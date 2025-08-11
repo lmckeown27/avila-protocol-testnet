@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
 
 export default function Navbar() {
-  const { user, isConnected, connectWallet, disconnectWallet } = useAppStore();
+  const { user, isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const location = useLocation();
 
