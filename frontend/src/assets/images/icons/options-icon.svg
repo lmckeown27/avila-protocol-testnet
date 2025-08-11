@@ -1,0 +1,13 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chart line -->
+  <path d="M 8 32 Q 16 28 24 30 T 40 24" stroke="#0f4c3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Call option arrow up -->
+  <path d="M 20 20 L 24 16 L 28 20 M 24 16 L 24 28" stroke="#32d74b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Put option arrow down -->
+  <path d="M 32 28 L 36 32 L 40 28 M 36 32 L 36 20" stroke="#ef4444" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Strike price line -->
+  <line x1="8" y1="24" x2="40" y2="24" stroke="#6b7280" stroke-width="1" stroke-dasharray="3,3"/>
+</svg> 

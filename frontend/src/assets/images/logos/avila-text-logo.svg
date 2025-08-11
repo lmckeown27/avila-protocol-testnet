@@ -1,0 +1,26 @@
+<svg width="300" height="100" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="avilaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0f4c3a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#32d74b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Letter A -->
+  <path d="M 20 80 L 40 20 L 60 80 M 30 60 L 50 60" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+  
+  <!-- Letter V -->
+  <path d="M 70 20 L 85 60 L 100 20" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+  
+  <!-- Letter I (stylized with two lines and dot) -->
+  <path d="M 120 20 L 120 80" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M 130 20 L 130 80" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <circle cx="125" cy="15" r="3" fill="url(#avilaGradient)"/>
+  
+  <!-- Letter L -->
+  <path d="M 150 20 L 150 80 L 190 80" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+  
+  <!-- Letter A -->
+  <path d="M 200 80 L 220 20 L 240 80 M 210 60 L 230 60" stroke="url(#avilaGradient)" stroke-width="8" stroke-linecap="round" fill="none"/>
+</svg> 
