@@ -108,13 +108,6 @@ export default function Home() {
       {/* Testnet Information */}
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 my-8">
         <div className="flex">
-          <div className="flex-shrink-0">
-            <img 
-              src="/src/assets/images/logos/Avilatokenlogo.jpg" 
-              alt="Avila Protocol Logo" 
-              className="h-8 w-8 rounded-full"
-            />
-          </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-yellow-800">
               Testnet Environment
