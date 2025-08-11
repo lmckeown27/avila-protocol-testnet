@@ -2,17 +2,27 @@
   "name": "avila-protocol",
   "version": "1.0.0",
   "description": "Decentralized options trading platform on Aptos",
-  "main": "scripts/deploy.js",
+  "private": true,
+  "workspaces": [
+    "backend/typescript",
+    "frontend"
+  ],
   "scripts": {
-    "test": "aptos move test",
-    "build": "aptos move compile",
-    "deploy:testnet": "node scripts/deploy.js full",
-    "deploy:mainnet": "NODE_URL=https://fullnode.mainnet.aptoslabs.com node scripts/deploy.js full",
-    "initialize": "node scripts/deploy.js initialize",
-    "verify": "node scripts/deploy.js verify",
-    "lint": "aptos move check",
-    "clean": "aptos move clean",
-    "format": "aptos move format"
+    "build:contracts": "cd backend/smart-contracts && aptos move compile",
+    "test:contracts": "cd backend/smart-contracts && aptos move test",
+    "build:backend": "cd backend/typescript && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:contracts && npm run build:backend && npm run build:frontend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend/typescript && npm run dev",
+    "deploy:testnet": "cd backend/typescript && npm run deploy:testnet",
+    "deploy:mainnet": "cd backend/typescript && npm run deploy:mainnet",
+    "initialize": "cd backend/typescript && npm run initialize",
+    "verify": "cd backend/typescript && npm run verify",
+    "lint": "cd backend/smart-contracts && aptos move check",
+    "clean": "cd backend/smart-contracts && aptos move clean",
+    "format": "cd backend/smart-contracts && aptos move format",
+    "install:all": "npm install && cd backend/typescript && npm install && cd ../../frontend && npm install"
   },
   "keywords": [
     "aptos",
@@ -24,13 +34,6 @@
   ],
   "author": "Avila Protocol Team",
   "license": "MIT",
-  "dependencies": {
-    "aptos": "^1.8.0"
-  },
-  "devDependencies": {
-    "@types/node": "^18.0.0",
-    "typescript": "^4.9.0"
-  },
   "engines": {
     "node": ">=16.0.0"
   },

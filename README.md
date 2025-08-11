@@ -1,151 +1,145 @@
-<<<<<<< HEAD
 # Avila Protocol
 
-## Overview
+A decentralized options trading platform built on the Aptos blockchain.
 
-**Avila Protocol** is a comprehensive, institutional-grade options trading protocol built on the Aptos blockchain. It provides a complete infrastructure for trading American-style options with advanced risk management, compliance controls, and professional-grade features.
+## Project Structure
 
-## What is Avila Protocol?
+This project has been restructured into a monorepo with clear separation of concerns:
 
-Avila Protocol is a decentralized options trading platform that enables users to:
+```
+avila-protocol/
+├── backend/
+│   ├── smart-contracts/     # Move smart contracts and tests
+│   └── typescript/          # Backend TypeScript services
+├── frontend/                # Frontend application (placeholder)
+├── docs/                    # Documentation and architecture
+└── package.json             # Root workspace configuration
+```
 
-- **Trade American-Style Options**: Exercise options at any time before expiry (unlike European options)
-- **Access Professional Tools**: Advanced order book, margin management, and risk controls
-- **Ensure Compliance**: Built-in KYC/AML verification and regulatory compliance
-- **Manage Risk**: Sophisticated margin requirements and portfolio risk management
-- **Settle Efficiently**: Both cash-settled and physically-settled options with immediate processing
+## Components
 
-## Key Features
+### 🏗️ Backend Smart Contracts (`backend/smart-contracts/`)
 
-### 🎯 **American-Style Options**
-- Early exercise capability at any time before expiry
-- Real-time market pricing for immediate settlement
-- Enhanced risk management for early exercise scenarios
+Contains all Move smart contracts that power the Avila Protocol:
 
-### 🏦 **Institutional-Grade Infrastructure**
-- Central limit order book for efficient price discovery
-- Advanced margin engine with risk-based calculations
-- Professional settlement engine supporting multiple settlement types
-- Comprehensive audit trail and event logging
+- **Core Protocol**: `avila_protocol.move` - Main protocol entry point
+- **Trading Engine**: `order_book.move`, `margin_engine.move`, `settlement_engine.move`
+- **Asset Management**: `collateral_vault.move`, `tokenized_asset_registry.move`
+- **Risk & Compliance**: `compliance_gate.move`, `governance_admin.move`
+- **Oracle Integration**: `price_oracle_adapter.move`
+- **Options Core**: `options_core.move` - Options contract logic
+- **Testing**: Comprehensive test suite in `complete_protocol_tests.move`
 
-### 🔒 **Security & Compliance**
-- Multi-role governance system (Admin, Operator, Guardian)
-- KYC/AML compliance gate with user whitelisting
-- Secure collateral vault with position-based locking
-- Comprehensive event emission for transparency
+**Quick Start:**
+```bash
+cd backend/smart-contracts
+aptos move compile
+aptos move test
+```
 
-### 💰 **Flexible Trading**
-- Support for both call and put options
-- Cash-settled and physically-settled options
-- Customizable contract sizes and strike prices
-- Professional order matching and execution
+### 🔧 Backend TypeScript (`backend/typescript/`)
 
-## Use Cases
+TypeScript services for deployment, management, and integration:
 
-### For Traders
-- **Hedging**: Protect portfolios against market movements
-- **Income Generation**: Write options to collect premiums
-- **Directional Trading**: Take leveraged positions on asset price movements
-- **Portfolio Diversification**: Access new asset classes and strategies
+- **Deployment Scripts**: Automated contract deployment
+- **Protocol Management**: Initialization and verification tools
+- **Integration Services**: API and external service connectors
 
-### For Institutions
-- **Risk Management**: Sophisticated hedging and risk mitigation
-- **Capital Efficiency**: Optimize capital allocation with margin management
-- **Compliance**: Built-in regulatory compliance and audit trails
-- **Professional Tools**: Enterprise-grade trading infrastructure
+**Quick Start:**
+```bash
+cd backend/typescript
+npm install
+npm run build
+npm run deploy:testnet
+```
 
-### For DeFi Protocols
-- **Integration**: Easy integration with existing DeFi protocols
-- **Liquidity**: Provide liquidity to options markets
-- **Innovation**: Build new financial products on top of options infrastructure
+### 🎨 Frontend (`frontend/`)
 
-## Technology Stack
+Frontend application for user interaction (currently a placeholder).
 
-- **Blockchain**: Aptos (Move language)
-- **Smart Contracts**: Modular, upgradeable architecture
-- **Consensus**: Byzantine Fault Tolerant (BFT)
-- **Security**: Formal verification and extensive testing
+**Status**: Frontend implementation pending - structure prepared for future development.
 
-## Architecture
+### 📚 Documentation (`docs/`)
 
-The protocol consists of 10 core modules working together:
+Comprehensive documentation including:
 
-1. **Options Core** - Core options logic and lifecycle management
-2. **Order Book** - Central limit order book for price discovery
-3. **Margin Engine** - Risk management and margin calculations
-4. **Collateral Vault** - Secure asset custody and position management
-5. **Settlement Engine** - Options settlement and payout processing
-6. **Price Oracle** - Real-time price feeds and market data
-7. **Governance Admin** - Protocol governance and parameter management
-8. **Compliance Gate** - KYC/AML and regulatory compliance
-9. **Events & Auditing** - Comprehensive event logging and audit trails
-10. **MultiStock Mock** - Mock tokenized stocks and price oracle for testing
+- **Architecture**: Protocol design and smart contract architecture
+- **Deployment**: Setup and deployment instructions
+- **Security**: Security considerations and audit information
+- **API Reference**: Integration guides and examples
 
 ## Getting Started
 
 ### Prerequisites
-- Aptos CLI installed
-- Node.js and npm
-- Basic understanding of options trading
 
-### Quick Start
+- Node.js >= 16.0.0
+- Aptos CLI
+- Move language support
+
+### Installation
+
+1. **Clone and install dependencies:**
 ```bash
-# Clone the repository
 git clone <repository-url>
-cd avila-contracts
-
-# Install dependencies
-npm install
-
-# Build the protocol
-aptos move build
-
-# Run tests
-aptos move test
+cd avila-protocol
+npm run install:all
 ```
 
-### Deployment
+2. **Build all components:**
 ```bash
-# Deploy to testnet
-aptos move publish --named-addresses avila_protocol=<your-address>
-
-# Deploy to mainnet
-aptos move publish --named-addresses avila_protocol=<your-address> --network mainnet
+npm run build
 ```
 
-## Documentation
+3. **Run tests:**
+```bash
+npm run test:contracts
+```
 
-- **[Smart Contract Architecture](./SMART_CONTRACT_ARCHITECTURE.md)** - Detailed explanation of each smart contract and how they work together
-- **API Reference** - Complete function documentation
-- **Integration Guide** - How to integrate with the protocol
-- **Security Audit** - Security considerations and best practices
+### Development Workflow
+
+- **Smart Contracts**: Work in `backend/smart-contracts/`
+- **Backend Services**: Develop in `backend/typescript/`
+- **Frontend**: Implement in `frontend/` (when ready)
+- **Documentation**: Update in `docs/`
+
+### Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `build:contracts` | Compile Move smart contracts |
+| `build:backend` | Build TypeScript backend |
+| `build:frontend` | Build frontend application |
+| `build` | Build all components |
+| `test:contracts` | Run Move contract tests |
+| `deploy:testnet` | Deploy to testnet |
+| `deploy:mainnet` | Deploy to mainnet |
+| `initialize` | Initialize protocol |
+| `verify` | Verify deployment |
+| `lint` | Check Move code |
+| `clean` | Clean build artifacts |
+| `format` | Format Move code |
+
+## Architecture
+
+The Avila Protocol is built with a modular architecture:
+
+- **Smart Contract Layer**: Core protocol logic in Move
+- **Service Layer**: TypeScript services for external integration
+- **Interface Layer**: User-facing applications (future)
+- **Documentation Layer**: Comprehensive guides and references
 
 ## Contributing
 
-We welcome contributions from the community! Please see our contributing guidelines and code of conduct.
-
-## Security
-
-- All smart contracts undergo extensive testing and formal verification
-- Security audits are conducted by leading firms
-- Bug bounty program available for security researchers
-- Multi-signature governance for critical operations
+1. Follow the established project structure
+2. Develop smart contracts in `backend/smart-contracts/`
+3. Add backend services in `backend/typescript/`
+4. Update documentation in `docs/`
+5. Implement frontend features in `frontend/`
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- **Documentation**: [Smart Contract Architecture](./SMART_CONTRACT_ARCHITECTURE.md)
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-- **Security**: security@avila-protocol.com
-
----
-
-**Avila Protocol** - Professional Options Trading on Aptos 
-=======
-# avila-contracts
-Smart contracts for Avila Protocol 
->>>>>>> 25a71dfae34ae30c649385d50f2a08868f8fc533
+For questions and support, please refer to the documentation in the `docs/` directory or open an issue in the repository.
