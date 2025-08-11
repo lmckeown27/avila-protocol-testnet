@@ -11,7 +11,7 @@ src/assets/images/
 │   ├── avila-circular-logo.svg    # Main circular logo with waves and bird
 │   ├── avila-text-logo.svg        # AVILA text logo with gradient
 │   ├── avila-favicon.svg          # Favicon version of circular logo
-│   └── .gitkeep                   # Ensures folder is tracked in git
+│   └── avila-token-logo.jpg      # Avila token logo (replaces warning icons)
 ├── icons/             # Custom icons and symbols
 │   └── options-icon.svg           # Options trading icon
 ├── backgrounds/       # Background images and patterns
@@ -34,6 +34,7 @@ src/assets/images/
 - **`avila-circular-logo.svg`** - Main circular logo featuring wave-like elements and bird silhouette
 - **`avila-text-logo.svg`** - Stylized AVILA text with teal-to-lime gradient
 - **`avila-favicon.svg`** - Favicon version optimized for small sizes
+- **`avila-token-logo.jpg`** - Avila token logo used in testnet banners and warnings
 
 ### **Icons:**
 - **`options-icon.svg`** - Options trading icon with chart line and call/put arrows
@@ -48,6 +49,7 @@ src/assets/images/
 import circularLogo from '../assets/images/logos/avila-circular-logo.svg';
 import textLogo from '../assets/images/logos/avila-text-logo.svg';
 import favicon from '../assets/images/logos/avila-favicon.svg';
+import tokenLogo from '../assets/images/logos/avila-token-logo.jpg';
 import optionsIcon from '../assets/images/icons/options-icon.svg';
 import chartBg from '../assets/images/ui/trading-chart-bg.svg';
 ```
@@ -57,6 +59,7 @@ import chartBg from '../assets/images/ui/trading-chart-bg.svg';
 // Logo usage
 <img src={circularLogo} alt="Avila Protocol Logo" className="w-16 h-16" />
 <img src={textLogo} alt="Avila Protocol" className="h-8" />
+<img src={tokenLogo} alt="Avila Protocol Logo" className="w-8 h-8 rounded-full" />
 
 // Icon usage
 <img src={optionsIcon} alt="Options Trading" className="w-6 h-6" />
@@ -107,6 +110,7 @@ import chartBg from '../assets/images/ui/trading-chart-bg.svg';
 - **Circular Logo**: Use for app icons, profile pictures, and branding
 - **Text Logo**: Use for headers, navigation, and horizontal layouts
 - **Favicon**: Use for browser tabs and bookmarks
+- **Token Logo**: Use for testnet banners, warnings, and small branding elements
 
 ## 🔄 Adding New Images
 
