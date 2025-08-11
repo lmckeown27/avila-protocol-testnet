@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../stores/appStore';
+import analyticsService from '../services/analytics';
 
 interface FeedbackData {
   type: 'bug' | 'feature' | 'general' | 'ui' | 'performance';
@@ -25,6 +26,9 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
     setIsSubmitting(true);
 
     try {
+      // Track feedback submission with analytics
+      analyticsService.trackFeedback(feedback.type, feedback.priority);
+      
       // For now, we'll just show a success message
       // In production, you'd send this to your backend or feedback service
       console.log('Feedback submitted:', feedback);

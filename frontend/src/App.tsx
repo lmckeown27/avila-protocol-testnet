@@ -1,7 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppStore } from './stores/appStore';
 import { config } from './config/environment';
+import { Analytics } from '@vercel/analytics/react';
+import analyticsService from './services/analytics';
 
 // Components
 import Navbar from './components/Navbar.tsx';
@@ -18,6 +20,17 @@ import Admin from './pages/Admin.tsx';
 
 // Services
 import { aptosService } from './services/aptos.ts';
+
+// Component to track page views
+function PageViewTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    analyticsService.trackPageView(location.pathname);
+  }, [location]);
+  
+  return null;
+}
 
 function App() {
   const { isLoading, setLoading, setError } = useAppStore();
@@ -63,6 +76,7 @@ function App() {
 
   return (
     <Router>
+      <PageViewTracker />
       <div className="min-h-screen bg-gray-50">
         {/* Testnet Banner */}
         <TestnetBanner />
@@ -84,6 +98,9 @@ function App() {
         
         {/* Notifications */}
         <NotificationContainer />
+        
+        {/* Vercel Analytics */}
+        <Analytics />
       </div>
     </Router>
   );
