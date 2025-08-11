@@ -110,7 +110,7 @@ export default function Home() {
         <div className="flex">
           <div className="flex-shrink-0">
             <img 
-              src="/src/assets/images/logos/avila-token-logo.jpg" 
+              src="/src/assets/images/logos/Avilatokenlogo.jpg" 
               alt="Avila Protocol Logo" 
               className="h-8 w-8 rounded-full"
             />

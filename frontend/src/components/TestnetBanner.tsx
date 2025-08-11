@@ -9,7 +9,7 @@ const TestnetBanner = () => {
     <div className="testnet-banner">
       <div className="flex items-center">
         <img 
-          src="/src/assets/images/logos/avila-token-logo.jpg" 
+          src="/src/assets/images/logos/Avilatokenlogo.jpg" 
           alt="Avila Protocol Logo" 
           className="w-8 h-8 mr-2 rounded-full"
         />

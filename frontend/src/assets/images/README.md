@@ -11,7 +11,8 @@ src/assets/images/
 │   ├── avila-circular-logo.svg    # Main circular logo with waves and bird
 │   ├── avila-text-logo.svg        # AVILA text logo with gradient
 │   ├── avila-favicon.svg          # Favicon version of circular logo
-│   └── avila-token-logo.jpg      # Avila token logo (replaces warning icons)
+│   ├── Avilatokenlogo.jpg        # Avila token logo (replaces warning icons)
+│   └── Avilatext.jpg             # Avila text logo in JPG format
 ├── icons/             # Custom icons and symbols
 │   └── options-icon.svg           # Options trading icon
 ├── backgrounds/       # Background images and patterns
@@ -34,7 +35,8 @@ src/assets/images/
 - **`avila-circular-logo.svg`** - Main circular logo featuring wave-like elements and bird silhouette
 - **`avila-text-logo.svg`** - Stylized AVILA text with teal-to-lime gradient
 - **`avila-favicon.svg`** - Favicon version optimized for small sizes
-- **`avila-token-logo.jpg`** - Avila token logo used in testnet banners and warnings
+- **`Avilatokenlogo.jpg`** - Avila token logo used in testnet banners and warnings
+- **`Avilatext.jpg`** - Avila text logo in JPG format
 
 ### **Icons:**
 - **`options-icon.svg`** - Options trading icon with chart line and call/put arrows
@@ -49,7 +51,7 @@ src/assets/images/
 import circularLogo from '../assets/images/logos/avila-circular-logo.svg';
 import textLogo from '../assets/images/logos/avila-text-logo.svg';
 import favicon from '../assets/images/logos/avila-favicon.svg';
-import tokenLogo from '../assets/images/logos/avila-token-logo.jpg';
+import tokenLogo from '../assets/images/logos/Avilatokenlogo.jpg';
 import optionsIcon from '../assets/images/icons/options-icon.svg';
 import chartBg from '../assets/images/ui/trading-chart-bg.svg';
 ```
