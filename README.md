@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Avila Protocol
 
 ## Overview
@@ -144,3 +145,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Avila Protocol** - Professional Options Trading on Aptos 
+=======
+# avila-contracts
+Smart contracts for Avila Protocol 
+>>>>>>> 25a71dfae34ae30c649385d50f2a08868f8fc533
