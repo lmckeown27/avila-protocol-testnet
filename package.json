@@ -1,0 +1,45 @@
+{
+  "name": "avila-protocol",
+  "version": "1.0.0",
+  "description": "Decentralized options trading platform on Aptos",
+  "main": "scripts/deploy.js",
+  "scripts": {
+    "test": "aptos move test",
+    "build": "aptos move compile",
+    "deploy:testnet": "node scripts/deploy.js full",
+    "deploy:mainnet": "NODE_URL=https://fullnode.mainnet.aptoslabs.com node scripts/deploy.js full",
+    "initialize": "node scripts/deploy.js initialize",
+    "verify": "node scripts/deploy.js verify",
+    "lint": "aptos move check",
+    "clean": "aptos move clean",
+    "format": "aptos move format"
+  },
+  "keywords": [
+    "aptos",
+    "move",
+    "options",
+    "defi",
+    "trading",
+    "blockchain"
+  ],
+  "author": "Avila Protocol Team",
+  "license": "MIT",
+  "dependencies": {
+    "aptos": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.9.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avila-protocol/avila-contracts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/avila-protocol/avila-contracts/issues"
+  },
+  "homepage": "https://github.com/avila-protocol/avila-contracts#readme"
+} 

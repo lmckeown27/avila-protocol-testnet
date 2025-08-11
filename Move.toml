@@ -1,0 +1,13 @@
+[package]
+name = "avila_protocol"
+version = "1.0.0"
+authors = ["Avila Protocol Team"]
+license = "MIT"
+
+[addresses]
+avila_protocol = "0x1"
+std = "0x1"
+aptos_framework = "0x1"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "main" } 
