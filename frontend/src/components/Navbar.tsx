@@ -3,11 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
+import AccessibilityMode from './AccessibilityMode';
 
 const Navbar = () => {
   const location = useLocation();
   const { isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isAccessibilityModeEnabled, setIsAccessibilityModeEnabled] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -87,6 +89,12 @@ const Navbar = () => {
 
             {/* Right Side */}
             <div className="flex items-center space-x-4">
+              {/* Accessibility Mode */}
+              <AccessibilityMode 
+                isEnabled={isAccessibilityModeEnabled}
+                onToggle={setIsAccessibilityModeEnabled}
+              />
+
               {/* Feedback Button */}
               <button
                 onClick={() => setIsFeedbackOpen(true)}

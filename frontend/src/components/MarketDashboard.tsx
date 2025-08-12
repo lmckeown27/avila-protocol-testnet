@@ -3,6 +3,7 @@ import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } fro
 import { tradFiDataService, TradFiAsset } from '../services/tradfiData';
 import { marketDataService, StandardizedMarketData } from '../services/marketData';
 import AssetDetailModal from './AssetDetailModal';
+import { checkContrast, suggestBetterContrast } from '../utils/colorContrast';
 
 const MarketDashboard = () => {
   // State for TradFi data
@@ -34,6 +35,9 @@ const MarketDashboard = () => {
         setTradFiError(null);
         const data = await tradFiDataService.getTradfiMarketData();
         setTradFiData(data.assets);
+        
+        // Check contrast for TradFi data display
+        checkContrastForTradFiData();
       } catch (error) {
         console.error('Failed to fetch TradFi data:', error);
         setTradFiError('Failed to load traditional market data');
@@ -64,6 +68,9 @@ const MarketDashboard = () => {
           .map(result => (result as PromiseFulfilledResult<StandardizedMarketData>).value);
         
         setDeFiData(validResults);
+        
+        // Check contrast for DeFi data display
+        checkContrastForDeFiData();
       } catch (error) {
         console.error('Failed to fetch DeFi data:', error);
         setDeFiError('Failed to load decentralized market data');
@@ -76,6 +83,53 @@ const MarketDashboard = () => {
     const interval = setInterval(fetchDeFiData, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
+
+  // Contrast checking functions
+  const checkContrastForTradFiData = () => {
+    // Check contrast for TradFi table elements
+    const colorPairs = [
+      { foreground: '#1f2937', background: '#ffffff', element: 'TradFi table text on white' },
+      { foreground: '#6b7280', background: '#ffffff', element: 'TradFi table secondary text on white' },
+      { foreground: '#059669', background: '#ffffff', element: 'TradFi positive change on white' },
+      { foreground: '#dc2626', background: '#ffffff', element: 'TradFi negative change on white' }
+    ];
+    
+    colorPairs.forEach(pair => {
+      const result = checkContrast(pair.foreground, pair.background);
+      if (!result.passesAA) {
+        console.warn(`⚠️ Low contrast detected between ${pair.foreground} and ${pair.background} (ratio: ${result.ratio}:1) for ${pair.element}`);
+        
+        // Get suggestions for better contrast
+        const suggestions = suggestBetterContrast(pair.foreground, pair.background);
+        if (suggestions.suggestions.length > 0) {
+          console.log(`💡 Suggestions for ${pair.element}:`, suggestions.suggestions.slice(0, 2));
+        }
+      }
+    });
+  };
+
+  const checkContrastForDeFiData = () => {
+    // Check contrast for DeFi table elements
+    const colorPairs = [
+      { foreground: '#1f2937', background: '#ffffff', element: 'DeFi table text on white' },
+      { foreground: '#6b7280', background: '#ffffff', element: 'DeFi table secondary text on white' },
+      { foreground: '#059669', background: '#ffffff', element: 'DeFi positive change on white' },
+      { foreground: '#dc2626', background: '#ffffff', element: 'DeFi negative change on white' }
+    ];
+    
+    colorPairs.forEach(pair => {
+      const result = checkContrast(pair.foreground, pair.background);
+      if (!result.passesAA) {
+        console.warn(`⚠️ Low contrast detected between ${pair.foreground} and ${pair.background} (ratio: ${result.ratio}:1) for ${pair.element}`);
+        
+        // Get suggestions for better contrast
+        const suggestions = suggestBetterContrast(pair.foreground, pair.background);
+        if (suggestions.suggestions.length > 0) {
+          console.log(`💡 Suggestions for ${pair.element}:`, suggestions.suggestions.slice(0, 2));
+        }
+      }
+    });
+  };
 
   // Filter and sort TradFi data
   const filteredAndSortedTradFi = useMemo(() => {
