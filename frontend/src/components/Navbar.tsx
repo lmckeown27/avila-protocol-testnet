@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
+import avilaLogo from '../assets/images/logos/Avilatokenlogo.jpg';
 
 export default function Navbar() {
   const { user, isConnected } = useAppStore();
@@ -30,7 +31,7 @@ export default function Navbar() {
               <div className="flex-shrink-0 flex items-center absolute left-4">
                 <Link to="/" className="flex items-center">
                   <img 
-                    src="/src/assets/images/logos/Avilatokenlogo.jpg" 
+                    src={avilaLogo} 
                     alt="Avila Protocol Logo" 
                     className="w-10 h-10 rounded-full mr-3"
                   />
