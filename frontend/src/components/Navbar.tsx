@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
-import AccessibilityMode from './AccessibilityMode';
 
 const Navbar = () => {
   const location = useLocation();
   const { isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isAccessibilityModeEnabled, setIsAccessibilityModeEnabled] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -41,60 +39,22 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* Navigation Links */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                to="/"
-                className={`nav-link ${isActive('/') ? 'active' : ''}`}
-              >
-                Home
-              </Link>
-              <Link
-                to="/tradfi-markets"
-                className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}
-              >
-                TradFi Markets
-              </Link>
-              <Link
-                to="/defi-markets"
-                className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}
-              >
-                DeFi Markets
-              </Link>
-              <Link
-                to="/trade"
-                className={`nav-link ${isActive('/trade') ? 'active' : ''}`}
-              >
-                Trade
-              </Link>
-              <Link
-                to="/portfolio"
-                className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}
-              >
-                Portfolio
-              </Link>
-              <Link
-                to="/governance"
-                className={`nav-link ${isActive('/governance') ? 'active' : ''}`}
-              >
-                Governance
-              </Link>
-              <Link
-                to="/admin"
-                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-              >
-                Admin
-              </Link>
+            {/* Centered Navigation Links */}
+            <div className="hidden md:flex items-center justify-center flex-1">
+              <div className="flex items-center space-x-8">
+                <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
+                <Link to="/markets" className={`nav-link ${isActive('/markets') ? 'active' : ''}`}>Markets</Link>
+                <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
+                <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
+                <Link to="/trade" className={`nav-link ${isActive('/trade') ? 'active' : ''}`}>Trade</Link>
+                <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
+                <Link to="/governance" className={`nav-link ${isActive('/governance') ? 'active' : ''}`}>Governance</Link>
+                <Link to="/admin" className={`nav-link ${isActive('/admin') ? 'active' : ''}`}>Admin</Link>
+              </div>
             </div>
 
             {/* Right Side */}
             <div className="flex items-center space-x-4">
-              {/* Accessibility Mode */}
-              <AccessibilityMode 
-                isEnabled={isAccessibilityModeEnabled}
-                onToggle={setIsAccessibilityModeEnabled}
-              />
-
               {/* Feedback Button */}
               <button
                 onClick={() => setIsFeedbackOpen(true)}
@@ -125,9 +85,9 @@ const Navbar = () => {
       </nav>
 
       {/* Feedback Modal */}
-      <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
       />
     </>
   );

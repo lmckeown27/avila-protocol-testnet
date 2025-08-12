@@ -1,147 +1,79 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { tradFiDataService, TradFiAsset } from '../services/tradfiData';
 import { marketDataService, StandardizedMarketData } from '../services/marketData';
 import AssetDetailModal from './AssetDetailModal';
-import { checkContrast, suggestBetterContrast } from '../utils/colorContrast';
 
 const MarketDashboard = () => {
   // State for TradFi data
   const [tradFiData, setTradFiData] = useState<TradFiAsset[]>([]);
-  const [tradFiLoading, setTradFiLoading] = useState(true);
   const [tradFiError, setTradFiError] = useState<string | null>(null);
+  const [tradFiSortConfig, setTradFiSortConfig] = useState<{ key: keyof TradFiAsset; direction: 'asc' | 'desc' } | null>(null);
 
   // State for DeFi data
   const [deFiData, setDeFiData] = useState<StandardizedMarketData[]>([]);
-  const [deFiLoading, setDeFiLoading] = useState(true);
   const [deFiError, setDeFiError] = useState<string | null>(null);
+  const [deFiSortConfig, setDeFiSortConfig] = useState<{ key: keyof StandardizedMarketData; direction: 'asc' | 'desc' } | null>(null);
 
-  // State for search and sorting
-  const [tradFiSearch, setTradFiSearch] = useState('');
-  const [deFiSearch, setDeFiSearch] = useState('');
-  const [tradFiSortConfig, setTradFiSortConfig] = useState<{ key: keyof TradFiAsset | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
-  const [deFiSortConfig, setDeFiSortConfig] = useState<{ key: keyof StandardizedMarketData | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
-
-  // State for modal
+  // State for search and modal
+  const [search, setSearch] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<TradFiAsset | StandardizedMarketData | null>(null);
   const [selectedAssetType, setSelectedAssetType] = useState<'tradfi' | 'defi' | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch TradFi data
+  // Fetch data on component mount
   useEffect(() => {
     const fetchTradFiData = async () => {
       try {
-        setTradFiLoading(true);
-        setTradFiError(null);
         const data = await tradFiDataService.getTradfiMarketData();
         setTradFiData(data.assets);
-        
-        // Check contrast for TradFi data display
-        checkContrastForTradFiData();
       } catch (error) {
         console.error('Failed to fetch TradFi data:', error);
-        setTradFiError('Failed to load traditional market data');
-      } finally {
-        setTradFiLoading(false);
+        setTradFiError('Failed to load Traditional Markets data.');
+      }
+    };
+
+    const fetchDeFiData = async () => {
+      try {
+        const results = await Promise.allSettled([
+          marketDataService.getMarketData('BTC'),
+          marketDataService.getMarketData('ETH'),
+          marketDataService.getMarketData('SOL'),
+          marketDataService.getMarketData('ADA'),
+          marketDataService.getMarketData('DOT'),
+        ]);
+        const validResults = results
+          .filter((result) => result.status === 'fulfilled')
+          .map((result) => (result as PromiseFulfilledResult<StandardizedMarketData>).value);
+        
+        setDeFiData(validResults);
+      } catch (error) {
+        console.error('Failed to fetch DeFi data:', error);
+        setDeFiError('Failed to load Decentralized Markets data.');
       }
     };
 
     fetchTradFiData();
-    const interval = setInterval(fetchTradFiData, 60000); // Refresh every minute
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch DeFi data
-  useEffect(() => {
-    const fetchDeFiData = async () => {
-      try {
-        setDeFiLoading(true);
-        setDeFiError(null);
-        
-        // Fetch data for major crypto assets
-        const assets = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'LINK', 'UNI', 'MATIC', 'AVAX', 'ATOM'];
-        const promises = assets.map(asset => marketDataService.getMarketData(asset));
-        const results = await Promise.allSettled(promises);
-        
-        const validResults = results
-          .filter(result => result.status === 'fulfilled')
-          .map(result => (result as PromiseFulfilledResult<StandardizedMarketData>).value);
-        
-        setDeFiData(validResults);
-        
-        // Check contrast for DeFi data display
-        checkContrastForDeFiData();
-      } catch (error) {
-        console.error('Failed to fetch DeFi data:', error);
-        setDeFiError('Failed to load decentralized market data');
-      } finally {
-        setDeFiLoading(false);
-      }
-    };
-
     fetchDeFiData();
-    const interval = setInterval(fetchDeFiData, 60000); // Refresh every minute
+
+    const interval = setInterval(() => {
+      fetchTradFiData();
+      fetchDeFiData();
+    }, 60000); // Refresh every 60 seconds
+
     return () => clearInterval(interval);
   }, []);
-
-  // Contrast checking functions
-  const checkContrastForTradFiData = () => {
-    // Check contrast for TradFi table elements
-    const colorPairs = [
-      { foreground: '#1f2937', background: '#ffffff', element: 'TradFi table text on white' },
-      { foreground: '#6b7280', background: '#ffffff', element: 'TradFi table secondary text on white' },
-      { foreground: '#059669', background: '#ffffff', element: 'TradFi positive change on white' },
-      { foreground: '#dc2626', background: '#ffffff', element: 'TradFi negative change on white' }
-    ];
-    
-    colorPairs.forEach(pair => {
-      const result = checkContrast(pair.foreground, pair.background);
-      if (!result.passesAA) {
-        console.warn(`⚠️ Low contrast detected between ${pair.foreground} and ${pair.background} (ratio: ${result.ratio}:1) for ${pair.element}`);
-        
-        // Get suggestions for better contrast
-        const suggestions = suggestBetterContrast(pair.foreground, pair.background);
-        if (suggestions.suggestions.length > 0) {
-          console.log(`💡 Suggestions for ${pair.element}:`, suggestions.suggestions.slice(0, 2));
-        }
-      }
-    });
-  };
-
-  const checkContrastForDeFiData = () => {
-    // Check contrast for DeFi table elements
-    const colorPairs = [
-      { foreground: '#1f2937', background: '#ffffff', element: 'DeFi table text on white' },
-      { foreground: '#6b7280', background: '#ffffff', element: 'DeFi table secondary text on white' },
-      { foreground: '#059669', background: '#ffffff', element: 'DeFi positive change on white' },
-      { foreground: '#dc2626', background: '#ffffff', element: 'DeFi negative change on white' }
-    ];
-    
-    colorPairs.forEach(pair => {
-      const result = checkContrast(pair.foreground, pair.background);
-      if (!result.passesAA) {
-        console.warn(`⚠️ Low contrast detected between ${pair.foreground} and ${pair.background} (ratio: ${result.ratio}:1) for ${pair.element}`);
-        
-        // Get suggestions for better contrast
-        const suggestions = suggestBetterContrast(pair.foreground, pair.background);
-        if (suggestions.suggestions.length > 0) {
-          console.log(`💡 Suggestions for ${pair.element}:`, suggestions.suggestions.slice(0, 2));
-        }
-      }
-    });
-  };
 
   // Filter and sort TradFi data
   const filteredAndSortedTradFi = useMemo(() => {
     let filtered = tradFiData.filter(asset =>
-      asset.symbol.toLowerCase().includes(tradFiSearch.toLowerCase()) ||
-      asset.name.toLowerCase().includes(tradFiSearch.toLowerCase())
+      asset.symbol.toLowerCase().includes(search.toLowerCase()) ||
+      asset.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    if (tradFiSortConfig.key) {
+    if (tradFiSortConfig) {
       filtered.sort((a, b) => {
-        const aVal = a[tradFiSortConfig.key!];
-        const bVal = b[tradFiSortConfig.key!];
+        const aVal = a[tradFiSortConfig.key];
+        const bVal = b[tradFiSortConfig.key];
 
         if (aVal === null || bVal === null) return 0;
         if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -161,18 +93,18 @@ const MarketDashboard = () => {
     }
 
     return filtered;
-  }, [tradFiData, tradFiSearch, tradFiSortConfig]);
+  }, [tradFiData, search, tradFiSortConfig]);
 
   // Filter and sort DeFi data
   const filteredAndSortedDeFi = useMemo(() => {
     let filtered = deFiData.filter(asset =>
-      asset.asset.toLowerCase().includes(deFiSearch.toLowerCase())
+      asset.asset.toLowerCase().includes(search.toLowerCase())
     );
 
-    if (deFiSortConfig.key) {
+    if (deFiSortConfig) {
       filtered.sort((a, b) => {
-        const aVal = a[deFiSortConfig.key!];
-        const bVal = b[deFiSortConfig.key!];
+        const aVal = a[deFiSortConfig.key];
+        const bVal = b[deFiSortConfig.key];
 
         if (aVal === null || bVal === null) return 0;
         if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -192,13 +124,13 @@ const MarketDashboard = () => {
     }
 
     return filtered;
-  }, [deFiData, deFiSearch, deFiSortConfig]);
+  }, [deFiData, search, deFiSortConfig]);
 
   // Handle sorting
   const handleSort = (key: keyof TradFiAsset | keyof StandardizedMarketData, type: 'tradfi' | 'defi') => {
     if (type === 'tradfi') {
       const currentConfig = tradFiSortConfig;
-      if (currentConfig.key === key) {
+      if (currentConfig?.key === key) {
         setTradFiSortConfig({
           key: key as keyof TradFiAsset,
           direction: currentConfig.direction === 'asc' ? 'desc' : 'asc'
@@ -208,7 +140,7 @@ const MarketDashboard = () => {
       }
     } else {
       const currentConfig = deFiSortConfig;
-      if (currentConfig.key === key) {
+      if (currentConfig?.key === key) {
         setDeFiSortConfig({
           key: key as keyof StandardizedMarketData,
           direction: currentConfig.direction === 'asc' ? 'desc' : 'asc'
@@ -223,7 +155,6 @@ const MarketDashboard = () => {
   const handleAssetClick = (asset: TradFiAsset | StandardizedMarketData, type: 'tradfi' | 'defi') => {
     setSelectedAsset(asset);
     setSelectedAssetType(type);
-    setIsModalOpen(true);
   };
 
   // Format currency
@@ -259,7 +190,7 @@ const MarketDashboard = () => {
   // Render sort indicator
   const renderSortIndicator = (key: keyof TradFiAsset | keyof StandardizedMarketData, type: 'tradfi' | 'defi') => {
     const config = type === 'tradfi' ? tradFiSortConfig : deFiSortConfig;
-    if (config.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    if (!config || config.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return config.direction === 'asc' ? 
       <ArrowUp className="w-4 h-4 text-blue-600" /> : 
       <ArrowDown className="w-4 h-4 text-blue-600" />;
@@ -415,8 +346,8 @@ const MarketDashboard = () => {
             <input
               type="text"
               placeholder="Search stocks and ETFs..."
-              value={tradFiSearch}
-              onChange={(e) => setTradFiSearch(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -435,14 +366,7 @@ const MarketDashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {tradFiLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <div className="mt-2">Loading traditional market data...</div>
-                  </td>
-                </tr>
-              ) : tradFiError ? (
+              {tradFiError ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-red-500">
                     {tradFiError}
@@ -462,12 +386,7 @@ const MarketDashboard = () => {
 
           {/* Mobile Card View */}
           <div className="md:hidden p-4 space-y-4">
-            {tradFiLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <div className="mt-2 text-gray-500 dark:text-gray-400">Loading...</div>
-              </div>
-            ) : tradFiError ? (
+            {tradFiError ? (
               <div className="text-center py-8 text-red-500">{tradFiError}</div>
             ) : filteredAndSortedTradFi.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -493,8 +412,8 @@ const MarketDashboard = () => {
             <input
               type="text"
               placeholder="Search cryptocurrencies..."
-              value={deFiSearch}
-              onChange={(e) => setDeFiSearch(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -513,14 +432,7 @@ const MarketDashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {deFiLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <div className="mt-2">Loading decentralized market data...</div>
-                  </td>
-                </tr>
-              ) : deFiError ? (
+              {deFiError ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-red-500">
                     {deFiError}
@@ -540,12 +452,7 @@ const MarketDashboard = () => {
 
           {/* Mobile Card View */}
           <div className="md:hidden p-4 space-y-4">
-            {deFiLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <div className="mt-2 text-gray-500 dark:text-gray-400">Loading...</div>
-              </div>
-            ) : deFiError ? (
+            {deFiError ? (
               <div className="text-center py-8 text-red-500">{deFiError}</div>
             ) : filteredAndSortedDeFi.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -560,8 +467,8 @@ const MarketDashboard = () => {
 
       {/* Asset Detail Modal */}
       <AssetDetailModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={!!selectedAsset}
+        onClose={() => setSelectedAsset(null)}
         asset={selectedAsset}
         assetType={selectedAssetType}
       />
