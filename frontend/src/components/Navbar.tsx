@@ -7,7 +7,6 @@ import FeedbackModal from './FeedbackModal';
 export default function Navbar() {
   const { user, isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
 
   const handleWalletConnect = async () => {
@@ -19,16 +18,6 @@ export default function Navbar() {
   };
 
   const isActive = (path: string) => location.pathname === path;
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
 
   return (
     <>
@@ -44,87 +33,78 @@ export default function Navbar() {
               </div>
               
               <div className="flex space-x-8">
-                                         <Link
-                           to="/"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Home
-                         </Link>
-                                         <Link
-                           to="/markets"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/markets') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Markets
-                         </Link>
-                                         <Link
-                           to="/trade"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/trade') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Trade
-                         </Link>
-                                         <Link
-                           to="/portfolio"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/portfolio') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Portfolio
-                         </Link>
-                                         <Link
-                           to="/governance"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/governance') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Governance
-                         </Link>
-                                         <Link
-                           to="/admin"
-                           className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                             isActive('/admin') 
-                               ? 'active' 
-                               : 'text-gray-500 hover:text-gray-700'
-                           }`}
-                         >
-                           Admin
-                         </Link>
+                <Link
+                  to="/"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/markets"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/markets') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Markets
+                </Link>
+                <Link
+                  to="/trade"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/trade') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Trade
+                </Link>
+                <Link
+                  to="/portfolio"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/portfolio') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Portfolio
+                </Link>
+                <Link
+                  to="/governance"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/governance') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Governance
+                </Link>
+                <Link
+                  to="/admin"
+                  className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                    isActive('/admin') 
+                      ? 'active' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Admin
+                </Link>
               </div>
             </div>
 
             {/* Right side - Feedback and Wallet */}
             <div className="flex items-center space-x-4">
-                                   {/* Dark Mode Toggle */}
-                     <button
-                       onClick={toggleDarkMode}
-                       className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
-                       title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                     >
-                       {isDarkMode ? "☀️" : "🌙"}
-                     </button>
-
-                     {/* Feedback Button */}
-                                     <button
-                         onClick={() => setIsFeedbackOpen(true)}
-                         className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
-                       >
-                         💬 Feedback
-                       </button>
+              {/* Feedback Button */}
+              <button
+                onClick={() => setIsFeedbackOpen(true)}
+                className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
+              >
+                💬 Feedback
+              </button>
 
               {/* Wallet Connection */}
               {isConnected ? (
@@ -139,20 +119,20 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
-                                             <button
-                             onClick={handleWalletDisconnect}
-                             className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
-                           >
-                             Disconnect
-                           </button>
+                  <button
+                    onClick={handleWalletDisconnect}
+                    className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
+                  >
+                    Disconnect
+                  </button>
                 </div>
               ) : (
-                                         <button
-                           onClick={handleWalletConnect}
-                           className="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium"
-                         >
-                           Connect Wallet
-                         </button>
+                <button
+                  onClick={handleWalletConnect}
+                  className="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium"
+                >
+                  Connect Wallet
+                </button>
               )}
             </div>
           </div>
