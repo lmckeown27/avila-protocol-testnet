@@ -1,0 +1,387 @@
+/* Market Dashboard Styles */
+
+/* Table Styles */
+.market-table {
+  @apply w-full border-collapse;
+}
+
+.market-table th {
+  @apply px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600;
+}
+
+.market-table td {
+  @apply px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600;
+}
+
+.market-table tbody tr {
+  @apply hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer;
+}
+
+.market-table tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+/* Sortable Headers */
+.sortable-header {
+  @apply cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-150;
+}
+
+.sortable-header:hover .sort-icon {
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.sort-icon {
+  @apply text-gray-400 transition-colors duration-150;
+}
+
+.sort-icon.active {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+/* Search Bar Styles */
+.search-container {
+  @apply relative max-w-md;
+}
+
+.search-input {
+  @apply w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+}
+
+.search-input:focus {
+  @apply shadow-lg;
+}
+
+.search-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5;
+}
+
+/* Card Styles for Mobile */
+.market-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-all duration-200;
+}
+
+.market-card:hover {
+  @apply transform scale-[1.02];
+}
+
+.market-card-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.market-card-symbol {
+  @apply w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400;
+}
+
+.market-card-info {
+  @apply flex-1 ml-3;
+}
+
+.market-card-name {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.market-card-description {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.market-card-price {
+  @apply text-right;
+}
+
+.market-card-price-value {
+  @apply text-lg font-bold text-gray-900 dark:text-white;
+}
+
+.market-card-price-change {
+  @apply flex items-center justify-end space-x-1 text-sm;
+}
+
+.market-card-stats {
+  @apply grid grid-cols-2 gap-4 text-sm mt-3;
+}
+
+.market-card-stat {
+  @apply flex justify-between;
+}
+
+.market-card-stat-label {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.market-card-stat-value {
+  @apply text-gray-900 dark:text-white font-medium;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+}
+
+.modal-container {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto;
+}
+
+.modal-header {
+  @apply flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700;
+}
+
+.modal-title {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.modal-subtitle {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+.modal-close-button {
+  @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700;
+}
+
+.modal-content {
+  @apply p-6 space-y-6;
+}
+
+.modal-section {
+  @apply bg-gray-50 dark:bg-gray-700 rounded-lg p-4;
+}
+
+.modal-section-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white mb-3;
+}
+
+.modal-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.modal-grid-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.modal-stat {
+  @apply flex items-center space-x-2 mb-2;
+}
+
+.modal-stat-icon {
+  @apply w-5 h-5 text-gray-500;
+}
+
+.modal-stat-label {
+  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+}
+
+.modal-stat-value {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.modal-stat-value-large {
+  @apply text-xl font-semibold text-gray-900 dark:text-white;
+}
+
+/* Chart Container */
+.chart-container {
+  @apply h-64 bg-white dark:bg-gray-600 rounded-lg p-2;
+}
+
+.chart-loading {
+  @apply flex items-center justify-center h-64;
+}
+
+.chart-spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modal-grid {
+    @apply grid-cols-1 gap-3;
+  }
+  
+  .modal-grid-2 {
+    @apply grid-cols-1 gap-3;
+  }
+  
+  .modal-stat-value {
+    @apply text-xl;
+  }
+  
+  .modal-stat-value-large {
+    @apply text-lg;
+  }
+}
+
+/* Loading States */
+.loading-container {
+  @apply flex items-center justify-center py-8;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+}
+
+.loading-text {
+  @apply mt-2 text-gray-500 dark:text-gray-400;
+}
+
+/* Error States */
+.error-container {
+  @apply text-center py-8 text-red-500;
+}
+
+/* Empty States */
+.empty-container {
+  @apply text-center py-8 text-gray-500 dark:text-gray-400;
+}
+
+/* Hover Effects */
+.hover-lift {
+  @apply transition-transform duration-200;
+}
+
+.hover-lift:hover {
+  @apply transform scale-[1.02];
+}
+
+/* Transitions */
+.fade-in {
+  @apply animate-in fade-in duration-300;
+}
+
+.slide-up {
+  @apply animate-in slide-in-from-bottom-4 duration-300;
+}
+
+/* Dark Mode Enhancements */
+.dark .market-table th {
+  @apply bg-gray-700 border-gray-600;
+}
+
+.dark .market-table td {
+  @apply border-gray-600;
+}
+
+.dark .market-table tbody tr:hover {
+  @apply bg-gray-700;
+}
+
+.dark .search-input {
+  @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400;
+}
+
+.dark .search-input:focus {
+  @apply ring-blue-500;
+}
+
+.dark .market-card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .market-card:hover {
+  @apply bg-gray-750;
+}
+
+.dark .modal-container {
+  @apply bg-gray-800;
+}
+
+.dark .modal-section {
+  @apply bg-gray-700;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-700 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-500 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-400;
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-animation {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.slide-in-animation {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Focus States */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200;
+}
+
+/* Status Indicators */
+.status-indicator {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-success {
+  @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+}
+
+.status-warning {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+}
+
+.status-error {
+  @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+}
+
+/* Tooltip Styles */
+.tooltip {
+  @apply absolute z-10 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg opacity-0 pointer-events-none transition-opacity duration-200;
+}
+
+.tooltip.show {
+  @apply opacity-100;
+}
+
+/* Responsive Utilities */
+.responsive-text {
+  @apply text-sm md:text-base lg:text-lg;
+}
+
+.responsive-padding {
+  @apply p-4 md:p-6 lg:p-8;
+}
+
+.responsive-margin {
+  @apply m-2 md:m-4 lg:m-6;
+} 
