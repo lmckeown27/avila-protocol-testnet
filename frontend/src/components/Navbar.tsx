@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
-import { LogoAdaptive } from './LogoAdaptive';
 
 export default function Navbar() {
   const { user, isConnected } = useAppStore();
@@ -41,10 +40,6 @@ export default function Navbar() {
             <div className="flex flex-1 justify-center">
               <div className="flex-shrink-0 flex items-center absolute left-4">
                 <Link to="/" className="flex items-center">
-                  <LogoAdaptive 
-                    className="w-10 h-10 rounded-full mr-3"
-                    alt="Avila Protocol Logo"
-                  />
                   <span className="text-xl font-bold text-primary-600">Avila Protocol</span>
                 </Link>
               </div>
