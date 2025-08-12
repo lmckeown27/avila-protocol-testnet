@@ -376,7 +376,7 @@ h3 {
 .table td {
   padding: 1rem;
   border-bottom: 1px solid var(--secondary-100);
-  color: var(--secondary-800);
+  color: #0b0101;
 }
 
 .table tbody tr:hover {
