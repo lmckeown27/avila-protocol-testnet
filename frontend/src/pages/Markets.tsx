@@ -80,7 +80,7 @@ const Markets = () => {
         <div className="card bg-gradient-to-r from-blue-50 to-blue-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-600 font-medium">Total Markets</p>
+              <p className="text-sm text-black font-medium">Total Markets</p>
               <p className="text-2xl font-bold text-blue-900">{markets.length}</p>
             </div>
             <BarChart3 className="w-8 h-8 text-blue-400" />
@@ -89,7 +89,7 @@ const Markets = () => {
         <div className="card bg-gradient-to-r from-green-50 to-green-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-600 font-medium">Total Volume (24h)</p>
+              <p className="text-sm text-black font-medium">Total Volume (24h)</p>
               <p className="text-2xl font-bold text-green-900">
                 ${(markets.reduce((sum, m) => sum + m.volume24h, 0) / 1000000).toFixed(1)}M
               </p>
@@ -100,7 +100,7 @@ const Markets = () => {
         <div className="card bg-gradient-to-r from-purple-50 to-purple-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-purple-600 font-medium">Total Market Cap</p>
+              <p className="text-sm text-black font-medium">Total Market Cap</p>
               <p className="text-2xl font-bold text-purple-900">
                 ${(markets.reduce((sum, m) => sum + m.marketCap, 0) / 1000000000).toFixed(1)}B
               </p>
@@ -111,7 +111,7 @@ const Markets = () => {
         <div className="card bg-gradient-to-r from-orange-50 to-orange-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-orange-600 font-medium">Active Markets</p>
+              <p className="text-sm text-black font-medium">Active Markets</p>
               <p className="text-2xl font-bold text-orange-900">{markets.length}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-orange-400" />
