@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useDataSourceManager } from '../lib/dataSourceManager';
-import { MarketData, DataSourceStatus } from '../lib/types';
+import { DataSourceStatus } from '../lib/types';
 import { 
   TrendingUp, 
   TrendingDown, 
   Activity, 
   Wifi, 
   WifiOff,
-  RefreshCw,
-  AlertTriangle
+  RefreshCw
 } from 'lucide-react';
 
 interface MarketOverviewDashboardProps {
@@ -21,17 +20,16 @@ type TabType = 'total' | 'tradfi' | 'defi';
 
 export default function MarketOverviewDashboard({ className = '' }: MarketOverviewDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('total');
-  const [marketData, setMarketData] = useState<MarketData>({});
   const [dataSourceStatus, setDataSourceStatus] = useState<DataSourceStatus>('connecting');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [error, setError] = useState<string | null>(null);
 
   const { 
     connect, 
     disconnect, 
     status, 
     isLive, 
-    lastDataUpdate 
+    lastDataUpdate,
+    marketData
   } = useDataSourceManager();
 
   // Update local state when data source status changes
@@ -47,17 +45,6 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
     connect();
     return () => disconnect();
   }, [connect, disconnect]);
-
-  // Handle data updates
-  const handleDataUpdate = useCallback((data: MarketData) => {
-    setMarketData(data);
-    setError(null);
-  }, []);
-
-  // Handle connection errors
-  const handleError = useCallback((errorMessage: string) => {
-    setError(errorMessage);
-  }, []);
 
   // Tab navigation
   const tabs = [
@@ -85,23 +72,6 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
     );
   };
 
-  // Render error banner
-  const renderErrorBanner = () => {
-    if (!error) return null;
-
-    return (
-      <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-        <div className="flex items-center">
-          <AlertTriangle className="w-5 h-5 text-red-400 mr-2" />
-          <div>
-            <h3 className="text-sm font-medium text-red-800">Data Source Warning</h3>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // Render market overview cards
   const renderMarketCards = () => {
     const data = marketData[activeTab] || {};
@@ -118,8 +88,8 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
             ${data.marketCap ? (data.marketCap / 1e12).toFixed(2) + 'T' : '--'}
           </div>
           <div className="flex items-center text-sm">
-            <span className={`${data.marketCapChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {data.marketCapChange ? `${data.marketCapChange >= 0 ? '+' : ''}${data.marketCapChange.toFixed(2)}%` : '--'}
+            <span className={`${(data.marketCapChange ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {data.marketCapChange !== undefined ? `${(data.marketCapChange >= 0 ? '+' : '')}${data.marketCapChange.toFixed(2)}%` : '--'}
             </span>
             <span className="text-gray-500 dark:text-gray-400 ml-2">24h</span>
           </div>
@@ -135,8 +105,8 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
             ${data.volume ? (data.volume / 1e9).toFixed(2) + 'B' : '--'}
           </div>
           <div className="flex items-center text-sm">
-            <span className={`${data.volumeChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {data.volumeChange ? `${data.volumeChange >= 0 ? '+' : ''}${data.volumeChange.toFixed(2)}%` : '--'}
+            <span className={`${(data.volumeChange ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {data.volumeChange !== undefined ? `${(data.volumeChange >= 0 ? '+' : '')}${data.volumeChange.toFixed(2)}%` : '--'}
             </span>
             <span className="text-gray-500 dark:text-gray-400 ml-2">24h</span>
           </div>
@@ -177,10 +147,10 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
             <TrendingDown className="w-5 h-5 text-red-500" />
           </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {data.priceChange ? `${data.priceChange >= 0 ? '+' : ''}${data.priceChange.toFixed(2)}%` : '--'}
+            {data.priceChange !== undefined ? `${(data.priceChange >= 0 ? '+' : '')}${data.priceChange.toFixed(2)}%` : '--'}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {data.priceChange ? '24h average' : '--'}
+            {data.priceChange !== undefined ? '24h average' : '--'}
           </div>
         </div>
 
@@ -191,10 +161,10 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
             <div className="w-5 h-5 bg-orange-500 rounded-full"></div>
           </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {data.volatility ? `${data.volatility.toFixed(2)}%` : '--'}
+            {data.volatility !== undefined ? `${data.volatility.toFixed(2)}%` : '--'}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {data.volatility ? 'VIX equivalent' : '--'}
+            {data.volatility !== undefined ? 'VIX equivalent' : '--'}
           </div>
         </div>
       </div>
@@ -219,9 +189,6 @@ export default function MarketOverviewDashboard({ className = '' }: MarketOvervi
           </div>
         </div>
       </div>
-
-      {/* Error Banner */}
-      {renderErrorBanner()}
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 dark:border-gray-700">

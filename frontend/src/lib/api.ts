@@ -1,4 +1,4 @@
-import { MarketData, MarketMetrics } from './types';
+import { MarketMetrics } from './types';
 
 // API configuration
 const API_CONFIG = {
@@ -138,8 +138,8 @@ export class MarketDataAPI {
       // Get DeFi token data from CoinGecko
       const defiTokens = await this.getDeFiTokens();
       
-      // Get DeFi protocol TVL from DeFi Llama
-      const protocolTVL = await this.getDeFiProtocolTVL();
+      // Get DeFi protocol TVL from DeFi Llama (stored but not used in current implementation)
+      await this.getDeFiProtocolTVL();
       
       // Get DeFi sentiment (based on price performance)
       const avgPriceChange = defiTokens.reduce((sum, token) => sum + (token.price_change_percentage_24h || 0), 0) / defiTokens.length;
