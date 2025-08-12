@@ -33,14 +33,14 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo/Brand */}
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0">
               <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
                 Avila Protocol
               </Link>
             </div>
 
             {/* Centered Navigation Links */}
-            <div className="hidden md:flex items-center justify-center flex-1">
+            <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
               <div className="flex items-center space-x-8">
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
                 <Link to="/markets" className={`nav-link ${isActive('/markets') ? 'active' : ''}`}>Markets</Link>
@@ -54,7 +54,7 @@ const Navbar = () => {
             </div>
 
             {/* Right Side */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 flex-shrink-0">
               {/* Feedback Button */}
               <button
                 onClick={() => setIsFeedbackOpen(true)}
