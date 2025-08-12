@@ -3,12 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
 import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
-import avilaLogo from '../assets/images/logos/Avilatokenlogo.jpg';
+import { LogoAdaptive } from './LogoAdaptive';
 
 export default function Navbar() {
   const { user, isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
 
   const handleWalletConnect = async () => {
@@ -21,6 +22,16 @@ export default function Navbar() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   return (
     <>
       <nav className="navbar">
@@ -30,10 +41,9 @@ export default function Navbar() {
             <div className="flex flex-1 justify-center">
               <div className="flex-shrink-0 flex items-center absolute left-4">
                 <Link to="/" className="flex items-center">
-                  <img 
-                    src={avilaLogo} 
-                    alt="Avila Protocol Logo" 
+                  <LogoAdaptive 
                     className="w-10 h-10 rounded-full mr-3"
+                    alt="Avila Protocol Logo"
                   />
                   <span className="text-xl font-bold text-primary-600">Avila Protocol</span>
                 </Link>
@@ -124,7 +134,16 @@ export default function Navbar() {
 
             {/* Right side - Feedback and Wallet */}
             <div className="flex items-center space-x-4">
-              {/* Feedback Button */}
+                                   {/* Dark Mode Toggle */}
+                     <button
+                       onClick={toggleDarkMode}
+                       className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"
+                       title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                     >
+                       {isDarkMode ? "☀️" : "🌙"}
+                     </button>
+
+                     {/* Feedback Button */}
                                      <button
                          onClick={() => setIsFeedbackOpen(true)}
                          className="btn-secondary inline-flex items-center px-3 py-2 text-sm leading-4 font-medium"

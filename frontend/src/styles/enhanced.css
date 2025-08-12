@@ -518,6 +518,7 @@ h3 {
 }
 
 /* ===== DARK MODE SUPPORT ===== */
+/* System preference dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
     --primary-50: #1e3a8a;
@@ -557,4 +558,71 @@ h3 {
     background: rgba(30, 41, 59, 0.95);
     border-color: rgba(51, 65, 85, 0.8);
   }
+}
+
+/* Manual dark mode toggle */
+.dark {
+  --primary-50: #1e3a8a;
+  --primary-100: #1e40af;
+  --primary-200: #1d4ed8;
+  --primary-300: #2563eb;
+  --primary-400: #3b82f6;
+  --primary-500: #60a5fa;
+  --primary-600: #93c5fd;
+  --primary-700: #bfdbfe;
+  --primary-800: #dbeafe;
+  --primary-900: #eff6ff;
+  
+  --secondary-50: #0f172a;
+  --secondary-100: #1e293b;
+  --secondary-200: #334155;
+  --secondary-300: #475569;
+  --secondary-400: #64748b;
+  --secondary-500: #94a3b8;
+  --secondary-600: #cbd5e1;
+  --secondary-700: #e2e8f0;
+  --secondary-800: #f1f5f9;
+  --secondary-900: #f8fafc;
+}
+
+.dark body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: var(--secondary-100);
+}
+
+.dark .card {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(51, 65, 85, 0.8);
+}
+
+.dark .navbar {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(51, 65, 85, 0.8);
+}
+
+.dark .btn-primary {
+  background: var(--primary-600);
+  color: var(--secondary-900);
+}
+
+.dark .btn-secondary {
+  background: var(--secondary-200);
+  color: var(--secondary-100);
+  border-color: var(--secondary-300);
+}
+
+.dark .text-gray-900 {
+  color: var(--secondary-100);
+}
+
+.dark .text-gray-500 {
+  color: var(--secondary-400);
+}
+
+.dark .bg-gray-50 {
+  background: var(--secondary-50);
+}
+
+.dark .bg-white {
+  background: var(--secondary-100);
 } 
