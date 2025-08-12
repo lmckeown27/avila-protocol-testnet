@@ -7,7 +7,6 @@ import FeedbackModal from './FeedbackModal';
 export default function Navbar() {
   const { user, isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
 
@@ -44,7 +43,7 @@ export default function Navbar() {
                 </Link>
               </div>
               
-              <div className="hidden sm:flex sm:space-x-8">
+              <div className="flex space-x-8">
                                          <Link
                            to="/"
                            className={`nav-link inline-flex items-center px-1 pt-1 text-sm font-medium ${
@@ -106,25 +105,6 @@ export default function Navbar() {
                            Admin
                          </Link>
               </div>
-              
-              {/* Mobile menu button */}
-              <div className="sm:hidden">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
-                >
-                  <span className="sr-only">Open main menu</span>
-                  {isMobileMenuOpen ? (
-                    <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  )}
-                </button>
-              </div>
             </div>
 
             {/* Right side - Feedback and Wallet */}
@@ -177,80 +157,6 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-        
-        {/* Mobile menu */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden">
-            <div className="pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-              <Link
-                to="/"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/markets"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/markets') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Markets
-              </Link>
-              <Link
-                to="/trade"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/trade') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Trade
-              </Link>
-              <Link
-                to="/portfolio"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/portfolio') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Portfolio
-              </Link>
-              <Link
-                to="/governance"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/governance') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Governance
-              </Link>
-              <Link
-                to="/admin"
-                className={`block px-3 py-2 text-base font-medium rounded-md ${
-                  isActive('/admin') 
-                    ? 'bg-primary-50 text-primary-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Feedback Modal */}
