@@ -6,11 +6,14 @@ const TestnetBanner = () => {
   }
 
   return (
-    <div className="testnet-banner">
-      <div className="flex items-center">
-        <div>
-          <strong className="font-medium">Testnet Environment</strong>
-          <span className="ml-2">This is a mock trading environment with no real money. All assets and transactions are for testing purposes only.</span>
+    <div className="testnet-banner animate-fade-in-up">
+      <div className="flex items-center justify-center text-center">
+        <div className="max-w-4xl">
+          <strong className="font-bold text-lg block mb-2">🚀 Testnet Environment</strong>
+          <span className="text-sm leading-relaxed">
+            This is a mock trading environment with no real money. All assets and transactions are for testing purposes only. 
+            <span className="block mt-1 text-xs opacity-75">Experience the future of DeFi options trading!</span>
+          </span>
         </div>
       </div>
     </div>
