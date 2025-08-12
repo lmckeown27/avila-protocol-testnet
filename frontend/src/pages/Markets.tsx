@@ -76,45 +76,150 @@ const Markets = () => {
       </div>
 
       {/* Market Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card bg-gradient-to-r from-blue-50 to-blue-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-black font-medium">Total Markets</p>
-              <p className="text-2xl font-bold text-blue-900">{markets.length}</p>
-            </div>
-            <BarChart3 className="w-8 h-8 text-blue-400" />
-          </div>
-        </div>
-        <div className="card bg-gradient-to-r from-green-50 to-green-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-black font-medium">Total Volume (24h)</p>
-              <p className="text-2xl font-bold text-green-900">
-                ${(markets.reduce((sum, m) => sum + m.volume24h, 0) / 1000000).toFixed(1)}M
-              </p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-green-400" />
-          </div>
-        </div>
-        <div className="card bg-gradient-to-r from-purple-50 to-purple-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-black font-medium">Total Market Cap</p>
-              <p className="text-2xl font-bold text-purple-900">
-                ${(markets.reduce((sum, m) => sum + m.marketCap, 0) / 1000000000).toFixed(1)}B
-              </p>
-            </div>
-            <DollarSign className="w-8 h-8 text-purple-400" />
-          </div>
-        </div>
-        <div className="card bg-gradient-to-r from-orange-50 to-orange-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-black font-medium">Active Markets</p>
-              <p className="text-2xl font-bold text-orange-900">{markets.length}</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-orange-400" />
+      <div className="card mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Market Overview</h2>
+        <div className="table-container">
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Price</th>
+                  <th>24h Change</th>
+                  <th>24h Volume</th>
+                  <th>Market Cap</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="hover:bg-gray-50">
+                  <td>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-sm">M</span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">Total Markets</div>
+                        <div className="text-sm text-gray-500">Market Count</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-blue-600">
+                      {markets.length}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td className="text-sm font-medium">
+                    <button className="btn-secondary text-xs px-3 py-1">
+                      View
+                    </button>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <span className="text-green-600 font-bold text-sm">V</span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">Total Volume (24h)</div>
+                        <div className="text-sm text-gray-500">24h Trading Volume</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-green-600">
+                      ${(markets.reduce((sum, m) => sum + m.volume24h, 0) / 1000000).toFixed(1)}M
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td className="text-sm font-medium">
+                    <button className="btn-secondary text-xs px-3 py-1">
+                      View
+                    </button>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-purple-600 font-bold text-sm">C</span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">Total Market Cap</div>
+                        <div className="text-sm text-gray-500">Market Capitalization</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-purple-600">
+                      ${(markets.reduce((sum, m) => sum + m.marketCap, 0) / 1000000000).toFixed(1)}B
+                    </div>
+                  </td>
+                  <td className="text-sm font-medium">
+                    <button className="btn-secondary text-xs px-3 py-1">
+                      View
+                    </button>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                        <span className="text-orange-600 font-bold text-sm">A</span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">Active Markets</div>
+                        <div className="text-sm text-gray-500">Active Trading Pairs</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td>
+                    <div className="text-sm font-medium text-gray-900">-</div>
+                  </td>
+                  <td className="text-sm font-medium">
+                    <button className="btn-secondary text-xs px-3 py-1">
+                      View
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -165,9 +270,9 @@ const Markets = () => {
                     </div>
                   </td>
                   <td>
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm font-medium text-gray-900">
                       ${(market.marketCap / 1000000).toFixed(1)}M
-                  </div>
+                    </div>
                   </td>
                   <td className="text-sm font-medium">
                     <button className="btn-primary text-xs px-3 py-1 mr-2">
