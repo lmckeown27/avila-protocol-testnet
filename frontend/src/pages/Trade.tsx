@@ -1,270 +1,254 @@
-import { useState } from 'react';
-import { useAppStore } from '../stores/appStore';
+import { useState, useEffect } from 'react';
 import { config } from '../config/environment';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+
+interface Asset {
+  ticker: string;
+  name: string;
+  decimals: number;
+  initialPrice: number;
+}
 
 const Trade = () => {
-  const { isConnected } = useAppStore();
-  const [selectedAsset, setSelectedAsset] = useState(config.testnet.mockAssets[0]);
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
-  const [optionType, setOptionType] = useState<'call' | 'put'>('call');
-  const [strikePrice, setStrikePrice] = useState(150);
-  const [expiry, setExpiry] = useState(30);
-  const [quantity, setQuantity] = useState(1);
-  const [premium, setPremium] = useState(5.50);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [orderType, setOrderType] = useState<'call' | 'put'>('call');
+  const [strikePrice, setStrikePrice] = useState<number>(0);
+  const [expiration, setExpiration] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
+  const [premium, setPremium] = useState<number>(0);
 
-  if (!isConnected) {
+  // Set default values when asset is selected
+  useEffect(() => {
+    if (selectedAsset) {
+      setStrikePrice(selectedAsset.initialPrice);
+      setPremium(selectedAsset.initialPrice * 0.1); // 10% of asset price
+      
+      // Set default expiration to 30 days from now
+      const defaultExpiration = new Date();
+      defaultExpiration.setDate(defaultExpiration.getDate() + 30);
+      setExpiration(defaultExpiration.toISOString().split('T')[0]);
+    }
+  }, [selectedAsset]);
+
+  const handlePlaceOrder = () => {
+    if (!selectedAsset) return;
+    
+    // Mock order placement
+    alert(`Order placed: ${quantity} ${orderType} option(s) for ${selectedAsset.ticker} at strike $${strikePrice}`);
+  };
+
+  if (!selectedAsset) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
-        <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
-        <button className="btn-primary">Connect Wallet</button>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Select Asset to Trade</h2>
+        <p className="text-gray-700 mb-6">Please select an asset from the list to begin trading.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {config.testnet.mockAssets.map((asset) => (
+            <div
+              key={asset.ticker}
+              className="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-colors hover:border-gray-300"
+              onClick={() => setSelectedAsset(asset)}
+            >
+              <div className="font-medium text-gray-900">{asset.ticker}</div>
+              <div className="text-sm text-gray-600">{asset.name}</div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
         <h1 className="text-3xl font-bold text-gray-900">Trade Options</h1>
-        <p className="text-gray-600">Place call and put options orders on tokenized stocks</p>
+        <p className="text-gray-700">Place call and put options orders on tokenized stocks</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Trading Interface */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Asset Selection */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Asset</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {config.testnet.mockAssets.map((asset) => (
-                <button
-                  key={asset.ticker}
-                  onClick={() => setSelectedAsset(asset)}
-                  className={`p-3 rounded-lg border text-left transition-colors ${
-                    selectedAsset.ticker === asset.ticker
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium text-gray-900">{asset.ticker}</div>
-                  <div className="text-sm text-gray-500">{asset.name}</div>
-                  <div className="text-sm font-medium text-primary-600">
-                    ${asset.initialPrice}
-                  </div>
-                </button>
-              ))}
+      {/* Asset Selection */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Asset</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {config.testnet.mockAssets.map((asset) => (
+            <div
+              key={asset.ticker}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                selectedAsset?.ticker === asset.ticker
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedAsset(asset)}
+            >
+              <div className="font-medium text-gray-900">{asset.ticker}</div>
+              <div className="text-sm text-gray-600">{asset.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trading Interface */}
+      {selectedAsset && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Order</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Order Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Order Type
+              </label>
+              <select
+                value={orderType}
+                onChange={(e) => setOrderType(e.target.value as 'call' | 'put')}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  orderType === 'call'
+                    ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <option value="call">Call Option</option>
+                <option value="put">Put Option</option>
+              </select>
+            </div>
+
+            {/* Strike Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Strike Price
+              </label>
+              <input
+                type="number"
+                value={strikePrice}
+                onChange={(e) => setStrikePrice(parseFloat(e.target.value))}
+                step="0.01"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  strikePrice === selectedAsset.initialPrice
+                    ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              />
+            </div>
+
+            {/* Expiration */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expiration Date
+              </label>
+              <input
+                type="date"
+                value={expiration}
+                onChange={(e) => setExpiration(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  expiration === ''
+                    ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    : 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                }`}
+              />
+            </div>
+
+            {/* Quantity */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quantity (Contracts)
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value))}
+                min="1"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  quantity === 1
+                    ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              />
+            </div>
+
+            {/* Premium */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Premium per Contract
+              </label>
+              <input
+                type="number"
+                value={premium}
+                onChange={(e) => setPremium(parseFloat(e.target.value))}
+                step="0.01"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  premium === 0
+                    ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    : 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                }`}
+              />
+            </div>
+
+            {/* Total Cost */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Cost
+              </label>
+              <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                ${(premium * quantity).toFixed(2)}
+              </div>
             </div>
           </div>
 
-          {/* Order Form */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Order</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Order Type
-                </label>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setOrderType('buy')}
-                    className={`flex-1 py-2 px-4 rounded-lg border font-medium transition-colors ${
-                      orderType === 'buy'
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <TrendingUp className="w-4 h-4 inline mr-2" />
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => setOrderType('sell')}
-                    className={`flex-1 py-2 px-4 rounded-lg border font-medium transition-colors ${
-                      orderType === 'sell'
-                        ? 'border-red-500 bg-red-50 text-red-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <TrendingDown className="w-4 h-4 inline mr-2" />
-                    Sell
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Option Type
-                </label>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setOptionType('call')}
-                    className={`flex-1 py-2 px-4 rounded-lg border font-medium transition-colors ${
-                      optionType === 'call'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Call
-                  </button>
-                  <button
-                    onClick={() => setOptionType('put')}
-                    className={`flex-1 py-2 px-4 rounded-lg border font-medium transition-colors ${
-                      optionType === 'put'
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Put
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Strike Price ($)
-                </label>
-                <input
-                  type="number"
-                  value={strikePrice}
-                  onChange={(e) => setStrikePrice(Number(e.target.value))}
-                  className="input-field"
-                  min="0.01"
-                  step="0.01"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expiry (days)
-                </label>
-                <input
-                  type="number"
-                  value={expiry}
-                  onChange={(e) => setExpiry(Number(e.target.value))}
-                  className="input-field"
-                  min="1"
-                  max="365"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity (contracts)
-                </label>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="input-field"
-                  min="1"
-                  max="1000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Premium ($)
-                </label>
-                <input
-                  type="number"
-                  value={premium}
-                  onChange={(e) => setPremium(Number(e.target.value))}
-                  className="input-field"
-                  min="0.01"
-                  step="0.01"
-                />
-              </div>
+          {/* Order Summary */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Order Summary</h4>
+            <div className="text-sm text-gray-700 space-y-1">
+              <div>Asset: {selectedAsset.ticker} ({selectedAsset.name})</div>
+              <div>Type: {orderType === 'call' ? 'Call' : 'Put'} Option</div>
+              <div>Strike: ${strikePrice}</div>
+              <div>Expiration: {expiration} days</div>
+              <div>Quantity: {quantity} contract(s)</div>
+              <div>Premium: ${premium} per contract</div>
+              <div className="font-medium">Total: ${(premium * quantity).toFixed(2)}</div>
             </div>
+          </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-lg font-medium text-gray-900">Order Summary</span>
-                <span className="text-sm text-gray-500">
-                  {orderType === 'buy' ? 'Buying' : 'Selling'} {quantity} {optionType} option{quantity > 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Asset:</span>
-                  <span className="font-medium">{selectedAsset.ticker}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Strike Price:</span>
-                  <span className="font-medium">${strikePrice}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Expiry:</span>
-                  <span className="font-medium">{expiry} days</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Premium per contract:</span>
-                  <span className="font-medium">${premium}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Premium:</span>
-                  <span className="font-medium">${(premium * quantity).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <button className="w-full btn-primary mt-4">
-                Place {orderType === 'buy' ? 'Buy' : 'Sell'} Order
-              </button>
-            </div>
+          {/* Action Buttons */}
+          <div className="mt-6 flex space-x-4">
+            <button
+              onClick={handlePlaceOrder}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Place Order
+            </button>
+            <button
+              onClick={() => setSelectedAsset(null)}
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Market Info */}
-        <div className="space-y-6">
-          {/* Selected Asset Info */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Market Info</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Current Price</span>
-                <span className="font-medium text-green-600">${selectedAsset.initialPrice}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">24h Change</span>
-                <span className="font-medium text-green-600">+2.45%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">24h Volume</span>
-                <span className="font-medium">$1.2M</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Market Cap</span>
-                <span className="font-medium">$2.4B</span>
-              </div>
-            </div>
+      {/* Market Information */}
+      <div className="mt-8 bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Market Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">Call Options</div>
+            <p className="text-sm text-gray-700">Right to buy at strike price</p>
+            <span className="text-sm text-gray-600">
+              Near-the-money options
+            </span>
           </div>
-
-          {/* Options Chain */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Options Chain</h3>
-            <div className="space-y-3">
-              <div className="text-sm text-gray-500">Near-the-money options</div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Call ${strikePrice}</span>
-                  <span className="font-medium">${premium}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Put ${strikePrice}</span>
-                  <span className="font-medium">${(premium * 0.8).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">Put Options</div>
+            <p className="text-sm text-gray-700">Right to sell at strike price</p>
+            <span className="text-sm text-gray-600">
+              Near-the-money options
+            </span>
           </div>
-
-          {/* Testnet Notice */}
-          <div className="card bg-yellow-50 border-yellow-200">
-            <h4 className="text-sm font-medium text-yellow-800 mb-2">
-              🧪 Testnet Trading
-            </h4>
-            <p className="text-yellow-700 text-xs">
-              This is a mock trading environment. All orders are simulated and no real transactions occur.
-            </p>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">Risk Management</div>
+            <p className="text-sm text-gray-700">Advanced hedging strategies</p>
+            <span className="text-sm text-gray-600">
+              Portfolio protection
+            </span>
           </div>
         </div>
       </div>

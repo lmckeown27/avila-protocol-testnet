@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useAppStore } from '../stores/appStore';
-import { Vote, Users, Calendar, BarChart3 } from 'lucide-react';
+import { Vote, Users, BarChart3 } from 'lucide-react';
 
 interface Proposal {
   id: number;
@@ -16,7 +15,6 @@ interface Proposal {
 }
 
 const Governance = () => {
-  const { isConnected } = useAppStore();
   const [proposals] = useState<Proposal[]>([
     {
       id: 1,
@@ -59,20 +57,6 @@ const Governance = () => {
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [showVoteModal, setShowVoteModal] = useState(false);
   const [voteChoice, setVoteChoice] = useState<'yes' | 'no'>('yes');
-
-  if (!isConnected) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Access Governance</h2>
-        <p className="text-gray-600">You need to connect your wallet to participate in governance.</p>
-      </div>
-    );
-  }
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -160,15 +144,10 @@ const Governance = () => {
                   <h4 className="text-lg font-semibold text-gray-900 mb-2">{proposal.title}</h4>
                   <p className="text-gray-600 text-sm mb-3">{proposal.description}</p>
                   
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      <span>Started: {formatTime(proposal.startTime)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      <span>Ends: {formatTime(proposal.endTime)}</span>
-                    </div>
+                  <div className="flex items-center space-x-6 text-sm text-gray-600">
+                    <span>Total Votes: {proposal.totalVotes}</span>
+                    <span>Quorum: {getVotePercentage(proposal).toFixed(1)}%</span>
+                    <span>Status: {proposal.status}</span>
                   </div>
                 </div>
                 

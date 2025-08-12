@@ -117,7 +117,7 @@ const DeFiMarkets = () => {
 
   // Get change display for price change stats
   const getChangeDisplay = (change: number) => {
-    if (change === undefined || change === null) return { color: 'text-gray-500', icon: null };
+    if (change === undefined || change === null) return { color: 'text-gray-600', icon: null };
     
     const isPositive = change >= 0;
     return {
@@ -128,17 +128,17 @@ const DeFiMarkets = () => {
 
   // Render sort indicator
   const renderSortIndicator = (key: keyof StandardizedMarketData) => {
-    if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-500" />;
     return sortConfig.direction === 'asc' ? 
-      <ArrowUp className="w-4 h-4 text-blue-600" /> : 
-      <ArrowDown className="w-4 h-4 text-blue-600" />;
+      <ArrowUp className="w-4 h-4 text-purple-600" /> : 
+      <ArrowDown className="w-4 h-4 text-purple-600" />;
   };
 
   // Render table header
   const renderTableHeader = (key: keyof StandardizedMarketData, label: string) => (
     <th
       key={key}
-      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+      className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       onClick={() => handleSort(key)}
     >
       <div className="flex items-center space-x-1">
@@ -170,7 +170,7 @@ const DeFiMarkets = () => {
               <div className="text-sm font-medium text-gray-900 dark:text-white">
                 {asset.asset}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 Cryptocurrency
               </div>
             </div>
@@ -222,7 +222,7 @@ const DeFiMarkets = () => {
               <div className="font-medium text-gray-900 dark:text-white">
                 {asset.asset}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 Cryptocurrency
               </div>
             </div>
@@ -242,11 +242,11 @@ const DeFiMarkets = () => {
         
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-500 dark:text-gray-400">Volume:</span>
+            <span className="text-gray-600 dark:text-gray-400">Volume:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(volume24h)}</span>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400">24h High:</span>
+            <span className="text-gray-600 dark:text-gray-400">24h High:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(high24h)}</span>
           </div>
         </div>
