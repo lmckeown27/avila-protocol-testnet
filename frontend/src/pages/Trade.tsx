@@ -39,20 +39,8 @@ const Trade = () => {
   if (!selectedAsset) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Select Asset to Trade</h2>
-        <p className="text-gray-700 mb-6">Please select an asset from the list to begin trading.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {config.testnet.mockAssets.map((asset) => (
-            <div
-              key={asset.ticker}
-              className="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-colors hover:border-gray-300"
-              onClick={() => setSelectedAsset(asset)}
-            >
-              <div className="font-medium text-gray-900">{asset.ticker}</div>
-              <div className="text-sm text-gray-600">{asset.name}</div>
-            </div>
-          ))}
-        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
+        <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
       </div>
     );
   }
@@ -61,7 +49,7 @@ const Trade = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold text-gray-900">Trade Options</h1>
-        <p className="text-gray-700">Place call and put options orders on tokenized stocks</p>
+        <p className="text-gray-600">Place call and put options orders on tokenized stocks</p>
       </div>
 
       {/* Asset Selection */}
@@ -79,7 +67,7 @@ const Trade = () => {
               onClick={() => setSelectedAsset(asset)}
             >
               <div className="font-medium text-gray-900">{asset.ticker}</div>
-              <div className="text-sm text-gray-600">{asset.name}</div>
+              <div className="text-sm text-gray-500">{asset.name}</div>
             </div>
           ))}
         </div>
@@ -200,7 +188,7 @@ const Trade = () => {
               <div>Asset: {selectedAsset.ticker} ({selectedAsset.name})</div>
               <div>Type: {orderType === 'call' ? 'Call' : 'Put'} Option</div>
               <div>Strike: ${strikePrice}</div>
-              <div>Expiration: {expiration} days</div>
+              <div>Expiration: {expiration}</div>
               <div>Quantity: {quantity} contract(s)</div>
               <div>Premium: ${premium} per contract</div>
               <div className="font-medium">Total: ${(premium * quantity).toFixed(2)}</div>
@@ -232,21 +220,21 @@ const Trade = () => {
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">Call Options</div>
             <p className="text-sm text-gray-700">Right to buy at strike price</p>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-500">
               Near-the-money options
             </span>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-red-600">Put Options</div>
             <p className="text-sm text-gray-700">Right to sell at strike price</p>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-500">
               Near-the-money options
             </span>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">Risk Management</div>
             <p className="text-sm text-gray-700">Advanced hedging strategies</p>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-500">
               Portfolio protection
             </span>
           </div>

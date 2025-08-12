@@ -109,7 +109,7 @@ const TradFiMarkets = () => {
 
   // Get change color and icon
   const getChangeDisplay = (change: number, changePercent: number) => {
-    if (!change && !changePercent) return { color: 'text-gray-600', icon: null };
+    if (!change && !changePercent) return { color: 'text-gray-500', icon: null };
     
     const isPositive = (change || 0) >= 0;
     return {
@@ -120,7 +120,7 @@ const TradFiMarkets = () => {
 
   // Render sort indicator
   const renderSortIndicator = (key: keyof TradFiAsset) => {
-    if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-500" />;
+    if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return sortConfig.direction === 'asc' ? 
       <ArrowUp className="w-4 h-4 text-blue-600" /> : 
       <ArrowDown className="w-4 h-4 text-blue-600" />;
@@ -130,7 +130,7 @@ const TradFiMarkets = () => {
   const renderTableHeader = (key: keyof TradFiAsset, label: string) => (
     <th
       key={key}
-      className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       onClick={() => handleSort(key)}
     >
       <div className="flex items-center space-x-1">
@@ -214,7 +214,7 @@ const TradFiMarkets = () => {
               <div className="font-medium text-gray-900 dark:text-white">
                 {asset.symbol}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 {asset.name}
               </div>
             </div>
@@ -234,11 +234,11 @@ const TradFiMarkets = () => {
         
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-600 dark:text-gray-400">Volume:</span>
+            <span className="text-gray-500 dark:text-gray-400">Volume:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(asset.volume)}</span>
           </div>
           <div>
-            <span className="text-gray-600 dark:text-gray-400">Market Cap:</span>
+            <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.marketCap)}</span>
           </div>
         </div>

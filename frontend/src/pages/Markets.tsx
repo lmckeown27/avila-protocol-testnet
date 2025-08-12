@@ -9,7 +9,7 @@ const Markets = () => {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Markets Overview
         </h1>
-        <p className="text-gray-700 dark:text-gray-300">
+        <p className="text-gray-600 dark:text-gray-400">
           Access real-time market data for both traditional and decentralized finance
         </p>
       </div>
@@ -33,21 +33,21 @@ const Markets = () => {
               Stocks & ETFs
             </h3>
             
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Real-time data for major stocks, ETFs, and traditional market indices. 
               Track performance, volume, and market capitalization across global markets.
             </p>
             
             <div className="space-y-3 mb-6">
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
                 <span>Major stocks: AAPL, MSFT, GOOGL, TSLA, META</span>
               </div>
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <BarChart3 className="w-4 h-4 text-blue-500 mr-2" />
                 <span>Popular ETFs: SPY, QQQ, IWM, VTI, VEA</span>
               </div>
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <Activity className="w-4 h-4 text-purple-500 mr-2" />
                 <span>Real-time pricing & volume data</span>
               </div>
@@ -79,21 +79,21 @@ const Markets = () => {
               Cryptocurrencies
             </h3>
             
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Live cryptocurrency market data with real-time pricing, volume, and market metrics. 
               Track the performance of major digital assets and DeFi tokens.
             </p>
             
             <div className="space-y-3 mb-6">
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
                 <span>Major cryptos: BTC, ETH, SOL, ADA, DOT, LINK</span>
               </div>
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <BarChart3 className="w-4 h-4 text-blue-500 mr-2" />
                 <span>DeFi tokens: UNI, MATIC, AVAX, ATOM</span>
               </div>
-              <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <Activity className="w-4 h-4 text-purple-500 mr-2" />
                 <span>Live pricing & market analytics</span>
               </div>
@@ -117,19 +117,19 @@ const Markets = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">2</div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">Market Types</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Market Types</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">20+</div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">Assets Tracked</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Assets Tracked</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">Real-time</div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">Data Updates</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Data Updates</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">24/7</div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">Market Access</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Market Access</div>
           </div>
         </div>
       </div>

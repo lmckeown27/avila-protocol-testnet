@@ -144,7 +144,7 @@ const Governance = () => {
                   <h4 className="text-lg font-semibold text-gray-900 mb-2">{proposal.title}</h4>
                   <p className="text-gray-600 text-sm mb-3">{proposal.description}</p>
                   
-                  <div className="flex items-center space-x-6 text-sm text-gray-600">
+                  <div className="flex items-center space-x-6 text-sm text-gray-500">
                     <span>Total Votes: {proposal.totalVotes}</span>
                     <span>Quorum: {getVotePercentage(proposal).toFixed(1)}%</span>
                     <span>Status: {proposal.status}</span>

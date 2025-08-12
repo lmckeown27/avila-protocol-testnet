@@ -13,7 +13,7 @@ export default function Home() {
                    Welcome to{' '}
                    <span className="gradient-text">Avila Protocol</span>
                  </h1>
-        <p className="mt-3 max-w-md mx-auto text-base text-gray-700 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+        <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
           A decentralized options trading protocol built on Aptos blockchain, enabling secure and efficient derivatives trading with advanced risk management.
         </p>
                          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
@@ -46,7 +46,7 @@ export default function Home() {
             <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
               Why Choose Avila Protocol?
             </h2>
-            <p className="mt-4 max-w-2xl text-xl text-gray-700 lg:mx-auto">
+            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
               Built for traders, by traders, with cutting-edge technology and security.
             </p>
           </div>
@@ -59,7 +59,7 @@ export default function Home() {
                   <Shield className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">Secure & Reliable</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Built on Aptos blockchain with advanced security measures and audited smart contracts.
                 </p>
               </div>
@@ -70,7 +70,7 @@ export default function Home() {
                   <TrendingUp className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">Advanced Trading</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Professional-grade options trading with sophisticated risk management tools.
                 </p>
               </div>
@@ -81,7 +81,7 @@ export default function Home() {
                   <Zap className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">High Performance</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Lightning-fast execution with sub-second settlement times on Aptos.
                 </p>
               </div>
@@ -92,7 +92,7 @@ export default function Home() {
                   <Users className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">Community Driven</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Governed by the community with transparent decision-making processes.
                 </p>
               </div>
@@ -103,7 +103,7 @@ export default function Home() {
                   <Globe className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">Global Access</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Available 24/7 to traders worldwide with no geographical restrictions.
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function Home() {
                   <BarChart3 className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-lg font-medium text-gray-900">Advanced Analytics</h3>
-                <p className="mt-2 text-base text-gray-700">
+                <p className="mt-2 text-base text-gray-500">
                   Comprehensive market data and analytics for informed trading decisions.
                 </p>
               </div>
