@@ -21,8 +21,18 @@ const API_CONFIG = {
   },
   fearGreed: {
     baseUrl: 'https://api.alternative.me/fng'
+  },
+  finnhub: {
+    baseUrl: 'https://finnhub.io/api/v1',
+    apiKey: process.env.NEXT_PUBLIC_FINNHUB_API_KEY || 'demo'
   }
 };
+
+// Top stocks to track
+const TOP_STOCKS = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'BRK.A', 'JPM', 'JNJ',
+  'V', 'PG', 'UNH', 'HD', 'MA', 'BAC', 'PFE', 'ABBV', 'KO', 'PEP'
+];
 
 // HTTP client with error handling
 class HttpClient {
@@ -61,12 +71,122 @@ class HttpClient {
 
 const httpClient = new HttpClient();
 
+// Finnhub API integration
+export class FinnhubAPI {
+  // Get real-time quote for a single stock
+  static async getStockQuote(symbol: string): Promise<any> {
+    try {
+      const url = `${API_CONFIG.finnhub.baseUrl}/quote?symbol=${symbol}&token=${API_CONFIG.finnhub.apiKey}`;
+      const response = await httpClient.get<any>(url);
+      
+      if (response.error) {
+        throw new Error(`Finnhub API error: ${response.error}`);
+      }
+      
+      return {
+        symbol,
+        currentPrice: response.c,
+        change: response.d,
+        changePercent: response.dp,
+        highPrice: response.h,
+        lowPrice: response.l,
+        openPrice: response.o,
+        previousClose: response.pc,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error(`Failed to fetch quote for ${symbol}:`, error);
+      throw error;
+    }
+  }
+
+  // Get real-time quotes for multiple stocks
+  static async getMultipleStockQuotes(symbols: string[]): Promise<any[]> {
+    try {
+      const quotePromises = symbols.map(symbol => this.getStockQuote(symbol));
+      const quotes = await Promise.allSettled(quotePromises);
+      
+      return quotes
+        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+        .map(result => result.value);
+    } catch (error) {
+      console.error('Failed to fetch multiple stock quotes:', error);
+      return [];
+    }
+  }
+
+  // Get top stocks quotes
+  static async getTopStocksQuotes(): Promise<any[]> {
+    return this.getMultipleStockQuotes(TOP_STOCKS);
+  }
+
+  // Get company profile
+  static async getCompanyProfile(symbol: string): Promise<any> {
+    try {
+      const url = `${API_CONFIG.finnhub.baseUrl}/stock/profile2?symbol=${symbol}&token=${API_CONFIG.finnhub.apiKey}`;
+      const response = await httpClient.get<any>(url);
+      
+      if (response.error) {
+        throw new Error(`Finnhub API error: ${response.error}`);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Failed to fetch company profile for ${symbol}:`, error);
+      throw error;
+    }
+  }
+
+  // Get market news
+  static async getMarketNews(category: string = 'general'): Promise<any[]> {
+    try {
+      const url = `${API_CONFIG.finnhub.baseUrl}/news?category=${category}&token=${API_CONFIG.finnhub.apiKey}`;
+      const response = await httpClient.get<any[]>(url);
+      
+      if (Array.isArray(response) && response.length > 0 && response[0].error) {
+        throw new Error(`Finnhub API error: ${response[0].error}`);
+      }
+      
+      return response.slice(0, 10); // Return top 10 news items
+    } catch (error) {
+      console.error('Failed to fetch market news:', error);
+      return [];
+    }
+  }
+}
+
 // Market data API functions
 export class MarketDataAPI {
-  // Total Market Overview
+  // Total Market Overview with Finnhub integration
   static async getTotalMarketOverview(): Promise<MarketMetrics> {
     try {
-      // Get S&P 500 data
+      // Get top stocks quotes from Finnhub
+      const topStocksQuotes = await FinnhubAPI.getTopStocksQuotes();
+      
+      if (topStocksQuotes.length > 0) {
+        // Calculate market metrics from real stock data
+        const totalMarketCap = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 1000000), 0); // Approximate
+        const avgChange = topStocksQuotes.reduce((sum, stock) => sum + (stock.changePercent || 0), 0) / topStocksQuotes.length;
+        const totalVolume = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 100000), 0); // Approximate
+        
+        // Get market sentiment
+        const sentimentData = await this.getMarketSentiment();
+        
+        return {
+          marketCap: totalMarketCap,
+          marketCapChange: avgChange,
+          volume: totalVolume,
+          volumeChange: 0, // Would need historical data
+          sentiment: sentimentData.classification,
+          sentimentValue: sentimentData.value,
+          activeMarkets: topStocksQuotes.length,
+          totalMarkets: TOP_STOCKS.length,
+          priceChange: avgChange,
+          volatility: Math.abs(avgChange) * 2 // Rough volatility estimate
+        };
+      }
+      
+      // Fallback to Financial Modeling Prep if Finnhub fails
       const sp500Url = `${API_CONFIG.financialModelingPrep.baseUrl}/quote/^GSPC?apikey=${API_CONFIG.financialModelingPrep.apiKey}`;
       const sp500Data = await httpClient.get<any[]>(sp500Url);
       
@@ -94,10 +214,49 @@ export class MarketDataAPI {
     }
   }
 
-  // TradFi Market Overview
+  // TradFi Market Overview with enhanced stock data
   static async getTradFiMarketOverview(): Promise<MarketMetrics> {
     try {
-      // Get major indices
+      // Get top stocks quotes from Finnhub
+      const topStocksQuotes = await FinnhubAPI.getTopStocksQuotes();
+      
+      if (topStocksQuotes.length > 0) {
+        // Calculate metrics from real stock data
+        const totalMarketCap = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 1000000), 0);
+        const avgChange = topStocksQuotes.reduce((sum, stock) => sum + (stock.changePercent || 0), 0) / topStocksQuotes.length;
+        const totalVolume = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 100000), 0);
+        
+        // Get additional market data
+        const indices = ['^GSPC', '^IXIC', '^DJI']; // S&P 500, NASDAQ, Dow Jones
+        await Promise.allSettled(
+          indices.map(index => 
+            httpClient.get<any[]>(`${API_CONFIG.financialModelingPrep.baseUrl}/quote/${index}?apikey=${API_CONFIG.financialModelingPrep.apiKey}`)
+          )
+        );
+
+        // Get commodity data
+        const commodities = await this.getCommodityData();
+        
+        // Get bond data
+        const bonds = await this.getBondData();
+
+        const totalMarkets = topStocksQuotes.length + indices.length + commodities.length + bonds.length;
+
+        return {
+          marketCap: totalMarketCap,
+          marketCapChange: avgChange,
+          volume: totalVolume,
+          volumeChange: 0,
+          sentiment: this.calculateSentiment(avgChange),
+          sentimentValue: this.sentimentToValue(this.calculateSentiment(avgChange)),
+          activeMarkets: totalMarkets,
+          totalMarkets: totalMarkets,
+          priceChange: avgChange,
+          volatility: Math.abs(avgChange) * 2 // Rough volatility estimate
+        };
+      }
+      
+      // Fallback to original method
       const indices = ['^GSPC', '^IXIC', '^DJI']; // S&P 500, NASDAQ, Dow Jones
       const indicesData = await Promise.all(
         indices.map(index => 
