@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppStore } from './stores/appStore';
 import { config } from './config/environment';
@@ -93,6 +93,7 @@ function App() {
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/governance" element={<Governance />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<Home />} />
           </Routes>
         </main>
         
