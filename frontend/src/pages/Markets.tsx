@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { config } from '../config/environment';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface MarketData {
   ticker: string;
@@ -70,7 +70,6 @@ const Markets = () => {
           <p className="text-gray-600">Explore available tokenized stocks and options markets</p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <BarChart3 className="w-4 h-4" />
           <span>Last updated: {new Date().toLocaleTimeString()}</span>
         </div>
       </div>
