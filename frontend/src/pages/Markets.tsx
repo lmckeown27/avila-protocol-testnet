@@ -120,35 +120,23 @@ const Markets = () => {
       </div>
 
       {/* Markets Table */}
-      <div className="card">
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Asset
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  24h Change
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  24h Volume
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Market Cap
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th>Asset</th>
+                <th>Price</th>
+                <th>24h Change</th>
+                <th>24h Volume</th>
+                <th>Market Cap</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {markets.map((market) => (
-                <tr key={market.ticker} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={market.ticker} className="hover:bg-white">
+                  <td>
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                         <span className="text-primary-600 font-bold text-sm">
@@ -163,29 +151,29 @@ const Markets = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <div className="text-sm font-medium text-gray-900">
                       {formatPrice(market.price)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     {formatChange(market.change24h)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <div className="text-sm text-gray-900">
                       ${(market.volume24h / 1000).toFixed(0)}K
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <div className="text-sm text-gray-900">
                       ${(market.marketCap / 1000000).toFixed(1)}M
-                    </div>
+                  </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-primary-600 hover:text-primary-900 mr-3">
+                  <td className="text-sm font-medium">
+                    <button className="btn-primary text-xs px-3 py-1 mr-2">
                       Trade
                     </button>
-                    <button className="text-gray-600 hover:text-gray-900">
+                    <button className="btn-secondary text-xs px-3 py-1">
                       Options
                     </button>
                   </td>
@@ -197,11 +185,11 @@ const Markets = () => {
       </div>
 
       {/* Testnet Notice */}
-      <div className="card bg-yellow-50 border-yellow-200">
+      <div className="card animate-fade-in-up">
         <h3 className="text-lg font-semibold text-yellow-800 mb-2">
           🧪 Testnet Environment Notice
         </h3>
-        <p className="text-yellow-700 text-sm">
+        <p className="text-yellow-700 text-sm leading-relaxed">
           These are mock markets for testing purposes. Prices are simulated and do not reflect real market conditions. 
           No real money is involved in testnet trading.
         </p>
