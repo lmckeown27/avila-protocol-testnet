@@ -48,6 +48,7 @@ interface TradFiMarketData {
   timestamp: number;
   totalMarketCap: number;
   totalVolume: number;
+  dataSource: 'yahoo_finance' | 'fallback_mock';
 }
 
 class TradFiDataService {
@@ -73,6 +74,8 @@ class TradFiDataService {
     try {
       const symbolsParam = symbols.join(',');
       const url = `${this.baseUrl}?symbols=${encodeURIComponent(symbolsParam)}`;
+      
+      console.log('Fetching TradFi data from:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -123,7 +126,8 @@ class TradFiDataService {
         assets,
         timestamp: Date.now(),
         totalMarketCap,
-        totalVolume
+        totalVolume,
+        dataSource: 'yahoo_finance'
       };
 
       this.setCachedData(cacheKey, result);
@@ -134,7 +138,10 @@ class TradFiDataService {
       return result;
     } catch (error) {
       console.error('TradFi getTradfiMarketData error:', error);
-      throw error;
+      console.log('Falling back to mock data...');
+      
+      // Return fallback mock data when API fails
+      return this.getFallbackMockData(symbols);
     }
   }
 
@@ -301,6 +308,70 @@ class TradFiDataService {
 
   private async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get fallback mock data when API fails
+   */
+  private getFallbackMockData(symbols: string[]): TradFiMarketData {
+    const mockAssets: TradFiAsset[] = symbols.map((symbol, index) => {
+      const basePrice = 100 + (index * 50) + (Math.random() * 200);
+      const change = (Math.random() - 0.5) * 20;
+      const changePercent = (change / basePrice) * 100;
+      
+      return {
+        symbol,
+        name: this.getMockAssetName(symbol),
+        price: basePrice,
+        change: change,
+        changePercent: changePercent,
+        volume: Math.random() * 10000000 + 1000000,
+        marketCap: basePrice * (Math.random() * 1000000 + 100000),
+        high: basePrice + Math.random() * 10,
+        low: basePrice - Math.random() * 10,
+        open: basePrice + (Math.random() - 0.5) * 5,
+        previousClose: basePrice - change,
+        exchange: 'NASDAQ',
+        lastUpdated: Date.now()
+      };
+    });
+
+    const totalMarketCap = mockAssets.reduce((sum, asset) => sum + asset.marketCap, 0);
+    const totalVolume = mockAssets.reduce((sum, asset) => sum + asset.volume, 0);
+
+    return {
+      assets: mockAssets,
+      timestamp: Date.now(),
+      totalMarketCap,
+      totalVolume,
+      dataSource: 'fallback_mock'
+    };
+  }
+
+  /**
+   * Get mock asset names for fallback data
+   */
+  private getMockAssetName(symbol: string): string {
+    const names: { [key: string]: string } = {
+      'AAPL': 'Apple Inc.',
+      'MSFT': 'Microsoft Corporation',
+      'GOOGL': 'Alphabet Inc.',
+      'AMZN': 'Amazon.com Inc.',
+      'TSLA': 'Tesla Inc.',
+      'META': 'Meta Platforms Inc.',
+      'NVDA': 'NVIDIA Corporation',
+      'NFLX': 'Netflix Inc.',
+      'SPY': 'SPDR S&P 500 ETF',
+      'QQQ': 'Invesco QQQ Trust',
+      'IWM': 'iShares Russell 2000 ETF',
+      'VTI': 'Vanguard Total Stock Market ETF',
+      'VEA': 'Vanguard FTSE Developed Markets ETF',
+      'VWO': 'Vanguard FTSE Emerging Markets ETF',
+      'BND': 'Vanguard Total Bond Market ETF',
+      'GLD': 'SPDR Gold Shares'
+    };
+    
+    return names[symbol] || `${symbol} Corporation`;
   }
 }
 
