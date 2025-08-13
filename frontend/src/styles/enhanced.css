@@ -36,7 +36,7 @@ body {
   margin-bottom: 0.5rem;
   position: absolute;
   top: 85%;        /* Position at 85% from top (near bottom) */
-  left: 10%;       /* Position at 10% from left */
+  left: 0%;         /* Position at 0% from left */
 }
 
 .cta-subtext {
@@ -46,7 +46,7 @@ body {
   opacity: 0.9;
   position: absolute;
   top: 90%;        /* Position at 90% from top (below the heading) */
-  left: -5%;       /* Position at -5% from left */
+  left: 0%;         /* Position at 0% from left */
 }
 
 /* Control the "Avila Protocol" title positioning */
