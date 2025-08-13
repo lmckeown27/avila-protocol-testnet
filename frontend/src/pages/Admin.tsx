@@ -1,9 +1,9 @@
 import { useState } from 'react';
-// import { useAppStore } from '../stores/appStore';
+import { useAppStore } from '../stores/appStore';
 import { Shield, Users, Settings, BarChart3, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export default function Admin() {
-  // const { isConnected, user } = useAppStore();
+  const { isConnected } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
   const [kycRequests, setKycRequests] = useState([
     {
@@ -24,32 +24,30 @@ export default function Admin() {
     }
   ]);
 
-  // Mock user data for testnet
+  // Wallet connection check - restored
+  if (!isConnected) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Access Admin Panel</h2>
+          <p className="text-gray-600">You need to connect your wallet to access administrative functions.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Role check - restored (using mock user for now)
   const mockUser = { role: 'admin', username: 'admin_user' };
-
-  // Wallet connection check - commented out for testnet
-  // if (!isConnected) {
-  //   return (
-  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-  //       <div className="text-center py-12">
-  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Access Admin Panel</h2>
-  //         <p className="text-gray-600">You need to connect your wallet to access administrative functions.</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // Role check - commented out for testnet
-  // if (user?.role !== 'admin') {
-  //   return (
-  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-  //       <div className="text-center py-12">
-  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-  //         <p className="text-gray-600">You don't have permission to access the admin panel.</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (mockUser.role !== 'admin') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

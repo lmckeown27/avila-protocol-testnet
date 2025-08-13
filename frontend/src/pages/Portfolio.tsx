@@ -1,32 +1,18 @@
+import { useAppStore } from '../stores/appStore';
 import { TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
 
-// Mock data types for testnet
-interface MockPosition {
-  id: string;
-  seriesId: string;
-  type: 'long' | 'short';
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  pnl: number;
-  margin: number;
-}
-
-interface MockOrder {
-  id: string;
-  seriesId: string;
-  type: 'bid' | 'ask';
-  price: number;
-  quantity: number;
-  status: 'open' | 'partial' | 'filled';
-}
-
 const Portfolio = () => {
-  // const { isConnected, positions, orders } = useAppStore();
+  const { isConnected, positions, orders } = useAppStore();
 
-  // Mock data for testnet - commented out wallet connection
-  const mockPositions: MockPosition[] = []; // Empty for testnet
-  const mockOrders: MockOrder[] = []; // Empty for testnet
+  // Wallet connection check - restored
+  if (!isConnected) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to View Portfolio</h2>
+        <p className="text-gray-600">You need to connect your wallet to access your portfolio.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +37,7 @@ const Portfolio = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-green-600 font-medium">Open Positions</p>
-              <p className="text-2xl font-bold text-green-900">{mockPositions.length}</p>
+              <p className="text-2xl font-bold text-green-900">{positions.length}</p>
             </div>
             <BarChart3 className="w-8 h-8 text-green-400" />
           </div>
@@ -79,7 +65,7 @@ const Portfolio = () => {
       {/* Positions */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Open Positions</h3>
-        {mockPositions.length === 0 ? (
+        {positions.length === 0 ? (
           <div className="text-center py-8">
             <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p className="text-gray-500">No positions found. Start trading to build your portfolio.</p>
@@ -116,7 +102,7 @@ const Portfolio = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {mockPositions.map((position) => (
+                {positions.map((position) => (
                   <tr key={position.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -162,7 +148,7 @@ const Portfolio = () => {
       {/* Orders */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Open Orders</h3>
-        {mockOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No open orders</p>
@@ -197,7 +183,7 @@ const Portfolio = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {mockOrders.map((order) => (
+                {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {order.id}

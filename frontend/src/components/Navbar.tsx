@@ -1,31 +1,31 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-// import { useAppStore } from '../stores/appStore';
-// import { walletService } from '../services/wallet';
+import { useAppStore } from '../stores/appStore';
+import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
 
 const Navbar = () => {
   const location = useLocation();
-  // const { isConnected } = useAppStore();
+  const { isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
-  // const handleConnectWallet = async () => {
-  //   try {
-  //     await walletService.connectWallet();
-  //   } catch (error) {
-  //     console.error('Failed to connect wallet:', error);
-  //   }
-  // };
+  const handleConnectWallet = async () => {
+    try {
+      await walletService.connectWallet();
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
 
-  // const handleDisconnectWallet = async () => {
-  //   try {
-  //     await walletService.disconnectWallet();
-  //   } catch (error) {
-  //     console.error('Failed to disconnect wallet:', error);
-  //   }
-  // };
+  const handleDisconnectWallet = async () => {
+    try {
+      await walletService.disconnectWallet();
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
 
   return (
     <>
@@ -58,8 +58,8 @@ const Navbar = () => {
                 💬 Feedback
               </button>
 
-              {/* Wallet Connection - Commented out for testnet */}
-              {/* {isConnected ? (
+              {/* Wallet Connection - Restored */}
+              {isConnected ? (
                 <button
                   onClick={handleDisconnectWallet}
                   className="btn-primary text-sm px-4 py-2"
@@ -73,7 +73,7 @@ const Navbar = () => {
                 >
                   Connect Wallet
                 </button>
-              )} */}
+              )}
             </div>
           </div>
         </div>

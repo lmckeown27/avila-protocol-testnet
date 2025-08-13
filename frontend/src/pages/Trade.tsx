@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { config } from '../config/environment';
+import { useState } from 'react';
+import { useAppStore } from '../stores/appStore';
 
 interface Asset {
   ticker: string;
@@ -8,52 +8,49 @@ interface Asset {
   initialPrice: number;
 }
 
-const Trade = () => {
+// Mock config for testnet
+const config = {
+  testnet: {
+    mockAssets: [
+      { ticker: 'ETH', name: 'Ethereum', decimals: 8, initialPrice: 2500 },
+      { ticker: 'BTC', name: 'Bitcoin', decimals: 8, initialPrice: 45000 },
+      { ticker: 'SOL', name: 'Solana', decimals: 8, initialPrice: 100 }
+    ]
+  }
+};
+
+export default function Trade() {
+  const { isConnected } = useAppStore();
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [orderType, setOrderType] = useState<'call' | 'put'>('call');
-  const [strikePrice, setStrikePrice] = useState<number>(0);
-  const [expiration, setExpiration] = useState<string>('');
-  const [quantity, setQuantity] = useState<number>(1);
-  const [premium, setPremium] = useState<number>(0);
-
-  // Set default values when asset is selected
-  useEffect(() => {
-    if (selectedAsset) {
-      setStrikePrice(selectedAsset.initialPrice);
-      setPremium(selectedAsset.initialPrice * 0.1); // 10% of asset price
-      
-      // Set default expiration to 30 days from now
-      const defaultExpiration = new Date();
-      defaultExpiration.setDate(defaultExpiration.getDate() + 30);
-      setExpiration(defaultExpiration.toISOString().split('T')[0]);
-    }
-  }, [selectedAsset]);
+  const [quantity, setQuantity] = useState(1);
+  const [strikePrice, setStrikePrice] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
+  const [premium, setPremium] = useState(0);
 
   const handlePlaceOrder = () => {
-    if (!selectedAsset) return;
-    
-    // Mock order placement
-    alert(`Order placed: ${quantity} ${orderType} option(s) for ${selectedAsset.ticker} at strike $${strikePrice}`);
+    // Placeholder for order placement logic
+    console.log('Placing order:', { selectedAsset, orderType, quantity, strikePrice, expirationDate, premium });
   };
 
-  // Wallet connection check - commented out for testnet
-  // if (!isConnected) {
-  //   return (
-  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-  //       <div className="text-center py-12">
-  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
-  //         <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // Wallet connection check - restored
+  if (!isConnected) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
+          <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-gray-900">Trade Options</h1>
-        <p className="text-gray-600">Place call and put options orders on tokenized stocks</p>
-      </div>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Trade Options</h1>
+        </div>
 
       {/* Asset Selection */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -109,10 +106,10 @@ const Trade = () => {
               <input
                 type="number"
                 value={strikePrice}
-                onChange={(e) => setStrikePrice(parseFloat(e.target.value))}
+                onChange={(e) => setStrikePrice(e.target.value)}
                 step="0.01"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  strikePrice === selectedAsset.initialPrice
+                  parseFloat(strikePrice) === selectedAsset.initialPrice
                     ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`}
@@ -126,11 +123,11 @@ const Trade = () => {
               </label>
               <input
                 type="date"
-                value={expiration}
-                onChange={(e) => setExpiration(e.target.value)}
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  expiration === ''
+                  expirationDate === ''
                     ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     : 'border-blue-300 text-blue-700 hover:bg-blue-50'
                 }`}
@@ -191,7 +188,7 @@ const Trade = () => {
               <div>Asset: {selectedAsset.ticker} ({selectedAsset.name})</div>
               <div>Type: {orderType === 'call' ? 'Call' : 'Put'} Option</div>
               <div>Strike: ${strikePrice}</div>
-              <div>Expiration: {expiration}</div>
+              <div>Expiration: {expirationDate}</div>
               <div>Quantity: {quantity} contract(s)</div>
               <div>Premium: ${premium} per contract</div>
               <div className="font-medium">Total: ${(premium * quantity).toFixed(2)}</div>
@@ -244,7 +241,6 @@ const Trade = () => {
         </div>
       </div>
     </div>
+  </div>
   );
-};
-
-export default Trade; 
+} 
