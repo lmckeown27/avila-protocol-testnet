@@ -55,6 +55,9 @@ h1 .gradient-text {
   width: auto;        /* Auto width instead of full width */
   max-width: 400px;   /* Limit width for better appearance */
   z-index: 10;        /* Ensure it's above other content */
+  white-space: nowrap; /* Keep text on one line */
+  overflow: hidden;   /* Hide any overflow */
+  text-overflow: ellipsis; /* Add ellipsis if needed */
 }
 
 /* Alternative selector for broader compatibility */
@@ -70,6 +73,9 @@ h1 .gradient-text,
   width: auto;        /* Auto width */
   max-width: 400px;   /* Limit width */
   z-index: 10;        /* Ensure it's above other content */
+  white-space: nowrap; /* Keep text on one line */
+  overflow: hidden;   /* Hide any overflow */
+  text-overflow: ellipsis; /* Add ellipsis if needed */
 }
 
 /* Responsive adjustments for the "Avila Protocol" title */
