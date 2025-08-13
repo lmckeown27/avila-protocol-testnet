@@ -140,7 +140,7 @@ const Markets = () => {
           🧪 Testnet Environment Notice
         </h3>
         <p className="text-yellow-700 dark:text-yellow-300 text-sm leading-relaxed">
-          This is a testnet environment for the Avila Protocol. Market data is sourced from real APIs but trading functionality is simulated for testing purposes.
+          This is a testnet environment for the Avila Protocol. Market data is sourced from real APIs and trading functionality is simulated for testing purposes.
         </p>
       </div>
     </div>

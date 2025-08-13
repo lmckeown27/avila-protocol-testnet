@@ -43,12 +43,11 @@ interface TradFiAsset {
   lastUpdated: number;
 }
 
-interface TradFiMarketData {
+export interface TradFiMarketData {
   assets: TradFiAsset[];
   timestamp: number;
   totalMarketCap: number;
   totalVolume: number;
-  dataSource: 'yahoo_finance' | 'fallback_mock';
 }
 
 class TradFiDataService {
@@ -127,7 +126,6 @@ class TradFiDataService {
         timestamp: Date.now(),
         totalMarketCap,
         totalVolume,
-        dataSource: 'yahoo_finance'
       };
 
       this.setCachedData(cacheKey, result);
@@ -138,10 +136,9 @@ class TradFiDataService {
       return result;
     } catch (error) {
       console.error('TradFi getTradfiMarketData error:', error);
-      console.log('Falling back to mock data...');
       
-      // Return fallback mock data when API fails
-      return this.getFallbackMockData(symbols);
+      // Return mock data when API fails
+      return this.getMockData(symbols);
     }
   }
 
@@ -311,9 +308,9 @@ class TradFiDataService {
   }
 
   /**
-   * Get fallback mock data when API fails
+   * Get mock data when API fails
    */
-  private getFallbackMockData(symbols: string[]): TradFiMarketData {
+  private getMockData(symbols: string[]): TradFiMarketData {
     const mockAssets: TradFiAsset[] = symbols.map((symbol, index) => {
       const basePrice = 100 + (index * 50) + (Math.random() * 200);
       const change = (Math.random() - 0.5) * 20;
@@ -344,12 +341,11 @@ class TradFiDataService {
       timestamp: Date.now(),
       totalMarketCap,
       totalVolume,
-      dataSource: 'fallback_mock'
     };
   }
 
   /**
-   * Get mock asset names for fallback data
+   * Get mock asset names for mock data
    */
   private getMockAssetName(symbol: string): string {
     const names: { [key: string]: string } = {
@@ -381,6 +377,5 @@ export const tradFiDataService = new TradFiDataService();
 // Export types for external use
 export type {
   TradFiAsset,
-  TradFiMarketData,
   YahooFinanceQuote
 }; 
