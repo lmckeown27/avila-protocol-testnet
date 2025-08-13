@@ -45,12 +45,12 @@ body {
 .hero-title:has(.gradient-text),
 h1:has(.gradient-text),
 h1 .gradient-text {
-  position: absolute;
-  top: 5rem;          /* Position below navbar (navbar height + small gap) */
-  left: 50%;          /* Center horizontally */
-  transform: translateX(-50%); /* Center the text perfectly */
+  position: relative;  /* Change from absolute to relative */
+  top: auto;          /* Remove absolute positioning */
+  left: auto;         /* Remove absolute positioning */
+  transform: none;     /* Remove transform */
   text-align: center; /* Center-align the text */
-  margin: 0;          /* Remove all margins */
+  margin: 0 auto 1rem auto; /* Center with auto margins, add bottom margin */
   padding: 0;         /* Remove all padding */
   width: auto;        /* Auto width instead of full width */
   max-width: 400px;   /* Limit width for better appearance */
@@ -63,12 +63,12 @@ h1 .gradient-text {
 /* Alternative selector for broader compatibility */
 h1 .gradient-text,
 .hero-title .gradient-text {
-  position: absolute;
-  top: 5rem;          /* Position below navbar */
-  left: 50%;          /* Center horizontally */
-  transform: translateX(-50%); /* Center the text perfectly */
+  position: relative;  /* Change from absolute to relative */
+  top: auto;          /* Remove absolute positioning */
+  left: auto;         /* Remove absolute positioning */
+  transform: none;     /* Remove transform */
   text-align: center; /* Center-align the text */
-  margin: 0;          /* Remove all margins */
+  margin: 0 auto 1rem auto; /* Center with auto margins, add bottom margin */
   padding: 0;         /* Remove all padding */
   width: auto;        /* Auto width */
   max-width: 400px;   /* Limit width */
@@ -82,7 +82,6 @@ h1 .gradient-text,
 @media (max-width: 768px) {
   h1 .gradient-text,
   .hero-title .gradient-text {
-    top: 4rem;        /* Slightly closer to navbar on mobile */
     max-width: 300px; /* Smaller max-width on mobile */
     font-size: clamp(2rem, 4vw, 3rem); /* Responsive font size */
   }
@@ -91,7 +90,6 @@ h1 .gradient-text,
 @media (max-width: 480px) {
   h1 .gradient-text,
   .hero-title .gradient-text {
-    top: 3.5rem;      /* Even closer on small mobile */
     max-width: 250px; /* Smaller max-width on small mobile */
     font-size: clamp(1.5rem, 3vw, 2.5rem); /* Smaller font on small mobile */
   }
