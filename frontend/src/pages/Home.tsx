@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useAppStore } from '../stores/appStore';
+// import { useAppStore } from '../stores/appStore';
 import { Shield, TrendingUp, Zap, Users, Globe, BarChart3 } from 'lucide-react';
 
 export default function Home() {
-  const { isConnected } = useAppStore();
+  // const { isConnected } = useAppStore();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,27 +15,38 @@ export default function Home() {
         <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
           A decentralized options trading protocol built on Aptos blockchain, enabling secure and efficient derivatives trading with advanced risk management.
         </p>
-                         <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-                   {!isConnected ? (
-                     <div className="rounded-md shadow">
-                       <Link
-                         to="/trade"
-                         className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
-                       >
-                         🚀 Get Started
-                       </Link>
-                     </div>
-                   ) : (
-                     <div className="rounded-md shadow">
-                       <Link
-                         to="/portfolio"
-                         className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
-                       >
-                         📊 View Portfolio
-                       </Link>
-                     </div>
-                   )}
-                 </div>
+        <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+          {/* Wallet Connection - Commented out for testnet */}
+          {/* {!isConnected ? (
+            <div className="rounded-md shadow">
+              <Link
+                to="/trade"
+                className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
+              >
+                🚀 Get Started
+              </Link>
+            </div>
+          ) : (
+            <div className="rounded-md shadow">
+              <Link
+                to="/portfolio"
+                className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
+              >
+                📊 View Portfolio
+              </Link>
+            </div>
+          )} */}
+          
+          {/* Testnet version - always show Get Started */}
+          <div className="rounded-md shadow">
+            <Link
+              to="/trade"
+              className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
+            >
+              🚀 Get Started
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Features Section */}

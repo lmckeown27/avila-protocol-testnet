@@ -36,14 +36,17 @@ const Trade = () => {
     alert(`Order placed: ${quantity} ${orderType} option(s) for ${selectedAsset.ticker} at strike $${strikePrice}`);
   };
 
-  if (!selectedAsset) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
-        <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
-      </div>
-    );
-  }
+  // Wallet connection check - commented out for testnet
+  // if (!isConnected) {
+  //   return (
+  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //       <div className="text-center py-12">
+  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Trade</h2>
+  //         <p className="text-gray-600 mb-6">You need to connect your wallet to access the trading interface.</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

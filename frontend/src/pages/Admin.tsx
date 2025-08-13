@@ -1,127 +1,63 @@
 import { useState } from 'react';
-import { useAppStore } from '../stores/appStore';
-import { Shield, Users, BarChart3, Settings, AlertTriangle } from 'lucide-react';
+// import { useAppStore } from '../stores/appStore';
+import { Shield, Users, Settings, BarChart3, CheckCircle, XCircle, Clock } from 'lucide-react';
 
-interface ComplianceUser {
-  address: string;
-  kycStatus: 'pending' | 'approved' | 'rejected';
-  lastCheck: number;
-  riskScore: number;
-}
-
-interface AssetRegistration {
-  name: string;
-  symbol: string;
-  decimals: number;
-  metadata: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
-
-const Admin = () => {
-  const { isConnected, user } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'compliance' | 'assets' | 'system'>('compliance');
-  const [complianceUsers, setComplianceUsers] = useState<ComplianceUser[]>([
+export default function Admin() {
+  // const { isConnected, user } = useAppStore();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [kycRequests, setKycRequests] = useState([
     {
-      address: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      kycStatus: 'pending',
-      lastCheck: Date.now() - 86400000,
-      riskScore: 75,
-    },
-    {
-      address: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-      kycStatus: 'approved',
-      lastCheck: Date.now() - 172800000,
-      riskScore: 25,
-    },
-    {
-      address: '0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234',
-      kycStatus: 'rejected',
-      lastCheck: Date.now() - 259200000,
-      riskScore: 90,
-    },
-  ]);
-
-  const [assetRegistrations, setAssetRegistrations] = useState<AssetRegistration[]>([
-    {
-      name: 'Ethereum ETF',
-      symbol: 'ETH-ETF',
-      decimals: 8,
-      metadata: 'Ethereum Exchange Traded Fund',
+      id: 1,
+      userId: 'user123',
       status: 'pending',
+      submittedAt: '2024-01-15T10:30:00Z',
+      documents: ['passport', 'utility_bill'],
+      riskScore: 0.2
     },
     {
-      name: 'Solana',
-      symbol: 'SOL',
-      decimals: 8,
-      metadata: 'Solana blockchain token',
+      id: 2,
+      userId: 'user456',
       status: 'approved',
-    },
+      submittedAt: '2024-01-14T15:45:00Z',
+      documents: ['drivers_license', 'bank_statement'],
+      riskScore: 0.1
+    }
   ]);
 
-  if (!isConnected) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Access Admin Panel</h2>
-        <p className="text-gray-600">You need to connect your wallet to access administrative functions.</p>
-      </div>
-    );
-  }
+  // Mock user data for testnet
+  const mockUser = { role: 'admin', username: 'admin_user' };
 
-  if (!user?.isAdmin) {
-    return (
-      <div className="text-center py-12">
-        <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-        <p className="text-gray-600">You do not have administrative privileges to access this page.</p>
-      </div>
-    );
-  }
+  // Wallet connection check - commented out for testnet
+  // if (!isConnected) {
+  //   return (
+  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //       <div className="text-center py-12">
+  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Connect Wallet to Access Admin Panel</h2>
+  //         <p className="text-gray-600">You need to connect your wallet to access administrative functions.</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRiskScoreColor = (score: number) => {
-    if (score <= 30) return 'text-green-600';
-    if (score <= 70) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const handleKYCUpdate = (address: string, status: 'approved' | 'rejected') => {
-    setComplianceUsers(users => 
-      users.map(user => 
-        user.address === address 
-          ? { ...user, kycStatus: status, lastCheck: Date.now() }
-          : user
-      )
-    );
-  };
-
-  const handleAssetUpdate = (symbol: string, status: 'approved' | 'rejected') => {
-    setAssetRegistrations(assets => 
-      assets.map(asset => 
-        asset.symbol === symbol 
-          ? { ...asset, status }
-          : asset
-      )
-    );
-  };
+  // Role check - commented out for testnet
+  // if (user?.role !== 'admin') {
+  //   return (
+  //     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //       <div className="text-center py-12">
+  //         <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+  //         <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-        <p className="text-gray-600">Administrative functions for protocol management</p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+          <p className="text-gray-600">Welcome back, {mockUser.username}</p>
+        </div>
 
       {/* Admin Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -130,7 +66,7 @@ const Admin = () => {
             <div>
               <p className="text-sm text-blue-600 font-medium">Pending KYC</p>
               <p className="text-2xl font-bold text-blue-900">
-                {complianceUsers.filter(u => u.kycStatus === 'pending').length}
+                {kycRequests.filter(u => u.status === 'pending').length}
               </p>
             </div>
             <Users className="w-8 h-8 text-blue-400" />
@@ -141,7 +77,8 @@ const Admin = () => {
             <div>
               <p className="text-sm text-green-600 font-medium">Pending Assets</p>
               <p className="text-2xl font-bold text-green-900">
-                {assetRegistrations.filter(a => a.status === 'pending').length}
+                {/* {assetRegistrations.filter(a => a.status === 'pending').length} */}
+                0
               </p>
             </div>
             <BarChart3 className="w-8 h-8 text-green-400" />
@@ -151,7 +88,7 @@ const Admin = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-purple-600 font-medium">Total Users</p>
-              <p className="text-2xl font-bold text-purple-900">{complianceUsers.length}</p>
+              <p className="text-2xl font-bold text-purple-900">{kycRequests.length}</p>
             </div>
             <Users className="w-8 h-8 text-purple-400" />
           </div>
@@ -216,16 +153,16 @@ const Admin = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      User Address
+                      User ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      KYC Status
+                      Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Risk Score
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      Last Check
+                      Submitted At
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Actions
@@ -233,40 +170,44 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {complianceUsers.map((user) => (
-                    <tr key={user.address} className="hover:bg-gray-50">
+                  {kycRequests.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {user.address.slice(0, 8)}...{user.address.slice(-8)}
+                          {user.userId}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.kycStatus)}`}>
-                          {user.kycStatus}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                          {user.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm font-medium ${getRiskScoreColor(user.riskScore)}`}>
+                        <span className={`text-sm font-medium ${user.riskScore <= 0.3 ? 'text-green-600' : user.riskScore <= 0.7 ? 'text-yellow-600' : 'text-red-600'}`}>
                           {user.riskScore}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.lastCheck).toLocaleDateString()}
+                        <Clock className="w-4 h-4 inline mr-1" /> {new Date(user.submittedAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {user.kycStatus === 'pending' && (
+                        {user.status === 'pending' && (
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleKYCUpdate(user.address, 'approved')}
+                              onClick={() => {
+                                setKycRequests(requests => requests.map(req => req.id === user.id ? { ...req, status: 'approved' } : req));
+                              }}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Approve
+                              <CheckCircle className="w-4 h-4 inline mr-1" /> Approve
                             </button>
                             <button
-                              onClick={() => handleKYCUpdate(user.address, 'rejected')}
+                              onClick={() => {
+                                setKycRequests(requests => requests.map(req => req.id === user.id ? { ...req, status: 'rejected' } : req));
+                              }}
                               className="text-red-600 hover:text-red-900"
                             >
-                              Reject
+                              <XCircle className="w-4 h-4 inline mr-1" /> Reject
                             </button>
                           </div>
                         )}
@@ -305,42 +246,46 @@ const Admin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {assetRegistrations.map((asset) => (
-                    <tr key={asset.symbol} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {asset.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {asset.symbol}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {asset.decimals}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(asset.status)}`}>
-                          {asset.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {asset.status === 'pending' && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleAssetUpdate(asset.symbol, 'approved')}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleAssetUpdate(asset.symbol, 'rejected')}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {/* {assetRegistrations.map((asset) => ( */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      Ethereum ETF
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ETH-ETF
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      8
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        pending
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {/* {asset.status === 'pending' && ( */}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              // setAssetRegistrations(assets => assets.map(req => req.symbol === asset.symbol ? { ...req, status: 'approved' } : req));
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            <CheckCircle className="w-4 h-4 inline mr-1" /> Approve
+                          </button>
+                          <button
+                            onClick={() => {
+                              // setAssetRegistrations(assets => assets.map(req => req.symbol === asset.symbol ? { ...req, status: 'rejected' } : req));
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <XCircle className="w-4 h-4 inline mr-1" /> Reject
+                          </button>
+                        </div>
+                      {/* )} */}
+                    </td>
+                  </tr>
+                  {/* ))} */}
                 </tbody>
               </table>
             </div>
@@ -421,7 +366,6 @@ const Admin = () => {
         </p>
       </div>
     </div>
+  </div>
   );
-};
-
-export default Admin; 
+} 
