@@ -88,6 +88,11 @@ h1, h2, h3, h4, h5, h6 {
   color: #f8fafc;
   margin-bottom: 1rem;
   text-align: center; /* Center all headings by default */
+  position: absolute;  /* Enable absolute positioning for movement */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
+  z-index: 5;         /* Ensure proper layering */
 }
 
 h1 {
@@ -98,7 +103,8 @@ h1 {
   background-clip: text;
   text-align: center;
   margin-bottom: 1.5rem;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 600px;   /* Limit width for better appearance */
 }
 
 h2 {
@@ -106,7 +112,8 @@ h2 {
   color: #f8fafc;
   text-align: center;
   margin-bottom: 1.25rem;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 500px;   /* Limit width for better appearance */
 }
 
 h3 {
@@ -114,7 +121,8 @@ h3 {
   color: #f1f5f9;
   margin-bottom: 1rem;
   text-align: center;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 400px;   /* Limit width for better appearance */
 }
 
 h4 {
@@ -122,7 +130,8 @@ h4 {
   color: #e2e8f0;
   margin-bottom: 0.75rem;
   text-align: center;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 350px;   /* Limit width for better appearance */
 }
 
 h5 {
@@ -130,7 +139,8 @@ h5 {
   color: #cbd5e1;
   margin-bottom: 0.5rem;
   text-align: center;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 300px;   /* Limit width for better appearance */
 }
 
 h6 {
@@ -138,7 +148,8 @@ h6 {
   color: #94a3b8;
   margin-bottom: 0.5rem;
   text-align: center;
-  width: 100%; /* Ensure full width for centering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 250px;   /* Limit width for better appearance */
 }
 
 /* ===== TITLE CONTAINER CENTERING ===== */
@@ -239,12 +250,19 @@ h6 {
   width: 100%;
 }
 
-/* ===== BODY TEXT STYLING ===== */
+/* ===== BODY TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 p {
   color: #cbd5e1;
   line-height: 1.7;
   margin-bottom: 1rem;
   font-size: 1rem;
+  position: absolute;  /* Enable absolute positioning for movement */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
+  z-index: 4;         /* Ensure proper layering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 500px;   /* Limit width for better appearance */
 }
 
 /* Large paragraph text */
@@ -252,6 +270,7 @@ p.text-lg, p.text-xl {
   font-size: 1.125rem;
   line-height: 1.8;
   color: #e2e8f0;
+  max-width: 600px;   /* Wider for larger text */
 }
 
 /* Small paragraph text */
@@ -259,12 +278,18 @@ p.text-sm, p.text-xs {
   font-size: 0.875rem;
   line-height: 1.6;
   color: #94a3b8;
+  max-width: 400px;   /* Narrower for smaller text */
 }
 
-/* ===== SPAN TEXT STYLING ===== */
+/* ===== SPAN TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 span {
   color: inherit;
   font-weight: inherit;
+  position: absolute;  /* Enable absolute positioning for movement */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
+  z-index: 3;         /* Ensure proper layering */
 }
 
 /* Gradient text spans */
@@ -274,19 +299,34 @@ span.gradient-text {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 700;
+  max-width: 500px;   /* Limit width for better appearance */
 }
 
-/* ===== DIV TEXT STYLING ===== */
+/* ===== DIV TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
+div.text-center, div.text-left, div.text-right {
+  position: absolute;  /* Enable absolute positioning for movement */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
+  z-index: 3;         /* Ensure proper layering */
+  width: auto;        /* Auto width for positioning */
+  max-width: 500px;   /* Limit width for better appearance */
+}
+
 div.text-center {
   text-align: center;
 }
 
 div.text-left {
   text-align: left;
+  left: 25%;          /* Position to left side */
+  transform: translateY(-50%); /* Only center vertically */
 }
 
 div.text-right {
   text-align: right;
+  left: 75%;          /* Position to right side */
+  transform: translateY(-50%); /* Only center vertically */
 }
 
 /* Text color variations */
@@ -310,31 +350,45 @@ div.text-gray-600, div.text-gray-400, div.text-gray-500 {
   color: #475569;
 }
 
-/* ===== TABLE TEXT STYLING ===== */
+/* ===== TABLE TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 th {
   color: #64748b;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.75rem;
+  position: absolute;  /* Enable absolute positioning for movement */
+  z-index: 2;         /* Ensure proper layering */
 }
 
 td {
   color: #cbd5e1;
   font-size: 0.875rem;
+  position: absolute;  /* Enable absolute positioning for movement */
+  z-index: 2;         /* Ensure proper layering */
 }
 
-/* ===== BUTTON TEXT STYLING ===== */
+/* ===== BUTTON TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 button, .btn-primary, .btn-secondary {
   font-weight: 600;
   letter-spacing: 0.025em;
+  position: absolute;  /* Enable absolute positioning for movement */
+  z-index: 6;         /* Ensure proper layering */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
 }
 
-/* ===== LINK TEXT STYLING ===== */
+/* ===== LINK TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 a {
   color: #60a5fa;
   text-decoration: none;
   transition: color 0.3s ease;
+  position: absolute;  /* Enable absolute positioning for movement */
+  z-index: 3;         /* Ensure proper layering */
+  top: 50%;           /* Default vertical center */
+  left: 50%;          /* Default horizontal center */
+  transform: translate(-50%, -50%); /* Perfect centering */
 }
 
 a:hover {
