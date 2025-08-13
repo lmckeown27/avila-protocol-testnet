@@ -631,11 +631,11 @@ a:hover {
   width: 100%;
 }
 
-/* Center navigation content */
-.navbar .flex {
+/* Don't override navbar flex layout - remove this rule */
+/* .navbar .flex {
   text-align: center;
   width: 100%;
-}
+} */
 
 /* ===== RESPONSIVE LAYOUT FIXES ===== */
 @media (max-width: 768px) {
