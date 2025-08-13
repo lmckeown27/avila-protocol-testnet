@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../stores/appStore';
+import BackendStatus from '../components/BackendStatus';
 
 export default function Home() {
   const { isConnected } = useAppStore();
@@ -54,6 +55,11 @@ export default function Home() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Backend Status Section */}
+      <div className="mt-12">
+        <BackendStatus />
       </div>
 
       {/* CTA Section */}

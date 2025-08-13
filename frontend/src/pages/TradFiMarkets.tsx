@@ -1,33 +1,33 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, Activity, TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { tradFiDataService, TradFiAsset } from '../services/tradfiData';
+import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
 const TradFiMarkets = () => {
   // State for TradFi data
-  const [tradFiData, setTradFiData] = useState<TradFiAsset[]>([]);
+  const [tradFiData, setTradFiData] = useState<NormalizedAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // State for search and sorting
   const [search, setSearch] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof TradFiAsset | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState<{ key: keyof NormalizedAsset | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
 
   // State for modal
-  const [selectedAsset, setSelectedAsset] = useState<TradFiAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<NormalizedAsset | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch TradFi data
+  // Fetch TradFi data from backend
   useEffect(() => {
     const fetchTradFiData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await tradFiDataService.getTradfiMarketData();
-        setTradFiData(data.assets);
+        const data = await backendMarketDataService.getTradFiData();
+        setTradFiData(data);
       } catch (error) {
-        console.error('Failed to fetch TradFi data:', error);
-        setError('Failed to load traditional market data');
+        console.error('Failed to fetch TradFi data from backend:', error);
+        setError('Failed to load traditional market data from backend');
       } finally {
         setLoading(false);
       }
@@ -42,7 +42,7 @@ const TradFiMarkets = () => {
   const filteredAndSortedData = useMemo(() => {
     let filtered = tradFiData.filter(asset =>
       asset.symbol.toLowerCase().includes(search.toLowerCase()) ||
-      asset.name.toLowerCase().includes(search.toLowerCase())
+      asset.asset.toLowerCase().includes(search.toLowerCase())
     );
 
     if (sortConfig.key) {
@@ -71,7 +71,7 @@ const TradFiMarkets = () => {
   }, [tradFiData, search, sortConfig]);
 
   // Handle sorting
-  const handleSort = (key: keyof TradFiAsset) => {
+  const handleSort = (key: keyof NormalizedAsset) => {
     if (sortConfig.key === key) {
       setSortConfig({
         key,
@@ -83,7 +83,7 @@ const TradFiMarkets = () => {
   };
 
   // Handle asset selection
-  const handleAssetClick = (asset: TradFiAsset) => {
+  const handleAssetClick = (asset: NormalizedAsset) => {
     setSelectedAsset(asset);
     setIsModalOpen(true);
   };
@@ -119,7 +119,7 @@ const TradFiMarkets = () => {
   };
 
   // Render sort indicator
-  const renderSortIndicator = (key: keyof TradFiAsset) => {
+  const renderSortIndicator = (key: keyof NormalizedAsset) => {
     if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return sortConfig.direction === 'asc' ? 
       <ArrowUp className="w-4 h-4 text-blue-600" /> : 
@@ -127,7 +127,7 @@ const TradFiMarkets = () => {
   };
 
   // Render table header
-  const renderTableHeader = (key: keyof TradFiAsset, label: string) => (
+  const renderTableHeader = (key: keyof NormalizedAsset, label: string) => (
     <th
       key={key}
       className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -141,8 +141,8 @@ const TradFiMarkets = () => {
   );
 
   // Render table row
-  const renderTableRow = (asset: TradFiAsset) => {
-    const changeDisplay = getChangeDisplay(asset.change, asset.changePercent);
+  const renderTableRow = (asset: NormalizedAsset) => {
+    const changeDisplay = getChangeDisplay(asset.change24h, asset.change24h);
 
     return (
       <tr
@@ -160,7 +160,7 @@ const TradFiMarkets = () => {
                 {asset.symbol}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                {asset.name}
+                {asset.asset}
               </div>
             </div>
           </div>
@@ -172,32 +172,32 @@ const TradFiMarkets = () => {
           <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
             {changeDisplay.icon}
             <span className="font-medium">
-              {asset.change >= 0 ? '+' : ''}{formatCurrency(asset.change)}
+              {asset.change24h >= 0 ? '+' : ''}{formatCurrency(asset.change24h)}
             </span>
             <span className="text-sm">
-              ({asset.changePercent >= 0 ? '+' : ''}{asset.changePercent.toFixed(2)}%)
+              ({asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%)
             </span>
           </div>
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatVolume(asset.volume)}
+          {formatVolume(asset.volume24h)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           {formatCurrency(asset.marketCap)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.high)}
+          {formatCurrency(asset.high24h)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.low)}
+          {formatCurrency(asset.low24h)}
         </td>
       </tr>
     );
   };
 
   // Render mobile card view
-  const renderMobileCard = (asset: TradFiAsset) => {
-    const changeDisplay = getChangeDisplay(asset.change, asset.changePercent);
+  const renderMobileCard = (asset: NormalizedAsset) => {
+    const changeDisplay = getChangeDisplay(asset.change24h, asset.change24h);
 
     return (
       <div
@@ -215,7 +215,7 @@ const TradFiMarkets = () => {
                 {asset.symbol}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {asset.name}
+                {asset.asset}
               </div>
             </div>
           </div>
@@ -226,7 +226,7 @@ const TradFiMarkets = () => {
             <div className={`flex items-center justify-end space-x-1 ${changeDisplay.color}`}>
               {changeDisplay.icon}
               <span className="text-sm">
-                {asset.changePercent >= 0 ? '+' : ''}{asset.changePercent.toFixed(2)}%
+                {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
               </span>
             </div>
           </div>
@@ -235,7 +235,7 @@ const TradFiMarkets = () => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-500 dark:text-gray-400">Volume:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(asset.volume)}</span>
+            <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(asset.volume24h)}</span>
           </div>
           <div>
             <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
@@ -251,8 +251,8 @@ const TradFiMarkets = () => {
     if (tradFiData.length === 0) return null;
     
     const totalMarketCap = tradFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
-    const totalVolume = tradFiData.reduce((sum, asset) => sum + (asset.volume || 0), 0);
-    const avgChange = tradFiData.reduce((sum, asset) => sum + (asset.changePercent || 0), 0) / tradFiData.length;
+    const totalVolume = tradFiData.reduce((sum, asset) => sum + (asset.volume24h || 0), 0);
+    const avgChange = tradFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / tradFiData.length;
     
     return {
       totalMarketCap,
@@ -358,11 +358,11 @@ const TradFiMarkets = () => {
               <tr>
                 {renderTableHeader('symbol', 'Asset')}
                 {renderTableHeader('price', 'Price')}
-                {renderTableHeader('change', '24h Change')}
-                {renderTableHeader('volume', '24h Volume')}
+                {renderTableHeader('change24h', '24h Change')}
+                {renderTableHeader('volume24h', '24h Volume')}
                 {renderTableHeader('marketCap', 'Market Cap')}
-                {renderTableHeader('high', 'Day High')}
-                {renderTableHeader('low', 'Day Low')}
+                {renderTableHeader('high24h', 'Day High')}
+                {renderTableHeader('low24h', 'Day Low')}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">

@@ -1,42 +1,33 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, Activity, TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { marketDataService, StandardizedMarketData } from '../services/marketData';
+import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
 const DeFiMarkets = () => {
   // State for DeFi data
-  const [deFiData, setDeFiData] = useState<StandardizedMarketData[]>([]);
+  const [deFiData, setDeFiData] = useState<NormalizedAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // State for search and sorting
   const [search, setSearch] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof StandardizedMarketData | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState<{ key: keyof NormalizedAsset | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
 
   // State for modal
-  const [selectedAsset, setSelectedAsset] = useState<StandardizedMarketData | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<NormalizedAsset | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch DeFi data
+  // Fetch DeFi data from backend
   useEffect(() => {
     const fetchDeFiData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch data for major crypto assets
-        const assets = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'LINK', 'UNI', 'MATIC', 'AVAX', 'ATOM'];
-        const promises = assets.map(asset => marketDataService.getMarketData(asset));
-        const results = await Promise.allSettled(promises);
-        
-        const validResults = results
-          .filter(result => result.status === 'fulfilled')
-          .map(result => (result as PromiseFulfilledResult<StandardizedMarketData>).value);
-        
-        setDeFiData(validResults);
+        const data = await backendMarketDataService.getDeFiData();
+        setDeFiData(data);
       } catch (error) {
-        console.error('Failed to fetch DeFi data:', error);
-        setError('Failed to load decentralized market data');
+        console.error('Failed to fetch DeFi data from backend:', error);
+        setError('Failed to load decentralized market data from backend');
       } finally {
         setLoading(false);
       }
@@ -79,7 +70,7 @@ const DeFiMarkets = () => {
   }, [deFiData, search, sortConfig]);
 
   // Handle sorting
-  const handleSort = (key: keyof StandardizedMarketData) => {
+  const handleSort = (key: keyof NormalizedAsset) => {
     if (sortConfig.key === key) {
       setSortConfig({
         key,
@@ -91,7 +82,7 @@ const DeFiMarkets = () => {
   };
 
   // Handle asset selection
-  const handleAssetClick = (asset: StandardizedMarketData) => {
+  const handleAssetClick = (asset: NormalizedAsset) => {
     setSelectedAsset(asset);
     setIsModalOpen(true);
   };
@@ -127,7 +118,7 @@ const DeFiMarkets = () => {
   };
 
   // Render sort indicator
-  const renderSortIndicator = (key: keyof StandardizedMarketData) => {
+  const renderSortIndicator = (key: keyof NormalizedAsset) => {
     if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return sortConfig.direction === 'asc' ? 
       <ArrowUp className="w-4 h-4 text-purple-600" /> : 
@@ -135,7 +126,7 @@ const DeFiMarkets = () => {
   };
 
   // Render table header
-  const renderTableHeader = (key: keyof StandardizedMarketData, label: string) => (
+  const renderTableHeader = (key: keyof NormalizedAsset, label: string) => (
     <th
       key={key}
       className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -149,11 +140,8 @@ const DeFiMarkets = () => {
   );
 
   // Render table row
-  const renderTableRow = (asset: StandardizedMarketData) => {
-    const priceChange24h = asset.price_change_stats?.priceChange24h || 0;
-    const changeDisplay = getChangeDisplay(priceChange24h);
-    const volume24h = asset.price_change_stats?.volume24h || 0;
-    const high24h = asset.price_change_stats?.high24h || 0;
+  const renderTableRow = (asset: NormalizedAsset) => {
+    const changeDisplay = getChangeDisplay(asset.change24h);
 
     return (
       <tr
@@ -177,35 +165,32 @@ const DeFiMarkets = () => {
           </div>
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-          {formatCurrency(asset.spot_price)}
+          {formatCurrency(asset.price)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap">
           <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
             {changeDisplay.icon}
             <span className="font-medium">
-              {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
+              {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
             </span>
           </div>
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(volume24h)}
+          {formatCurrency(asset.volume24h)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.spot_price * 1000000)} {/* Mock market cap */}
+          {formatCurrency(asset.marketCap)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(high24h)}
+          {formatCurrency(asset.high24h)}
         </td>
       </tr>
     );
   };
 
   // Render mobile card view
-  const renderMobileCard = (asset: StandardizedMarketData) => {
-    const priceChange24h = asset.price_change_stats?.priceChange24h || 0;
-    const changeDisplay = getChangeDisplay(priceChange24h);
-    const volume24h = asset.price_change_stats?.volume24h || 0;
-    const high24h = asset.price_change_stats?.high24h || 0;
+  const renderMobileCard = (asset: NormalizedAsset) => {
+    const changeDisplay = getChangeDisplay(asset.change24h);
 
     return (
       <div
@@ -229,12 +214,12 @@ const DeFiMarkets = () => {
           </div>
           <div className="text-right">
             <div className="text-lg font-bold text-gray-900 dark:text-white">
-              {formatCurrency(asset.spot_price)}
+              {formatCurrency(asset.price)}
             </div>
             <div className={`flex items-center justify-end space-x-1 ${changeDisplay.color}`}>
               {changeDisplay.icon}
               <span className="text-sm">
-                {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
+                {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
               </span>
             </div>
           </div>
@@ -243,11 +228,11 @@ const DeFiMarkets = () => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-500 dark:text-gray-400">Volume:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(volume24h)}</span>
+            <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(asset.volume24h)}</span>
           </div>
           <div>
             <span className="text-gray-500 dark:text-gray-400">24h High:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(high24h)}</span>
+            <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.high24h)}</span>
           </div>
         </div>
       </div>
@@ -258,9 +243,9 @@ const DeFiMarkets = () => {
   const marketSummary = useMemo(() => {
     if (deFiData.length === 0) return null;
     
-    const totalValue = deFiData.reduce((sum, asset) => sum + (asset.spot_price || 0), 0);
-    const totalVolume = deFiData.reduce((sum, asset) => sum + (asset.price_change_stats?.volume24h || 0), 0);
-    const avgChange = deFiData.reduce((sum, asset) => sum + (asset.price_change_stats?.priceChange24h || 0), 0) / deFiData.length;
+    const totalValue = deFiData.reduce((sum, asset) => sum + (asset.price || 0), 0);
+    const totalVolume = deFiData.reduce((sum, asset) => sum + (asset.volume24h || 0), 0);
+    const avgChange = deFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / deFiData.length;
     
     return {
       totalValue,
@@ -365,12 +350,12 @@ const DeFiMarkets = () => {
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {renderTableHeader('asset', 'Asset')}
-                {renderTableHeader('spot_price', 'Price')}
-                {renderTableHeader('asset', '24h Change')}
-                {renderTableHeader('asset', '24h Volume')}
-                {renderTableHeader('asset', 'Market Cap')}
-                {renderTableHeader('asset', '24h High')}
-                {renderTableHeader('asset', '24h Low')}
+                {renderTableHeader('price', 'Price')}
+                {renderTableHeader('change24h', '24h Change')}
+                {renderTableHeader('volume24h', '24h Volume')}
+                {renderTableHeader('marketCap', 'Market Cap')}
+                {renderTableHeader('high24h', '24h High')}
+                {renderTableHeader('low24h', '24h Low')}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
