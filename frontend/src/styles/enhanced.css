@@ -34,9 +34,9 @@ body {
   color: #f8fafc; /* White like body text */
   font-weight: 800;
   margin-bottom: 0.5rem;
-  position: relative;
+  position: absolute;
+  top: 85%;        /* Position at 85% from top (near bottom) */
   left: 10%;       /* Position at 10% from left */
-  margin-top: 0;   /* Start at natural top position */
 }
 
 .cta-subtext {
@@ -44,9 +44,9 @@ body {
   font-weight: 600;
   font-size: 0.9em;
   opacity: 0.9;
-  position: relative;
+  position: absolute;
+  top: 90%;        /* Position at 90% from top (below the heading) */
   left: -5%;       /* Position at -5% from left */
-  margin-top: 3rem; /* Push down below the heading */
 }
 
 /* Control the "Avila Protocol" title positioning */
