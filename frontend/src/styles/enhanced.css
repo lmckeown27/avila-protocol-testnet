@@ -29,6 +29,20 @@ body {
   gap: 2rem; /* Add manual separation between buttons */
 }
 
+/* CTA Section Styling */
+.cta-heading {
+  color: #1f2937; /* Dark gray for main heading */
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.cta-subtext {
+  color: #2563eb; /* Blue for subtext */
+  font-weight: 600;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
 /* Control the "Avila Protocol" title positioning */
 .hero-title {
   position: relative; /* Change from absolute to relative */
