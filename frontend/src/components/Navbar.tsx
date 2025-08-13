@@ -41,7 +41,7 @@ const Navbar = () => {
 
             {/* Centered Navigation Links */}
             <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-              <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-12">
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
                 <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
                 <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
