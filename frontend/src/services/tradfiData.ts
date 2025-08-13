@@ -36,18 +36,25 @@ class TradFiDataService {
   ];
 
   /**
-   * Get market data for specified symbols
+   * Get market data for specified symbols from real APIs
    */
   async getTradfiMarketData(symbols: string[] = this.DEFAULT_SYMBOLS): Promise<TradFiMarketData> {
     const cacheKey = `tradfi_${symbols.sort().join('_')}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
-    // Generate mock data
-    const result = this.generateMockData(symbols);
-    
-    this.setCachedData(cacheKey, result);
-    return result;
+    try {
+      // Try to fetch real data from multiple free APIs
+      const result = await this.fetchRealMarketData(symbols);
+      this.setCachedData(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Failed to fetch real market data, using fallback:', error);
+      // Fallback to mock data if all APIs fail
+      const fallbackResult = this.generateFallbackData(symbols);
+      this.setCachedData(cacheKey, fallbackResult);
+      return fallbackResult;
+    }
   }
 
   /**
@@ -182,9 +189,209 @@ class TradFiDataService {
   }
 
   /**
-   * Generate mock data for specified symbols
+   * Fetch real market data from free APIs
    */
-  private generateMockData(symbols: string[]): TradFiMarketData {
+  private async fetchRealMarketData(symbols: string[]): Promise<TradFiMarketData> {
+    // Try multiple APIs in sequence for better reliability
+    const apis = [
+      () => this.fetchFromFinnhub(symbols),
+      () => this.fetchFromAlphaVantage(symbols),
+      () => this.fetchFromTwelveData(symbols)
+    ];
+
+    for (const api of apis) {
+      try {
+        const data = await api();
+        if (data && data.assets.length > 0) {
+          return data;
+        }
+      } catch (error) {
+        console.warn('API failed, trying next:', error);
+        continue;
+      }
+    }
+
+    throw new Error('All APIs failed');
+  }
+
+  /**
+   * Fetch from Finnhub API (60 requests/minute free)
+   */
+  private async fetchFromFinnhub(symbols: string[]): Promise<TradFiMarketData> {
+    const apiKey = process.env.REACT_APP_FINNHUB_API_KEY || 'demo';
+    const promises = symbols.map(async (symbol) => {
+      try {
+        const response = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.c === 0) throw new Error('Invalid price data');
+        
+        return {
+          symbol,
+          name: this.getAssetName(symbol),
+          price: data.c,
+          change: data.d,
+          changePercent: data.dp,
+          volume: data.v || 0,
+          marketCap: (data.c * (data.v || 1000000)) || 0,
+          high: data.h || data.c,
+          low: data.l || data.c,
+          open: data.o || data.c,
+          previousClose: data.pc || data.c,
+          exchange: 'NASDAQ',
+          lastUpdated: Date.now()
+        };
+      } catch (error) {
+        console.warn(`Failed to fetch ${symbol} from Finnhub:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(promises);
+    const validAssets = results.filter(asset => asset !== null) as TradFiAsset[];
+    
+    if (validAssets.length === 0) {
+      throw new Error('No valid data from Finnhub');
+    }
+
+    const totalMarketCap = validAssets.reduce((sum, asset) => sum + asset.marketCap, 0);
+    const totalVolume = validAssets.reduce((sum, asset) => sum + asset.volume, 0);
+
+    return {
+      assets: validAssets,
+      timestamp: Date.now(),
+      totalMarketCap,
+      totalVolume
+    };
+  }
+
+  /**
+   * Fetch from Alpha Vantage API (5 requests/minute free)
+   */
+  private async fetchFromAlphaVantage(symbols: string[]): Promise<TradFiMarketData> {
+    const apiKey = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY || 'demo';
+    const promises = symbols.slice(0, 5).map(async (symbol) => { // Limit to 5 due to rate limit
+      try {
+        const response = await fetch(
+          `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        const quote = data['Global Quote'];
+        if (!quote || !quote['05. price']) throw new Error('Invalid quote data');
+        
+        const price = parseFloat(quote['05. price']);
+        const change = parseFloat(quote['09. change'] || '0');
+        const changePercent = parseFloat(quote['10. change percent']?.replace('%', '') || '0');
+        const volume = parseInt(quote['06. volume'] || '0');
+        
+        return {
+          symbol,
+          name: this.getAssetName(symbol),
+          price,
+          change,
+          changePercent,
+          volume,
+          marketCap: price * volume,
+          high: parseFloat(quote['03. high'] || price.toString()),
+          low: parseFloat(quote['04. low'] || price.toString()),
+          open: parseFloat(quote['02. open'] || price.toString()),
+          previousClose: parseFloat(quote['08. previous close'] || price.toString()),
+          exchange: 'NASDAQ',
+          lastUpdated: Date.now()
+        };
+      } catch (error) {
+        console.warn(`Failed to fetch ${symbol} from Alpha Vantage:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(promises);
+    const validAssets = results.filter(asset => asset !== null) as TradFiAsset[];
+    
+    if (validAssets.length === 0) {
+      throw new Error('No valid data from Alpha Vantage');
+    }
+
+    const totalMarketCap = validAssets.reduce((sum, asset) => sum + asset.marketCap, 0);
+    const totalVolume = validAssets.reduce((sum, asset) => sum + asset.volume, 0);
+
+    return {
+      assets: validAssets,
+      timestamp: Date.now(),
+      totalMarketCap,
+      totalVolume
+    };
+  }
+
+  /**
+   * Fetch from Twelve Data API (8 requests/minute free)
+   */
+  private async fetchFromTwelveData(symbols: string[]): Promise<TradFiMarketData> {
+    const apiKey = process.env.REACT_APP_TWELVE_DATA_API_KEY || 'demo';
+    const promises = symbols.slice(0, 8).map(async (symbol) => { // Limit to 8 due to rate limit
+      try {
+        const response = await fetch(
+          `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${apiKey}`
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.status === 'error') throw new Error(data.message);
+        if (!data.close) throw new Error('Invalid quote data');
+        
+        const price = parseFloat(data.close);
+        const change = parseFloat(data.change || '0');
+        const changePercent = parseFloat(data.percent_change || '0');
+        const volume = parseInt(data.volume || '0');
+        
+        return {
+          symbol,
+          name: data.name || this.getAssetName(symbol),
+          price,
+          change,
+          changePercent,
+          volume,
+          marketCap: price * volume,
+          high: parseFloat(data.high || price.toString()),
+          low: parseFloat(data.low || price.toString()),
+          open: parseFloat(data.open || price.toString()),
+          previousClose: parseFloat(data.previous_close || price.toString()),
+          exchange: data.exchange || 'NASDAQ',
+          lastUpdated: Date.now()
+        };
+      } catch (error) {
+        console.warn(`Failed to fetch ${symbol} from Twelve Data:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(promises);
+    const validAssets = results.filter(asset => asset !== null) as TradFiAsset[];
+    
+    if (validAssets.length === 0) {
+      throw new Error('No valid data from Twelve Data');
+    }
+
+    const totalMarketCap = validAssets.reduce((sum, asset) => sum + asset.marketCap, 0);
+    const totalVolume = validAssets.reduce((sum, asset) => sum + asset.volume, 0);
+
+    return {
+      assets: validAssets,
+      timestamp: Date.now(),
+      totalMarketCap,
+      totalVolume
+    };
+  }
+
+  /**
+   * Generate fallback data when all APIs fail
+   */
+  private generateFallbackData(symbols: string[]): TradFiMarketData {
     const mockAssets: TradFiAsset[] = symbols.map((symbol, index) => {
       const basePrice = 100 + (index * 50) + (Math.random() * 200);
       const change = (Math.random() - 0.5) * 20;
@@ -192,7 +399,7 @@ class TradFiDataService {
       
       return {
         symbol,
-        name: this.getMockAssetName(symbol),
+        name: this.getAssetName(symbol),
         price: basePrice,
         change: change,
         changePercent: changePercent,
@@ -219,9 +426,9 @@ class TradFiDataService {
   }
 
   /**
-   * Get mock asset names for mock data
+   * Get asset names
    */
-  private getMockAssetName(symbol: string): string {
+  private getAssetName(symbol: string): string {
     const names: { [key: string]: string } = {
       'AAPL': 'Apple Inc.',
       'MSFT': 'Microsoft Corporation',
