@@ -31,13 +31,13 @@ body {
 
 /* CTA Section Styling */
 .cta-heading {
-  color: #1f2937; /* Dark gray for main heading */
+  color: #f8fafc; /* White like body text */
   font-weight: 800;
   margin-bottom: 0.5rem;
 }
 
 .cta-subtext {
-  color: #2563eb; /* Blue for subtext */
+  color: #f8fafc; /* White like body text */
   font-weight: 600;
   font-size: 0.9em;
   opacity: 0.9;
