@@ -40,20 +40,56 @@ body {
   /* margin-left: -200px; */ /* Move left by 200px */
 }
 
-/* Responsive positioning adjustments */
+/* ===== SPECIFIC "AVILA PROTOCOL" TITLE STYLING ===== */
+/* Target the specific "Avila Protocol" title */
+.hero-title:has(.gradient-text),
+h1:has(.gradient-text),
+h1 .gradient-text {
+  position: absolute;
+  top: 5rem;          /* Position below navbar (navbar height + small gap) */
+  right: 2rem;        /* Position at right side */
+  transform: none;     /* Remove centering transform */
+  text-align: right;  /* Right-align the text */
+  margin: 0;          /* Remove all margins */
+  padding: 0;         /* Remove all padding */
+  width: auto;        /* Auto width instead of full width */
+  max-width: 400px;   /* Limit width for better appearance */
+  z-index: 10;        /* Ensure it's above other content */
+}
+
+/* Alternative selector for broader compatibility */
+h1 .gradient-text,
+.hero-title .gradient-text {
+  position: absolute;
+  top: 5rem;          /* Position below navbar */
+  right: 2rem;        /* Position at right side */
+  transform: none;     /* Remove centering transform */
+  text-align: right;  /* Right-align the text */
+  margin: 0;          /* Remove all margins */
+  padding: 0;         /* Remove all padding */
+  width: auto;        /* Auto width */
+  max-width: 400px;   /* Limit width */
+  z-index: 10;        /* Ensure it's above other content */
+}
+
+/* Responsive adjustments for the "Avila Protocol" title */
 @media (max-width: 768px) {
-  .hero-title {
-    /* Adjust mobile positioning if needed */
-    top: 40%;
-    font-size: 2.5rem;
+  h1 .gradient-text,
+  .hero-title .gradient-text {
+    top: 4rem;        /* Slightly closer to navbar on mobile */
+    right: 1rem;      /* Closer to right edge on mobile */
+    max-width: 300px; /* Smaller max-width on mobile */
+    font-size: clamp(2rem, 4vw, 3rem); /* Responsive font size */
   }
 }
 
 @media (max-width: 480px) {
-  .hero-title {
-    /* Adjust small mobile positioning */
-    top: 35%;
-    font-size: 2rem;
+  h1 .gradient-text,
+  .hero-title .gradient-text {
+    top: 3.5rem;      /* Even closer on small mobile */
+    right: 0.5rem;    /* Minimal right margin on small mobile */
+    max-width: 250px; /* Smaller max-width on small mobile */
+    font-size: clamp(1.5rem, 3vw, 2.5rem); /* Smaller font on small mobile */
   }
 }
 
