@@ -24,7 +24,7 @@ body {
 .hero-title {
   position: absolute;
   /* You can adjust these values to move the title around */
-  top: 50%;           /* Vertical center */
+  top: 10%;           /* Move closer to top */
   left: 50%;          /* Horizontal center */
   transform: translate(-50%, -50%); /* Perfect centering */
   
