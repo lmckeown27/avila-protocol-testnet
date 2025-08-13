@@ -61,7 +61,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
             <span className="block cta-heading">Currently in Testnet</span>
-            <span className="block cta-subtext">Help us test the future of decentralized options trading.</span>
+            <span className="block cta-subtext">Help us test the future of decentralized options trading</span>
           </h2>
         </div>
       </div>
