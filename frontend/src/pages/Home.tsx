@@ -19,12 +19,7 @@ export default function Home() {
           {/* Wallet Connection - Restored */}
           {!isConnected ? (
             <div className="rounded-md shadow">
-              <Link
-                to="/trade"
-                className="btn-primary w-full flex items-center justify-center px-8 py-3 text-base font-medium md:py-4 md:text-lg md:px-10"
-              >
-                🚀 Get Started
-              </Link>
+              {/* Get Started button removed */}
             </div>
           ) : (
             <div className="rounded-md shadow">
