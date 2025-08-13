@@ -14,19 +14,21 @@ body {
 .hero-section {
   position: relative;
   width: 100%;
-  height: 100vh; /* Full viewport height */
+  min-height: 60vh; /* Reduced height for better flow */
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 4rem 0;
 }
 
 /* Control the "Avila Protocol" title positioning */
 .hero-title {
-  position: absolute;
-  /* You can adjust these values to move the title around */
-  top: 10%;           /* Move closer to top */
-  left: 50%;          /* Horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
+  position: relative; /* Change from absolute to relative */
+  /* Remove absolute positioning to restore normal flow */
+  /* top: 10%;           */
+  /* left: 50%;          */
+  /* transform: translate(-50%, -50%); */
   
   /* Alternative positioning options - uncomment and adjust as needed: */
   /* top: 20%; */     /* Move to top 20% of viewport */
@@ -88,11 +90,12 @@ h1, h2, h3, h4, h5, h6 {
   color: #f8fafc;
   margin-bottom: 1rem;
   text-align: center; /* Center all headings by default */
-  position: absolute;  /* Enable absolute positioning for movement */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
-  z-index: 5;         /* Ensure proper layering */
+  /* Remove absolute positioning to restore normal flow */
+  /* position: absolute;  */
+  /* top: 50%;           */
+  /* left: 50%;          */
+  /* transform: translate(-50%, -50%); */
+  /* z-index: 5;         */
 }
 
 h1 {
@@ -103,7 +106,7 @@ h1 {
   background-clip: text;
   text-align: center;
   margin-bottom: 1.5rem;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 600px;   /* Limit width for better appearance */
 }
 
@@ -112,7 +115,7 @@ h2 {
   color: #f8fafc;
   text-align: center;
   margin-bottom: 1.25rem;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 500px;   /* Limit width for better appearance */
 }
 
@@ -121,7 +124,7 @@ h3 {
   color: #f1f5f9;
   margin-bottom: 1rem;
   text-align: center;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 400px;   /* Limit width for better appearance */
 }
 
@@ -130,7 +133,7 @@ h4 {
   color: #e2e8f0;
   margin-bottom: 0.75rem;
   text-align: center;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 350px;   /* Limit width for better appearance */
 }
 
@@ -139,7 +142,7 @@ h5 {
   color: #cbd5e1;
   margin-bottom: 0.5rem;
   text-align: center;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 300px;   /* Limit width for better appearance */
 }
 
@@ -148,7 +151,7 @@ h6 {
   color: #94a3b8;
   margin-bottom: 0.5rem;
   text-align: center;
-  width: auto;        /* Auto width for positioning */
+  width: 100%;        /* Full width for proper layout */
   max-width: 250px;   /* Limit width for better appearance */
 }
 
@@ -256,12 +259,13 @@ p {
   line-height: 1.7;
   margin-bottom: 1rem;
   font-size: 1rem;
-  position: absolute;  /* Enable absolute positioning for movement */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
-  z-index: 4;         /* Ensure proper layering */
-  width: auto;        /* Auto width for positioning */
+  /* Remove absolute positioning to restore normal flow */
+  /* position: absolute;  */
+  /* top: 50%;           */
+  /* left: 50%;          */
+  /* transform: translate(-50%, -50%); */
+  /* z-index: 4;         */
+  width: 100%;        /* Full width for proper layout */
   max-width: 500px;   /* Limit width for better appearance */
 }
 
@@ -285,11 +289,12 @@ p.text-sm, p.text-xs {
 span {
   color: inherit;
   font-weight: inherit;
-  position: absolute;  /* Enable absolute positioning for movement */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
-  z-index: 3;         /* Ensure proper layering */
+  /* Remove absolute positioning to restore normal flow */
+  /* position: absolute;  */
+  /* top: 50%;           */
+  /* left: 50%;          */
+  /* transform: translate(-50%, -50%); */
+  /* z-index: 3;         */
 }
 
 /* Gradient text spans */
@@ -304,11 +309,11 @@ span.gradient-text {
 
 /* ===== DIV TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 div.text-center, div.text-left, div.text-right {
-  position: absolute;  /* Enable absolute positioning for movement */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
-  z-index: 3;         /* Ensure proper layering */
+  /* position: absolute;  */ /* Enable absolute positioning for movement */
+  /* top: 50%;           */ /* Default vertical center */
+  /* left: 50%;          */ /* Default horizontal center */
+  /* transform: translate(-50%, -50%); */ /* Perfect centering */
+  /* z-index: 3;         */ /* Ensure proper layering */
   width: auto;        /* Auto width for positioning */
   max-width: 500px;   /* Limit width for better appearance */
 }
@@ -357,26 +362,26 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.75rem;
-  position: absolute;  /* Enable absolute positioning for movement */
-  z-index: 2;         /* Ensure proper layering */
+  /* position: absolute;  */ /* Enable absolute positioning for movement */
+  /* z-index: 2;         */ /* Ensure proper layering */
 }
 
 td {
   color: #cbd5e1;
   font-size: 0.875rem;
-  position: absolute;  /* Enable absolute positioning for movement */
-  z-index: 2;         /* Ensure proper layering */
+  /* position: absolute;  */ /* Enable absolute positioning for movement */
+  /* z-index: 2;         */ /* Ensure proper layering */
 }
 
 /* ===== BUTTON TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
 button, .btn-primary, .btn-secondary {
   font-weight: 600;
   letter-spacing: 0.025em;
-  position: absolute;  /* Enable absolute positioning for movement */
-  z-index: 6;         /* Ensure proper layering */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
+  /* position: absolute;  */ /* Enable absolute positioning for movement */
+  /* z-index: 6;         */ /* Ensure proper layering */
+  /* top: 50%;           */ /* Default vertical center */
+  /* left: 50%;          */ /* Default horizontal center */
+  /* transform: translate(-50%, -50%); */ /* Perfect centering */
 }
 
 /* ===== LINK TEXT STYLING WITH MOVEMENT PROPERTIES ===== */
@@ -384,11 +389,11 @@ a {
   color: #60a5fa;
   text-decoration: none;
   transition: color 0.3s ease;
-  position: absolute;  /* Enable absolute positioning for movement */
-  z-index: 3;         /* Ensure proper layering */
-  top: 50%;           /* Default vertical center */
-  left: 50%;          /* Default horizontal center */
-  transform: translate(-50%, -50%); /* Perfect centering */
+  /* position: absolute;  */ /* Enable absolute positioning for movement */
+  /* z-index: 3;         */ /* Ensure proper layering */
+  /* top: 50%;           */ /* Default vertical center */
+  /* left: 50%;          */ /* Default horizontal center */
+  /* transform: translate(-50%, -50%); */ /* Perfect centering */
 }
 
 a:hover {
