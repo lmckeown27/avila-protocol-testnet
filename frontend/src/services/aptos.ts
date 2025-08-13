@@ -46,7 +46,7 @@ export class AptosService {
         throw new Error('Failed to connect to Aptos node');
       }
     } catch (error) {
-      console.error('❌ Failed to connect to Aptos:', error);
+      console.error('Failed to connect to Aptos:', error);
       return false;
     }
   }

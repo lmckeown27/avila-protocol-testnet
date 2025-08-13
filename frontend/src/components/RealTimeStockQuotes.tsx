@@ -142,7 +142,6 @@ export default function RealTimeStockQuotes({
       {error && (
         <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
           <div className="flex items-center">
-            <TrendingDown className="w-4 h-4 text-red-500 mr-2" />
             <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
           </div>
         </div>
