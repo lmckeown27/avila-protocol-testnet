@@ -31,27 +31,26 @@ const Navbar = () => {
     <>
       <nav className="navbar bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo/Brand - Left Side */}
-            <div className="flex items-center flex-shrink-0">
+          {/* Single flex container with three columns */}
+          <div className="flex justify-between items-center h-16">
+            
+            {/* Left Column: Logo/Brand */}
+            <div className="flex-shrink-0">
               <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
                 Avila Protocol
               </Link>
             </div>
 
-            {/* Centered Navigation Links - Middle */}
-            <div className="hidden md:flex items-center justify-center flex-1">
-              <div className="flex items-center space-x-12">
-                <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
-                <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
-                <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
-                <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
-              </div>
+            {/* Center Column: Navigation Links */}
+            <div className="hidden md:flex flex-1 justify-center space-x-12">
+              <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
+              <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
+              <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
+              <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
             </div>
 
-            {/* Right Side Buttons */}
-            <div className="flex items-center space-x-4 flex-shrink-0">
-              {/* Feedback Button */}
+            {/* Right Column: Feedback and Wallet Buttons */}
+            <div className="flex-shrink-0 flex items-center space-x-4">
               <button
                 onClick={() => setIsFeedbackOpen(true)}
                 className="btn-secondary text-sm px-3 py-2"
@@ -59,7 +58,6 @@ const Navbar = () => {
                 💬 Feedback
               </button>
 
-              {/* Wallet Connection */}
               {isConnected ? (
                 <button
                   onClick={handleDisconnectWallet}
