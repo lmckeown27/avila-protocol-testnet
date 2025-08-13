@@ -350,7 +350,7 @@ async function verifySetup(): Promise<void> {
     console.log("\n🔍 Verifying setup...");
     
     // Check if module exists
-    const moduleData = await aptosClient.getAccountResource(
+    await aptosClient.getAccountResource(
       CONFIG.MODULE_ADDRESS,
       `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::MultiStockMock`
     );

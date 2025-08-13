@@ -285,7 +285,7 @@ async function verifySetup() {
     try {
         console.log("\n🔍 Verifying setup...");
         // Check if module exists
-        const moduleData = await aptosClient.getAccountResource(CONFIG.MODULE_ADDRESS, `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::MultiStockMock`);
+        await aptosClient.getAccountResource(CONFIG.MODULE_ADDRESS, `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::MultiStockMock`);
         console.log("✅ MultiStockMock module is deployed and accessible");
         // You can add more verification logic here
         // For example, checking registered stocks, token supplies, etc.
