@@ -6,6 +6,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stopMarketDataPolling = exports.startMarketDataPolling = exports.getDeFiData = exports.getTradFiData = exports.getMarketData = exports.marketDataService = exports.MarketDataService = void 0;
+// Load environment variables from .env file
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const axios_1 = __importDefault(require("axios"));
 // ============================================================================
 // API CONFIGURATION
@@ -14,22 +17,22 @@ const API_CONFIG = {
     // TradFi APIs
     finnhub: {
         baseUrl: 'https://finnhub.io/api/v1',
-        token: process.env['FINNHUB_API_KEY'] || 'demo',
+        token: process.env['FINNHUB_API_KEY'] || 'demo', // Free tier available
         rateLimit: 60 // requests per minute
     },
     polygon: {
         baseUrl: 'https://api.polygon.io/v2',
-        token: process.env['POLYGON_API_KEY'] || 'demo',
+        token: process.env['POLYGON_API_KEY'] || 'demo', // Free tier available
         rateLimit: 5 // requests per minute
     },
     alphaVantage: {
         baseUrl: 'https://www.alphavantage.co/query',
-        token: process.env['ALPHA_VANTAGE_API_KEY'] || 'demo',
+        token: process.env['ALPHA_VANTAGE_API_KEY'] || 'demo', // Free tier available
         rateLimit: 5 // requests per minute
     },
     twelveData: {
         baseUrl: 'https://api.twelvedata.com',
-        token: process.env['TWELVE_DATA_API_KEY'] || 'demo',
+        token: process.env['TWELVE_DATA_API_KEY'] || 'demo', // Free tier available
         rateLimit: 8 // requests per minute
     },
     // Crypto APIs
@@ -96,87 +99,73 @@ class MarketDataService {
     // PUBLIC METHODS
     // ============================================================================
     /**
-     * Get all market data (TradFi + DeFi) in normalized format
+     * Get all market data (TradFi + DeFi) with fallback logic
      */
     async getAllMarketData() {
         try {
-            console.log('🔄 Fetching all market data...');
             const [tradfiData, defiData] = await Promise.all([
                 this.getTradFiData(),
                 this.getDeFiData()
             ]);
-            const response = {
+            return {
                 tradfi: tradfiData,
                 defi: defiData,
                 timestamp: Date.now(),
                 dataSources: this.getActiveDataSources(),
                 errors: []
             };
-            console.log(`✅ Market data fetched: ${tradfiData.length} TradFi, ${defiData.length} DeFi assets`);
-            return response;
         }
         catch (error) {
-            console.error('❌ Failed to fetch all market data:', error);
-            return this.getFallbackData();
+            console.error('Failed to fetch market data:', error);
+            return {
+                tradfi: this.getEmptyTradFiData(),
+                defi: this.getEmptyDeFiData(),
+                timestamp: Date.now(),
+                dataSources: ['API Failure'],
+                errors: [error instanceof Error ? error.message : 'Unknown error']
+            };
         }
     }
     /**
-     * Get TradFi market data from multiple sources
+     * Get TradFi market data with fallback logic
      */
     async getTradFiData() {
+        const cacheKey = 'tradfi';
+        const cached = this.getCachedData(cacheKey);
+        if (cached)
+            return cached;
         try {
-            const sources = [
-                () => this.fetchFromFinnhub(),
-                () => this.fetchFromPolygon(),
-                () => this.fetchFromAlphaVantage(),
-                () => this.fetchFromTwelveData()
-            ];
-            // Try sources in parallel, use first successful response
-            const results = await Promise.allSettled(sources.map(source => source()));
-            const successfulResults = results
-                .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
-                .map(result => result.value);
-            if (successfulResults.length > 0) {
-                const data = successfulResults[0];
-                if (data) {
-                    this.cacheData('tradfi', data);
-                    return data;
-                }
-            }
-            throw new Error('All TradFi data sources failed');
+            const result = await this.fetchTradFiDataFromAPIs();
+            this.cacheData(cacheKey, result);
+            return result;
         }
         catch (error) {
-            console.error('❌ TradFi data fetch failed, using fallback:', error);
-            return this.getTradFiFallbackData();
+            console.error('All TradFi APIs failed, returning empty data:', error);
+            // Return empty data instead of mock data to indicate API failure
+            const emptyResult = this.getEmptyTradFiData();
+            this.cacheData(cacheKey, emptyResult);
+            return emptyResult;
         }
     }
     /**
-     * Get DeFi market data from multiple sources
+     * Get DeFi market data with fallback logic
      */
     async getDeFiData() {
+        const cacheKey = 'defi';
+        const cached = this.getCachedData(cacheKey);
+        if (cached)
+            return cached;
         try {
-            const sources = [
-                () => this.fetchFromCoinGecko(),
-                () => this.fetchFromDefiLlama(),
-                () => this.fetchFromBinance()
-            ];
-            // Try sources in parallel, use first successful response
-            const results = await Promise.allSettled(sources.map(source => source()));
-            const successfulResults = results
-                .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
-                .map(result => result.value);
-            if (successfulResults.length > 0) {
-                const data = successfulResults[0];
-                if (data) {
-                    this.cacheData('defi', data);
-                    return data;
-                }
-            }
-            throw new Error('All DeFi data sources failed');
+            const result = await this.fetchDeFiDataFromAPIs();
+            this.cacheData(cacheKey, result);
+            return result;
         }
         catch (error) {
-            console.error('❌ DeFi data fetch failed, using fallback:', error);
-            return this.getDeFiFallbackData();
+            console.error('All DeFi APIs failed, returning empty data:', error);
+            // Return empty data instead of mock data to indicate API failure
+            const emptyResult = this.getEmptyDeFiData();
+            this.cacheData(cacheKey, emptyResult);
+            return emptyResult;
         }
     }
     /**
@@ -278,7 +267,7 @@ class MarketDataService {
                 asset: trade.results.T,
                 symbol: trade.results.T,
                 price: trade.results.price,
-                change24h: 0,
+                change24h: 0, // Polygon last trade doesn't provide 24h change
                 volume24h: trade.results.s || 0,
                 marketCap: 0,
                 source: 'Polygon',
@@ -323,7 +312,7 @@ class MarketDataService {
                     asset: data['Meta Data']['2. Symbol'],
                     symbol: data['Meta Data']['2. Symbol'],
                     price: parseFloat(latestData['4. close']),
-                    change24h: 0,
+                    change24h: 0, // Alpha Vantage intraday doesn't provide 24h change
                     volume24h: parseFloat(latestData['5. volume']),
                     marketCap: 0,
                     source: 'Alpha Vantage',
@@ -363,7 +352,7 @@ class MarketDataService {
                     asset: data.meta.symbol,
                     symbol: data.meta.symbol,
                     price: parseFloat(latest.close),
-                    change24h: 0,
+                    change24h: 0, // Twelve Data intraday doesn't provide 24h change
                     volume24h: parseFloat(latest.volume),
                     marketCap: 0,
                     source: 'Twelve Data',
@@ -426,7 +415,7 @@ class MarketDataService {
                 asset: protocol.name,
                 symbol: protocol.symbol.toUpperCase(),
                 name: protocol.name,
-                price: protocol.tvl / 1000000,
+                price: protocol.tvl / 1000000, // Convert to millions
                 change24h: protocol.change_1d || 0,
                 volume24h: protocol.volume_1d || 0,
                 marketCap: protocol.market_cap || protocol.tvl,
@@ -457,7 +446,7 @@ class MarketDataService {
                 price: parseFloat(ticker.lastPrice),
                 change24h: parseFloat(ticker.priceChange),
                 volume24h: parseFloat(ticker.volume),
-                marketCap: 0,
+                marketCap: 0, // Binance doesn't provide market cap
                 source: 'Binance',
                 lastUpdated: Date.now(),
                 high24h: parseFloat(ticker.highPrice),
@@ -472,71 +461,100 @@ class MarketDataService {
     // ============================================================================
     // FALLBACK DATA METHODS
     // ============================================================================
-    getFallbackData() {
-        return {
-            tradfi: this.getTradFiFallbackData(),
-            defi: this.getDeFiFallbackData(),
-            timestamp: Date.now(),
-            dataSources: ['fallback'],
-            errors: ['All API sources failed, using fallback data']
-        };
+    /**
+     * Fetch TradFi data from multiple APIs
+     */
+    async fetchTradFiDataFromAPIs() {
+        const sources = [
+            () => this.fetchFromFinnhub(),
+            () => this.fetchFromPolygon(),
+            () => this.fetchFromAlphaVantage(),
+            () => this.fetchFromTwelveData()
+        ];
+        // Try sources in parallel, use first successful response
+        const results = await Promise.allSettled(sources.map(source => source()));
+        const successfulResults = results
+            .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
+            .map(result => result.value);
+        if (successfulResults.length > 0) {
+            const data = successfulResults[0];
+            if (data) {
+                return data;
+            }
+        }
+        throw new Error('All TradFi data sources failed');
     }
-    getTradFiFallbackData() {
-        return DEFAULT_TRADFI_SYMBOLS.map((symbol, index) => ({
+    /**
+     * Fetch DeFi data from multiple APIs
+     */
+    async fetchDeFiDataFromAPIs() {
+        const sources = [
+            () => this.fetchFromCoinGecko(),
+            () => this.fetchFromDefiLlama(),
+            () => this.fetchFromBinance()
+        ];
+        // Try sources in parallel, use first successful response
+        const results = await Promise.allSettled(sources.map(source => source()));
+        const successfulResults = results
+            .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
+            .map(result => result.value);
+        if (successfulResults.length > 0) {
+            const data = successfulResults[0];
+            if (data) {
+                return data;
+            }
+        }
+        throw new Error('All DeFi data sources failed');
+    }
+    /**
+     * Get cached data if available and not expired
+     */
+    getCachedData(key) {
+        const cached = this.cache.get(key);
+        if (cached && Date.now() - cached.timestamp < 60000) { // 60 seconds TTL
+            return cached.data;
+        }
+        return null;
+    }
+    /**
+     * Return empty TradFi data to indicate API failure
+     */
+    getEmptyTradFiData() {
+        return DEFAULT_TRADFI_SYMBOLS.map(symbol => ({
             asset: symbol,
-            symbol,
-            name: this.getTradFiAssetName(symbol),
-            price: 100 + (index * 50) + (Math.random() * 200),
-            change24h: (Math.random() - 0.5) * 20,
-            volume24h: Math.random() * 10000000 + 1000000,
-            marketCap: Math.random() * 1000000000 + 100000000,
-            source: 'Fallback',
+            symbol: symbol,
+            price: 0,
+            change24h: 0,
+            volume24h: 0,
+            marketCap: 0,
+            source: 'API Failure',
             lastUpdated: Date.now(),
-            high24h: 100 + (index * 50) + (Math.random() * 200) + 10,
-            low24h: 100 + (index * 50) + (Math.random() * 200) - 10
+            high24h: 0,
+            low24h: 0,
+            open24h: 0
         }));
     }
-    getDeFiFallbackData() {
-        return DEFAULT_CRYPTO_IDS.map((id, index) => ({
+    /**
+     * Return empty DeFi data to indicate API failure
+     */
+    getEmptyDeFiData() {
+        return DEFAULT_CRYPTO_IDS.map(id => ({
             asset: id,
             symbol: id.toUpperCase().slice(0, 4),
-            name: id.charAt(0).toUpperCase() + id.slice(1),
-            price: 10 + (index * 5) + (Math.random() * 100),
-            change24h: (Math.random() - 0.5) * 15,
-            volume24h: Math.random() * 50000000 + 10000000,
-            marketCap: Math.random() * 500000000 + 100000000,
-            source: 'Fallback',
-            lastUpdated: Date.now()
+            price: 0,
+            change24h: 0,
+            volume24h: 0,
+            marketCap: 0,
+            source: 'API Failure',
+            lastUpdated: Date.now(),
+            high24h: 0,
+            low24h: 0,
+            open24h: 0
         }));
     }
     // ============================================================================
     // HELPER METHODS
     // ============================================================================
-    getTradFiAssetName(symbol) {
-        const names = {
-            'AAPL': 'Apple Inc.',
-            'MSFT': 'Microsoft Corporation',
-            'GOOGL': 'Alphabet Inc.',
-            'AMZN': 'Amazon.com Inc.',
-            'TSLA': 'Tesla Inc.',
-            'META': 'Meta Platforms Inc.',
-            'NVDA': 'NVIDIA Corporation',
-            'NFLX': 'Netflix Inc.',
-            'SPY': 'SPDR S&P 500 ETF',
-            'QQQ': 'Invesco QQQ Trust',
-            'IWM': 'iShares Russell 2000 ETF',
-            'VTI': 'Vanguard Total Stock Market ETF',
-            'VEA': 'Vanguard FTSE Developed Markets ETF',
-            'VWO': 'Vanguard FTSE Emerging Markets ETF',
-            'BND': 'Vanguard Total Bond Market ETF',
-            'GLD': 'SPDR Gold Shares',
-            '^GSPC': 'S&P 500 Index',
-            '^DJI': 'Dow Jones Industrial Average',
-            '^IXIC': 'NASDAQ Composite',
-            '^RUT': 'Russell 2000 Index'
-        };
-        return names[symbol] || `${symbol} Corporation`;
-    }
     getActiveDataSources() {
         const sources = [];
         if (this.cache.has('tradfi'))

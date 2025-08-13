@@ -2,7 +2,7 @@
 // Test file for Market Data Service
 // Demonstrates basic functionality and error handling
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.testMarketDataService = void 0;
+exports.testMarketDataService = testMarketDataService;
 const marketDataService_1 = require("./marketDataService");
 async function testMarketDataService() {
     console.log('🧪 Testing Market Data Service...\n');
@@ -83,7 +83,6 @@ async function testMarketDataService() {
         process.exit(1);
     }
 }
-exports.testMarketDataService = testMarketDataService;
 // Run tests if this file is executed directly
 if (require.main === module) {
     testMarketDataService()

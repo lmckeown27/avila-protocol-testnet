@@ -56,15 +56,15 @@ export declare class MarketDataService {
     private pollingInterval;
     constructor();
     /**
-     * Get all market data (TradFi + DeFi) in normalized format
+     * Get all market data (TradFi + DeFi) with fallback logic
      */
     getAllMarketData(): Promise<MarketDataResponse>;
     /**
-     * Get TradFi market data from multiple sources
+     * Get TradFi market data with fallback logic
      */
     getTradFiData(): Promise<NormalizedAsset[]>;
     /**
-     * Get DeFi market data from multiple sources
+     * Get DeFi market data with fallback logic
      */
     getDeFiData(): Promise<NormalizedAsset[]>;
     /**
@@ -94,10 +94,26 @@ export declare class MarketDataService {
     private fetchFromCoinGecko;
     private fetchFromDefiLlama;
     private fetchFromBinance;
-    private getFallbackData;
-    private getTradFiFallbackData;
-    private getDeFiFallbackData;
-    private getTradFiAssetName;
+    /**
+     * Fetch TradFi data from multiple APIs
+     */
+    private fetchTradFiDataFromAPIs;
+    /**
+     * Fetch DeFi data from multiple APIs
+     */
+    private fetchDeFiDataFromAPIs;
+    /**
+     * Get cached data if available and not expired
+     */
+    private getCachedData;
+    /**
+     * Return empty TradFi data to indicate API failure
+     */
+    private getEmptyTradFiData;
+    /**
+     * Return empty DeFi data to indicate API failure
+     */
+    private getEmptyDeFiData;
     private getActiveDataSources;
     private cacheData;
     private calculateCacheHitRate;
@@ -107,6 +123,6 @@ export declare const marketDataService: MarketDataService;
 export declare const getMarketData: () => Promise<MarketDataResponse>;
 export declare const getTradFiData: () => Promise<NormalizedAsset[]>;
 export declare const getDeFiData: () => Promise<NormalizedAsset[]>;
-export declare const startMarketDataPolling: (callback?: ((data: MarketDataResponse) => void) | undefined) => void;
+export declare const startMarketDataPolling: (callback?: (data: MarketDataResponse) => void) => void;
 export declare const stopMarketDataPolling: () => void;
 //# sourceMappingURL=marketDataService.d.ts.map

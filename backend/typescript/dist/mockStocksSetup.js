@@ -17,17 +17,25 @@
  * - MultiStockMock module deployed to testnet
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifySetup = exports.setAllStockPrices = exports.setStockPrice = exports.mintTokensToAllAccounts = exports.mintTokens = exports.registerAllStocks = exports.registerStock = exports.initializeMultiStockMock = exports.initializeAptosConnection = void 0;
+exports.initializeAptosConnection = initializeAptosConnection;
+exports.initializeMultiStockMock = initializeMultiStockMock;
+exports.registerStock = registerStock;
+exports.registerAllStocks = registerAllStocks;
+exports.mintTokens = mintTokens;
+exports.mintTokensToAllAccounts = mintTokensToAllAccounts;
+exports.setStockPrice = setStockPrice;
+exports.setAllStockPrices = setAllStockPrices;
+exports.verifySetup = verifySetup;
 const aptos_1 = require("aptos");
 // Configuration - Customize these values for your deployment
 const CONFIG = {
     // Aptos testnet configuration
     NODE_URL: "https://fullnode.testnet.aptoslabs.com",
     // Your testnet account configuration
-    ADMIN_PRIVATE_KEY: "YOUR_ADMIN_PRIVATE_KEY_HERE",
-    ADMIN_ADDRESS: "YOUR_ADMIN_ADDRESS_HERE",
+    ADMIN_PRIVATE_KEY: "YOUR_ADMIN_PRIVATE_KEY_HERE", // Replace with actual private key
+    ADMIN_ADDRESS: "YOUR_ADMIN_ADDRESS_HERE", // Replace with actual address
     // MultiStockMock module configuration
-    MODULE_ADDRESS: "YOUR_MODULE_ADDRESS_HERE",
+    MODULE_ADDRESS: "YOUR_MODULE_ADDRESS_HERE", // Replace with deployed module address
     MODULE_NAME: "multi_stock_mock",
     // Mock stocks configuration
     MOCK_STOCKS: [
@@ -102,7 +110,6 @@ async function initializeAptosConnection() {
         throw error;
     }
 }
-exports.initializeAptosConnection = initializeAptosConnection;
 /**
  * Initialize the MultiStockMock module
  * Calls the init() function to set up the module
@@ -131,7 +138,6 @@ async function initializeMultiStockMock() {
         throw error;
     }
 }
-exports.initializeMultiStockMock = initializeMultiStockMock;
 /**
  * Register a mock stock in the MultiStockMock module
  * Calls the register_stock() function
@@ -160,7 +166,6 @@ async function registerStock(ticker, name, decimals) {
         throw error;
     }
 }
-exports.registerStock = registerStock;
 /**
  * Register all configured mock stocks
  */
@@ -179,7 +184,6 @@ async function registerAllStocks() {
         throw error;
     }
 }
-exports.registerAllStocks = registerAllStocks;
 /**
  * Mint mock tokens to a specific account
  * Calls the mint() function
@@ -208,7 +212,6 @@ async function mintTokens(ticker, recipientAddress, amount) {
         throw error;
     }
 }
-exports.mintTokens = mintTokens;
 /**
  * Mint tokens to all test accounts for all stocks
  */
@@ -229,7 +232,6 @@ async function mintTokensToAllAccounts() {
         throw error;
     }
 }
-exports.mintTokensToAllAccounts = mintTokensToAllAccounts;
 /**
  * Set mock oracle price for a stock
  * Calls the set_price() function
@@ -258,7 +260,6 @@ async function setStockPrice(ticker, price) {
         throw error;
     }
 }
-exports.setStockPrice = setStockPrice;
 /**
  * Set initial prices for all stocks
  */
@@ -277,7 +278,6 @@ async function setAllStockPrices() {
         throw error;
     }
 }
-exports.setAllStockPrices = setAllStockPrices;
 /**
  * Verify the setup by checking module state
  */
@@ -295,7 +295,6 @@ async function verifySetup() {
         throw error;
     }
 }
-exports.verifySetup = verifySetup;
 /**
  * Main function to run the complete setup
  */
