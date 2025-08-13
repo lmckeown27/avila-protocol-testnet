@@ -50,7 +50,7 @@ h1 .gradient-text {
   left: auto;         /* Remove absolute positioning */
   transform: none;     /* Remove transform */
   text-align: center; /* Center-align the text */
-  margin: 0 auto 1rem auto; /* Center with auto margins, add bottom margin */
+  margin: 0 auto 2rem auto; /* Center with auto margins, increase bottom margin for spacing */
   padding: 0;         /* Remove all padding */
   width: auto;        /* Auto width instead of full width */
   max-width: 400px;   /* Limit width for better appearance */
@@ -58,6 +58,7 @@ h1 .gradient-text {
   white-space: nowrap; /* Keep text on one line */
   overflow: hidden;   /* Hide any overflow */
   text-overflow: ellipsis; /* Add ellipsis if needed */
+  display: block;     /* Ensure it's a block element */
 }
 
 /* Alternative selector for broader compatibility */
@@ -68,7 +69,7 @@ h1 .gradient-text,
   left: auto;         /* Remove absolute positioning */
   transform: none;     /* Remove transform */
   text-align: center; /* Center-align the text */
-  margin: 0 auto 1rem auto; /* Center with auto margins, add bottom margin */
+  margin: 0 auto 2rem auto; /* Center with auto margins, increase bottom margin for spacing */
   padding: 0;         /* Remove all padding */
   width: auto;        /* Auto width */
   max-width: 400px;   /* Limit width */
@@ -76,6 +77,28 @@ h1 .gradient-text,
   white-space: nowrap; /* Keep text on one line */
   overflow: hidden;   /* Hide any overflow */
   text-overflow: ellipsis; /* Add ellipsis if needed */
+  display: block;     /* Ensure it's a block element */
+}
+
+/* Ensure proper spacing between h1 and h2 elements */
+.hero-section h1 {
+  margin-bottom: 2rem; /* Add space below the h1 */
+}
+
+.hero-section h1 + h2,
+.hero-section h1 + div,
+.hero-section h1 + p {
+  margin-top: 1rem; /* Add space above elements that follow h1 */
+}
+
+/* Ensure h2 elements have proper top spacing */
+h2 {
+  margin-top: 2rem; /* Add space above h2 elements */
+}
+
+/* Features section specific spacing */
+.py-16 h2 {
+  margin-top: 3rem; /* Extra space above features h2 */
 }
 
 /* Responsive adjustments for the "Avila Protocol" title */
