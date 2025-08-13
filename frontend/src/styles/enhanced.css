@@ -26,6 +26,7 @@ body {
 .button-row {
   flex-direction: row;
   display: flex;
+  gap: 2rem; /* Add manual separation between buttons */
 }
 
 /* Control the "Avila Protocol" title positioning */
