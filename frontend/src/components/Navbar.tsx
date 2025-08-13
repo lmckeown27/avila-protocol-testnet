@@ -43,12 +43,9 @@ const Navbar = () => {
             <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
               <div className="flex items-center space-x-8">
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
-                <Link to="/markets" className={`nav-link ${isActive('/markets') ? 'active' : ''}`}>Markets</Link>
                 <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
                 <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
-                <Link to="/trade" className={`nav-link ${isActive('/trade') ? 'active' : ''}`}>Trade</Link>
                 <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
-                <Link to="/governance" className={`nav-link ${isActive('/governance') ? 'active' : ''}`}>Governance</Link>
                 <Link to="/admin" className={`nav-link ${isActive('/admin') ? 'active' : ''}`}>Admin</Link>
               </div>
             </div>
