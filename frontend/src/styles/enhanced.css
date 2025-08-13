@@ -35,8 +35,9 @@ body {
   font-weight: 800;
   margin-bottom: 0.5rem;
   position: relative;
-  top: 0;
-  left: 0;
+  top: 85%;        /* Position at 85% from top (near bottom) */
+  left: 50%;       /* Center horizontally at 50% */
+  transform: translateX(-50%); /* Center the text properly */
 }
 
 .cta-subtext {
@@ -45,8 +46,9 @@ body {
   font-size: 0.9em;
   opacity: 0.9;
   position: relative;
-  top: 2rem; /* Position below the heading */
-  left: 0;
+  top: 90%;        /* Position at 90% from top (below the heading) */
+  left: 50%;       /* Center horizontally at 50% */
+  transform: translateX(-50%); /* Center the text properly */
 }
 
 /* Control the "Avila Protocol" title positioning */
