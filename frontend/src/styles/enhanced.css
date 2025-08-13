@@ -18,6 +18,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-top: 2px solid #3b82f6;    /* Horizontal top border */
+  border-bottom: 2px solid #3b82f6; /* Horizontal bottom border */
+  padding-top: 2rem;                 /* Add padding above top border */
+  padding-bottom: 2rem;              /* Add padding below bottom border */
 }
 
 /* Control the "Avila Protocol" title positioning */
@@ -38,6 +42,63 @@ body {
   /* position: fixed; */ /* Fixed to viewport */
   /* margin-top: -100px; */ /* Move up by 100px */
   /* margin-left: -200px; */ /* Move left by 200px */
+}
+
+/* ===== HORIZONTAL BORDERS FOR HERO ELEMENTS ===== */
+/* Add horizontal borders to the title */
+.hero-title {
+  border-top: 1px solid #64748b;     /* Horizontal top border */
+  border-bottom: 1px solid #64748b;  /* Horizontal bottom border */
+  padding-top: 1rem;                 /* Padding above top border */
+  padding-bottom: 1rem;              /* Padding below bottom border */
+  margin-bottom: 2rem;               /* Space below the title */
+}
+
+/* Add horizontal borders to the description paragraph */
+.hero-section p {
+  border-top: 1px solid #94a3b8;     /* Horizontal top border */
+  border-bottom: 1px solid #94a3b8;  /* Horizontal bottom border */
+  padding-top: 0.75rem;              /* Padding above top border */
+  padding-bottom: 0.75rem;           /* Padding below bottom border */
+  margin-bottom: 2rem;               /* Space below the paragraph */
+}
+
+/* Add horizontal borders to the button container */
+.hero-section .rounded-md {
+  border-top: 1px solid #cbd5e1;     /* Horizontal top border */
+  border-bottom: 1px solid #cbd5e1;  /* Horizontal bottom border */
+  padding-top: 0.5rem;               /* Padding above top border */
+  padding-bottom: 0.5rem;            /* Padding below bottom border */
+}
+
+/* ===== BORDER STYLING ===== */
+/* Custom border colors and styles */
+.hero-section {
+  border-top-color: #3b82f6;         /* Blue top border */
+  border-bottom-color: #3b82f6;      /* Blue bottom border */
+  border-top-width: 2px;             /* Thicker top border */
+  border-bottom-width: 2px;          /* Thicker bottom border */
+}
+
+.hero-title {
+  border-top-color: #64748b;         /* Slate top border */
+  border-bottom-color: #64748b;      /* Slate bottom border */
+  border-top-width: 1px;             /* Standard top border */
+  border-bottom-width: 1px;          /* Standard bottom border */
+}
+
+.hero-section p {
+  border-top-color: #94a3b8;         /* Light slate top border */
+  border-bottom-color: #94a3b8;      /* Light slate bottom border */
+  border-top-width: 1px;             /* Standard top border */
+  border-bottom-width: 1px;          /* Standard bottom border */
+}
+
+.hero-section .rounded-md {
+  border-top-color: #cbd5e1;         /* Very light slate top border */
+  border-bottom-color: #cbd5e1;      /* Very light slate bottom border */
+  border-top-width: 1px;             /* Standard top border */
+  border-bottom-width: 1px;          /* Standard bottom border */
 }
 
 /* ===== SPECIFIC "AVILA PROTOCOL" TITLE STYLING ===== */
