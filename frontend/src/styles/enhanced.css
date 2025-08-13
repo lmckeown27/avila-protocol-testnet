@@ -62,6 +62,8 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.025em;
+  color: #f8fafc;
+  margin-bottom: 1rem;
 }
 
 h1 {
@@ -70,16 +72,142 @@ h1 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
 h2 {
   font-size: clamp(2rem, 4vw, 3rem);
   color: #f8fafc;
+  text-align: center;
+  margin-bottom: 1.25rem;
 }
 
 h3 {
   font-size: clamp(1.5rem, 3vw, 2rem);
   color: #f1f5f9;
+  margin-bottom: 1rem;
+}
+
+h4 {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  color: #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+h5 {
+  font-size: clamp(1.125rem, 2vw, 1.25rem);
+  color: #cbd5e1;
+  margin-bottom: 0.5rem;
+}
+
+h6 {
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+/* ===== BODY TEXT STYLING ===== */
+p {
+  color: #cbd5e1;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+/* Large paragraph text */
+p.text-lg, p.text-xl {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: #e2e8f0;
+}
+
+/* Small paragraph text */
+p.text-sm, p.text-xs {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+/* ===== SPAN TEXT STYLING ===== */
+span {
+  color: inherit;
+  font-weight: inherit;
+}
+
+/* Gradient text spans */
+span.gradient-text {
+  background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* ===== DIV TEXT STYLING ===== */
+div.text-center {
+  text-align: center;
+}
+
+div.text-left {
+  text-align: left;
+}
+
+div.text-right {
+  text-align: right;
+}
+
+/* Text color variations */
+div.text-blue-600, div.text-blue-400 {
+  color: #2563eb;
+}
+
+div.text-green-600, div.text-green-400 {
+  color: #059669;
+}
+
+div.text-purple-600, div.text-purple-400 {
+  color: #7c3aed;
+}
+
+div.text-orange-600, div.text-orange-400 {
+  color: #ea580c;
+}
+
+div.text-gray-600, div.text-gray-400, div.text-gray-500 {
+  color: #475569;
+}
+
+/* ===== TABLE TEXT STYLING ===== */
+th {
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+td {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+/* ===== BUTTON TEXT STYLING ===== */
+button, .btn-primary, .btn-secondary {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* ===== LINK TEXT STYLING ===== */
+a {
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #3b82f6;
+  text-decoration: underline;
 }
 
 /* ===== NAVIGATION ENHANCEMENTS ===== */
@@ -264,4 +392,46 @@ h3 {
 
 .animate-slide-in-left {
   animation: slideInLeft 0.6s ease-out;
+} 
+
+/* ===== RESPONSIVE TEXT ADJUSTMENTS ===== */
+@media (max-width: 768px) {
+  h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: 1rem;
+  }
+  
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    margin-bottom: 0.75rem;
+  }
+  
+  p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
+  }
+  
+  p {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
 } 
