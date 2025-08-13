@@ -1,33 +1,8 @@
-// TradFi Data Service
-// Uses Yahoo Finance free JSON API for stocks and ETFs
+// ============================================================================
+// INTERFACES & TYPES
+// ============================================================================
 
-interface YahooFinanceQuote {
-  symbol: string;
-  shortname?: string;
-  longname?: string;
-  regularMarketPrice: number;
-  regularMarketChange: number;
-  regularMarketChangePercent: number;
-  regularMarketVolume: number;
-  marketCap: number;
-  regularMarketTime: number;
-  regularMarketDayHigh: number;
-  regularMarketDayLow: number;
-  regularMarketOpen: number;
-  regularMarketPreviousClose: number;
-  exchange: string;
-  quoteType: string;
-  marketState: string;
-}
-
-interface YahooFinanceResponse {
-  quoteResponse: {
-    result: YahooFinanceQuote[];
-    error: any;
-  };
-}
-
-interface TradFiAsset {
+export interface TradFiAsset {
   symbol: string;
   name: string;
   price: number;
@@ -51,10 +26,8 @@ export interface TradFiMarketData {
 }
 
 class TradFiDataService {
-  private baseUrl = 'https://query1.finance.yahoo.com/v7/finance/quote';
   private cache = new Map<string, { data: TradFiMarketData; timestamp: number }>();
   private readonly CACHE_TTL = 60000; // 60 seconds
-  private readonly RATE_LIMIT_DELAY = 1000; // 1 second between requests
 
   // Default symbols for major stocks and ETFs
   private readonly DEFAULT_SYMBOLS = [
@@ -70,76 +43,11 @@ class TradFiDataService {
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
 
-    try {
-      const symbolsParam = symbols.join(',');
-      const url = `${this.baseUrl}?symbols=${encodeURIComponent(symbolsParam)}`;
-      
-      console.log('Fetching TradFi data from:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Avila-Protocol/1.0'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Yahoo Finance API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data: YahooFinanceResponse = await response.json();
-      
-      if (data.quoteResponse.error) {
-        throw new Error(`Yahoo Finance API error: ${JSON.stringify(data.quoteResponse.error)}`);
-      }
-
-      if (!data.quoteResponse.result || !Array.isArray(data.quoteResponse.result)) {
-        throw new Error('Invalid response format from Yahoo Finance API');
-      }
-
-      // Transform and filter the data
-      const assets: TradFiAsset[] = data.quoteResponse.result
-        .filter(quote => quote.regularMarketPrice && quote.regularMarketPrice > 0)
-        .map(quote => ({
-          symbol: quote.symbol,
-          name: quote.shortname || quote.longname || quote.symbol,
-          price: quote.regularMarketPrice,
-          change: quote.regularMarketChange,
-          changePercent: quote.regularMarketChangePercent,
-          volume: quote.regularMarketVolume || 0,
-          marketCap: quote.marketCap || 0,
-          high: quote.regularMarketDayHigh || quote.regularMarketPrice,
-          low: quote.regularMarketDayLow || quote.regularMarketPrice,
-          open: quote.regularMarketOpen || quote.regularMarketPrice,
-          previousClose: quote.regularMarketPreviousClose || quote.regularMarketPrice,
-          exchange: quote.exchange || 'Unknown',
-          lastUpdated: quote.regularMarketTime * 1000 // Convert to milliseconds
-        }));
-
-      // Calculate totals
-      const totalMarketCap = assets.reduce((sum, asset) => sum + asset.marketCap, 0);
-      const totalVolume = assets.reduce((sum, asset) => sum + asset.volume, 0);
-
-      const result: TradFiMarketData = {
-        assets,
-        timestamp: Date.now(),
-        totalMarketCap,
-        totalVolume,
-      };
-
-      this.setCachedData(cacheKey, result);
-      
-      // Rate limiting delay
-      await this.delay(this.RATE_LIMIT_DELAY);
-      
-      return result;
-    } catch (error) {
-      console.error('TradFi getTradfiMarketData error:', error);
-      
-      // Return mock data when API fails
-      return this.getMockData(symbols);
-    }
+    // Generate mock data
+    const result = this.generateMockData(symbols);
+    
+    this.setCachedData(cacheKey, result);
+    return result;
   }
 
   /**
@@ -206,8 +114,7 @@ class TradFiDataService {
     }
 
     try {
-      // For now, search within default symbols
-      // In a real implementation, you might want to use Yahoo Finance search API
+      // Search within default symbols
       const marketData = await this.getTradfiMarketData();
       const queryLower = query.toLowerCase();
       
@@ -225,7 +132,7 @@ class TradFiDataService {
    * Get historical data for an asset (placeholder for future implementation)
    */
   async getHistoricalData(_symbol: string, days: number = 7): Promise<any[]> {
-    // This would typically use Yahoo Finance historical data endpoint
+    // This would typically use a historical data endpoint
     // For now, return mock data
     const mockData = [];
     const now = Date.now();
@@ -238,42 +145,13 @@ class TradFiDataService {
       
       mockData.push({
         timestamp,
-        open: price * (1 + (Math.random() - 0.5) * 0.01),
-        high: price * (1 + Math.random() * 0.02),
-        low: price * (1 - Math.random() * 0.02),
-        close: price,
-        volume: Math.random() * 10000000 + 1000000
+        price: parseFloat(price.toFixed(2)),
+        volume: Math.floor(Math.random() * 1000000) + 100000,
+        change: parseFloat((priceVariation * 100).toFixed(2))
       });
     }
     
     return mockData;
-  }
-
-  /**
-   * Check if the service is available
-   */
-  async isAvailable(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}?symbols=AAPL`);
-      return response.ok;
-    } catch (error) {
-      console.error('TradFi availability check failed:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get supported symbols list
-   */
-  getSupportedSymbols(): string[] {
-    return [...this.DEFAULT_SYMBOLS];
-  }
-
-  /**
-   * Clear cache for testing or manual refresh
-   */
-  clearCache(): void {
-    this.cache.clear();
   }
 
   /**
@@ -303,14 +181,10 @@ class TradFiDataService {
     });
   }
 
-  private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   /**
-   * Get mock data when API fails
+   * Generate mock data for specified symbols
    */
-  private getMockData(symbols: string[]): TradFiMarketData {
+  private generateMockData(symbols: string[]): TradFiMarketData {
     const mockAssets: TradFiAsset[] = symbols.map((symbol, index) => {
       const basePrice = 100 + (index * 50) + (Math.random() * 200);
       const change = (Math.random() - 0.5) * 20;
@@ -325,7 +199,7 @@ class TradFiDataService {
         volume: Math.random() * 10000000 + 1000000,
         marketCap: basePrice * (Math.random() * 1000000 + 100000),
         high: basePrice + Math.random() * 10,
-        low: basePrice - Math.random() * 10,
+        low: basePrice - Math.random() * 5,
         open: basePrice + (Math.random() - 0.5) * 5,
         previousClose: basePrice - change,
         exchange: 'NASDAQ',
@@ -364,7 +238,11 @@ class TradFiDataService {
       'VEA': 'Vanguard FTSE Developed Markets ETF',
       'VWO': 'Vanguard FTSE Emerging Markets ETF',
       'BND': 'Vanguard Total Bond Market ETF',
-      'GLD': 'SPDR Gold Shares'
+      'GLD': 'SPDR Gold Shares',
+      '^GSPC': 'S&P 500 Index',
+      '^DJI': 'Dow Jones Industrial Average',
+      '^IXIC': 'NASDAQ Composite',
+      '^RUT': 'Russell 2000 Index'
     };
     
     return names[symbol] || `${symbol} Corporation`;
@@ -372,10 +250,4 @@ class TradFiDataService {
 }
 
 // Export singleton instance
-export const tradFiDataService = new TradFiDataService();
-
-// Export types for external use
-export type {
-  TradFiAsset,
-  YahooFinanceQuote
-}; 
+export const tradFiDataService = new TradFiDataService(); 
