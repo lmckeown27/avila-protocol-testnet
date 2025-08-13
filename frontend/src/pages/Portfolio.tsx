@@ -27,64 +27,9 @@ interface MockHolding {
 }
 
 const Portfolio = () => {
-  // Mock data for testnet - no wallet connection required
-  const [watchlist, setWatchlist] = useState<MockAsset[]>([
-    {
-      id: '1',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      currentPrice: 2500.00,
-      change24h: 125.50,
-      changePercent24h: 5.28,
-      marketCap: 300000000000,
-      volume24h: 15000000000
-    },
-    {
-      id: '2',
-      symbol: 'BTC',
-      name: 'Bitcoin',
-      currentPrice: 45000.00,
-      change24h: 2250.00,
-      changePercent24h: 5.26,
-      marketCap: 880000000000,
-      volume24h: 25000000000
-    },
-    {
-      id: '3',
-      symbol: 'SOL',
-      name: 'Solana',
-      currentPrice: 100.00,
-      change24h: 8.50,
-      changePercent24h: 9.28,
-      marketCap: 45000000000,
-      volume24h: 3000000000
-    }
-  ]);
-
-  const [holdings, setHoldings] = useState<MockHolding[]>([
-    {
-      id: '1',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      quantity: 2.5,
-      avgPrice: 2400.00,
-      currentPrice: 2500.00,
-      totalValue: 6250.00,
-      pnl: 250.00,
-      pnlPercent: 10.42
-    },
-    {
-      id: '2',
-      symbol: 'SOL',
-      name: 'Solana',
-      quantity: 50,
-      avgPrice: 95.00,
-      currentPrice: 100.00,
-      totalValue: 5000.00,
-      pnl: 250.00,
-      pnlPercent: 5.26
-    }
-  ]);
+  // Start with empty watchlist and holdings for testnet
+  const [watchlist, setWatchlist] = useState<MockAsset[]>([]);
+  const [holdings, setHoldings] = useState<MockHolding[]>([]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'watchlist' | 'holdings'>('overview');
 
@@ -180,7 +125,9 @@ const Portfolio = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-600 font-medium">Total Portfolio Value</p>
-                <p className="text-2xl font-bold text-blue-900">${totalPortfolioValue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {holdings.length > 0 ? `$${totalPortfolioValue.toLocaleString()}` : '$0.00'}
+                </p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-400" />
             </div>
@@ -190,7 +137,7 @@ const Portfolio = () => {
               <div>
                 <p className="text-sm text-green-600 font-medium">Total P&L</p>
                 <p className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-                  ${totalPnL.toLocaleString()}
+                  {holdings.length > 0 ? `$${totalPnL.toLocaleString()}` : '$0.00'}
                 </p>
               </div>
               <TrendingUp className={`w-8 h-8 ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`} />
@@ -201,7 +148,7 @@ const Portfolio = () => {
               <div>
                 <p className="text-sm text-purple-600 font-medium">P&L %</p>
                 <p className={`text-2xl font-bold ${totalPnLPercent >= 0 ? 'text-purple-900' : 'text-red-900'}`}>
-                  {totalPnLPercent.toFixed(2)}%
+                  {holdings.length > 0 ? `${totalPnLPercent.toFixed(2)}%` : '0.00%'}
                 </p>
               </div>
               <BarChart3 className="w-8 h-8 text-purple-400" />
