@@ -64,6 +64,7 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
   color: #f8fafc;
   margin-bottom: 1rem;
+  text-align: center; /* Center all headings by default */
 }
 
 h1 {
@@ -74,6 +75,7 @@ h1 {
   background-clip: text;
   text-align: center;
   margin-bottom: 1.5rem;
+  width: 100%; /* Ensure full width for centering */
 }
 
 h2 {
@@ -81,30 +83,137 @@ h2 {
   color: #f8fafc;
   text-align: center;
   margin-bottom: 1.25rem;
+  width: 100%; /* Ensure full width for centering */
 }
 
 h3 {
   font-size: clamp(1.5rem, 3vw, 2rem);
   color: #f1f5f9;
   margin-bottom: 1rem;
+  text-align: center;
+  width: 100%; /* Ensure full width for centering */
 }
 
 h4 {
   font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   color: #e2e8f0;
   margin-bottom: 0.75rem;
+  text-align: center;
+  width: 100%; /* Ensure full width for centering */
 }
 
 h5 {
   font-size: clamp(1.125rem, 2vw, 1.25rem);
   color: #cbd5e1;
   margin-bottom: 0.5rem;
+  text-align: center;
+  width: 100%; /* Ensure full width for centering */
 }
 
 h6 {
   font-size: clamp(1rem, 1.5vw, 1.125rem);
   color: #94a3b8;
   margin-bottom: 0.5rem;
+  text-align: center;
+  width: 100%; /* Ensure full width for centering */
+}
+
+/* ===== TITLE CONTAINER CENTERING ===== */
+/* Ensure title containers are properly centered */
+.text-center h1,
+.text-center h2,
+.text-center h3,
+.text-center h4,
+.text-center h5,
+.text-center h6 {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Center titles within their specific regions */
+.hero-section h1,
+.hero-section h2,
+.hero-section h3 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in card sections */
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in grid sections */
+.grid h1,
+.grid h2,
+.grid h3,
+.grid h4,
+.grid h5,
+.grid h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in specific page sections */
+.space-y-8 h1,
+.space-y-8 h2,
+.space-y-8 h3,
+.space-y-8 h4,
+.space-y-8 h5,
+.space-y-8 h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in portfolio sections */
+.space-y-6 h1,
+.space-y-6 h2,
+.space-y-6 h3,
+.space-y-6 h4,
+.space-y-6 h5,
+.space-y-6 h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in trade sections */
+.trade-section h1,
+.trade-section h2,
+.trade-section h3,
+.trade-section h4,
+.trade-section h5,
+.trade-section h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in admin sections */
+.admin-section h1,
+.admin-section h2,
+.admin-section h3,
+.admin-section h4,
+.admin-section h5,
+.admin-section h6 {
+  text-align: center;
+  width: 100%;
+}
+
+/* Center titles in governance sections */
+.governance-section h1,
+.governance-section h2,
+.governance-section h3,
+.governance-section h4,
+.governance-section h5,
+.governance-section h6 {
+  text-align: center;
+  width: 100%;
 }
 
 /* ===== BODY TEXT STYLING ===== */
