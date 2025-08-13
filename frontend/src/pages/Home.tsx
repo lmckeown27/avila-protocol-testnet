@@ -60,8 +60,8 @@ export default function Home() {
       <div className="bg-gray-50">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
           <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-            <span className="block">Ready to explore markets?</span>
-            <span className="block text-blue-600">Experience Avila Protocol's testnet today.</span>
+            <span className="block">Currently in Testnet Phase</span>
+            <span className="block text-blue-600">Help us develop and test the future of decentralized options trading.</span>
           </h2>
         </div>
       </div>
