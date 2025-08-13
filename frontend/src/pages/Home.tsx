@@ -18,7 +18,7 @@ export default function Home() {
         
         {/* TradFi and DeFi Markets Buttons */}
         <div className="mt-6 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-          <div className="flex space-x-4">
+          <div className="button-row flex space-x-4">
             <div className="rounded-md shadow">
               <Link
                 to="/tradfi-markets"

@@ -22,6 +22,12 @@ body {
   padding: 4rem 0;
 }
 
+/* Button row layout - ensures buttons are side by side */
+.button-row {
+  flex-direction: row;
+  display: flex;
+}
+
 /* Control the "Avila Protocol" title positioning */
 .hero-title {
   position: relative; /* Change from absolute to relative */
