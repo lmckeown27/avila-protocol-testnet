@@ -8,7 +8,6 @@ const TradFiMarkets = () => {
   const [tradFiData, setTradFiData] = useState<TradFiAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataSource, setDataSource] = useState<'yahoo_finance' | 'fallback_mock'>('yahoo_finance');
 
   // State for search and sorting
   const [search, setSearch] = useState('');
@@ -26,11 +25,6 @@ const TradFiMarkets = () => {
         setError(null);
         const data = await tradFiDataService.getTradfiMarketData();
         setTradFiData(data.assets);
-        setDataSource(data.dataSource);
-        
-        if (data.dataSource === 'fallback_mock') {
-          console.log('Using fallback mock data - Yahoo Finance API may be unavailable');
-        }
       } catch (error) {
         console.error('Failed to fetch TradFi data:', error);
         setError('Failed to load traditional market data');
@@ -279,42 +273,6 @@ const TradFiMarkets = () => {
           Real-time stock and ETF market data
         </p>
       </div>
-
-      {/* Data Source Status Banner */}
-      {dataSource === 'fallback_mock' && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                Using Fallback Data
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                <p>
-                  Yahoo Finance API is currently unavailable. Displaying simulated market data for demonstration purposes.
-                  Real-time data will resume when the API becomes available.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {dataSource === 'yahoo_finance' && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                Live Market Data
-              </h3>
-              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
-                <p>
-                  Connected to Yahoo Finance API. Displaying real-time market data.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Market Summary Cards */}
       {marketSummary && (
