@@ -51,22 +51,71 @@ h3 {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
+/* Navbar container layout */
+.navbar .container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Ensure proper flex behavior */
+.navbar .flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+}
+
+/* Left column - Logo/Brand */
+.navbar .flex-shrink-0:first-child {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Center column - Navigation Links */
+.navbar .flex-1 {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.navbar .space-x-12 > * + * {
+  margin-left: 3rem;
+}
+
+/* Right column - Buttons */
+.navbar .flex-shrink-0:last-child {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
 .nav-link {
   position: relative;
   transition: all 0.3s ease;
   padding: 0.75rem 1rem;
   border-radius: 12px;
   color: #cbd5e1;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
   background: rgba(51, 65, 85, 0.5);
   color: #f8fafc;
+  transform: translateY(-1px);
 }
 
 .nav-link.active {
   background: rgba(59, 130, 246, 0.2);
   color: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+/* Button spacing in right column */
+.navbar .space-x-4 > * + * {
+  margin-left: 1rem;
 }
 
 /* ===== COMPONENT STYLES ===== */
