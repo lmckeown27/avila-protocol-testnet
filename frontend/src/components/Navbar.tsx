@@ -32,15 +32,15 @@ const Navbar = () => {
       <nav className="navbar bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Logo/Brand */}
+            {/* Logo/Brand - Left Side */}
             <div className="flex items-center flex-shrink-0">
               <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
                 Avila Protocol
               </Link>
             </div>
 
-            {/* Centered Navigation Links */}
-            <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+            {/* Centered Navigation Links - Middle */}
+            <div className="hidden md:flex items-center justify-center flex-1">
               <div className="flex items-center space-x-12">
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
                 <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
@@ -49,7 +49,7 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Right Side */}
+            {/* Right Side Buttons */}
             <div className="flex items-center space-x-4 flex-shrink-0">
               {/* Feedback Button */}
               <button
