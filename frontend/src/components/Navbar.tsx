@@ -1,31 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { useAppStore } from '../stores/appStore';
-import { walletService } from '../services/wallet';
+// import { useAppStore } from '../stores/appStore';
+// import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
 
 const Navbar = () => {
   const location = useLocation();
-  const { isConnected } = useAppStore();
+  // const { isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleConnectWallet = async () => {
-    try {
-      await walletService.connectWallet();
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-    }
-  };
+  // Wallet connection handlers removed
+  // const handleConnectWallet = async () => {
+  //   try {
+  //     await walletService.connectWallet();
+  //   } catch (error) {
+  //     console.error('Failed to connect wallet:', error);
+  //   }
+  // };
 
-  const handleDisconnectWallet = async () => {
-    try {
-      await walletService.disconnectWallet();
-    } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
-    }
-  };
+  // const handleDisconnectWallet = async () => {
+  //   try {
+  //     await walletService.disconnectWallet();
+  //   } catch (error) {
+  //     console.error('Failed to disconnect wallet:', error);
+  //   }
+  // };
 
   return (
     <>
@@ -49,31 +50,14 @@ const Navbar = () => {
               <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
             </div>
 
-            {/* Right Column: Feedback and Wallet Buttons */}
-            <div className="flex-shrink-0 flex items-center space-x-4">
+            {/* Right Column: Feedback Button Only */}
+            <div className="flex-shrink-0 flex items-center">
               <button
                 onClick={() => setIsFeedbackOpen(true)}
                 className="btn-secondary text-sm px-3 py-2"
               >
                 💬 Feedback
               </button>
-
-              {/* Wallet Connection - Restored */}
-              {isConnected ? (
-                <button
-                  onClick={handleDisconnectWallet}
-                  className="btn-primary text-sm px-4 py-2"
-                >
-                  Disconnect Wallet
-                </button>
-              ) : (
-                <button
-                  onClick={handleConnectWallet}
-                  className="btn-primary text-sm px-4 py-2"
-                >
-                  Connect Wallet
-                </button>
-              )}
             </div>
           </div>
         </div>
