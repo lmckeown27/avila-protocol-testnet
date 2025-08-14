@@ -14,410 +14,370 @@
  * - Aptos CLI installed and configured
  * - Testnet account with sufficient APT for gas fees
  * - MultiStockMock module deployed to testnet
+ * - Environment variables configured (see env.mockStocksSetup.example)
  */
 
-import { AptosClient, AptosAccount } from "aptos";
+import { AptosConfig, Network, Account, AccountAddress, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
+import * as dotenv from "dotenv";
 
-// Configuration - Customize these values for your deployment
-const CONFIG = {
-  // Aptos testnet configuration
-  NODE_URL: "https://fullnode.testnet.aptoslabs.com",
-  
-  // Your testnet account configuration
-  ADMIN_PRIVATE_KEY: "YOUR_ADMIN_PRIVATE_KEY_HERE", // Replace with actual private key
-  ADMIN_ADDRESS: "YOUR_ADMIN_ADDRESS_HERE", // Replace with actual address
-  
-  // MultiStockMock module configuration
-  MODULE_ADDRESS: "YOUR_MODULE_ADDRESS_HERE", // Replace with deployed module address
-  MODULE_NAME: "multi_stock_mock",
-  
-  // Mock stocks configuration
-  MOCK_STOCKS: [
-    {
-      ticker: "AAPL",
-      name: "Apple Inc.",
-      decimals: 8,
-      initialPrice: 150.50,
-      initialSupply: 1000000
-    },
-    {
-      ticker: "GOOGL", 
-      name: "Alphabet Inc.",
-      decimals: 8,
-      initialPrice: 2750.00,
-      initialSupply: 500000
-    },
-    {
-      ticker: "TSLA",
-      name: "Tesla Inc.",
-      decimals: 8,
-      initialPrice: 850.25,
-      initialSupply: 750000
-    },
-    {
-      ticker: "MSFT",
-      name: "Microsoft Corporation",
-      decimals: 8,
-      initialPrice: 320.75,
-      initialSupply: 800000
-    },
-    {
-      ticker: "AMZN",
-      name: "Amazon.com Inc.",
-      decimals: 8,
-      initialPrice: 135.50,
-      initialSupply: 600000
-    }
-  ],
-  
-  // Test accounts to mint tokens to
-  TEST_ACCOUNTS: [
-    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-    "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-    "0x567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234"
-  ]
+// Load environment variables
+dotenv.config();
+
+// Configuration
+const config = {
+  nodeUrl: process.env.NODE_URL || "https://fullnode.testnet.aptoslabs.com",
+  adminPrivateKey: process.env.ADMIN_PRIVATE_KEY || "",
+  adminAddress: process.env.ADMIN_ADDRESS || "",
+  moduleAddress: process.env.MODULE_ADDRESS || "",
+  moduleName: process.env.MODULE_NAME || "multi_stock_mock",
+  testAccounts: process.env.TEST_ACCOUNTS ? process.env.TEST_ACCOUNTS.split(",") : []
 };
 
-// Initialize Aptos client and admin account
-let aptosClient: AptosClient;
-let adminAccount: AptosAccount;
+// Initialize Aptos client
+const aptosConfig = new AptosConfig({ 
+  network: Network.TESTNET,
+  fullnode: config.nodeUrl
+});
+
+// Mock stocks configuration
+const mockStocks = [
+  {
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    decimals: 8,
+    initialPrice: 150.00,
+    description: "Apple Inc. Common Stock"
+  },
+  {
+    symbol: "GOOGL", 
+    name: "Alphabet Inc.",
+    decimals: 8,
+    initialPrice: 2800.00,
+    description: "Alphabet Inc. Class A Common Stock"
+  },
+  {
+    symbol: "MSFT",
+    name: "Microsoft Corporation", 
+    decimals: 8,
+    initialPrice: 300.00,
+    description: "Microsoft Corporation Common Stock"
+  },
+  {
+    symbol: "TSLA",
+    name: "Tesla Inc.",
+    decimals: 8, 
+    initialPrice: 800.00,
+    description: "Tesla Inc. Common Stock"
+  },
+  {
+    symbol: "AMZN",
+    name: "Amazon.com Inc.",
+    decimals: 8,
+    initialPrice: 3500.00,
+    description: "Amazon.com Inc. Common Stock"
+  }
+];
 
 /**
- * Initialize the Aptos client and admin account
+ * Create account from private key hex string
  */
-async function initializeAptosConnection(): Promise<void> {
+function createAccountFromPrivateKey(privateKeyHex: string): Account {
   try {
-    console.log("🔌 Initializing Aptos connection...");
+    // Remove 0x prefix if present
+    const cleanHex = privateKeyHex.startsWith('0x') ? privateKeyHex.slice(2) : privateKeyHex;
     
-    // Create Aptos client for testnet
-    aptosClient = new AptosClient(CONFIG.NODE_URL);
-    
-    // Create admin account from private key
-    adminAccount = new AptosAccount(
-      Buffer.from(CONFIG.ADMIN_PRIVATE_KEY, 'hex')
+    // Convert hex to Uint8Array
+    const privateKeyBytes = new Uint8Array(
+      cleanHex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
     );
     
-    // Verify connection by checking account info
-    const accountInfo = await aptosClient.getAccount(adminAccount.address());
-    console.log(`✅ Connected to Aptos testnet`);
-    console.log(`   Admin address: ${adminAccount.address().toString()}`);
-    console.log(`   Account sequence number: ${accountInfo.sequence_number}`);
+    // Create Ed25519PrivateKey directly from Uint8Array
+    const privateKey = new Ed25519PrivateKey(privateKeyBytes);
     
-    // Check account balance
-    const balance = await aptosClient.getAccountResource(
-      adminAccount.address(),
-      "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"
-    );
-    const aptBalance = (balance.data as any).coin.value;
-    console.log(`   APT balance: ${aptBalance / 100000000} APT`);
-    
+    // Create account
+    return Account.fromPrivateKey({ privateKey });
   } catch (error) {
-    console.error("❌ Failed to initialize Aptos connection:", error);
-    throw error;
+    throw new Error(`Failed to create account from private key: ${error}`);
   }
 }
 
 /**
- * Initialize the MultiStockMock module
- * Calls the init() function to set up the module
+ * Main setup function
  */
-async function initializeMultiStockMock(): Promise<void> {
+async function main() {
   try {
-    console.log("\n🚀 Initializing MultiStockMock module...");
+    console.log("🚀 Starting MultiStockMock setup...");
     
-    // Create transaction payload for init() function
-    const payload = {
-      function: `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::init`,
-      type_arguments: [],
-      arguments: []
-    };
-    
-    // Submit transaction
-    const transaction = await aptosClient.generateTransaction(
-      adminAccount.address(),
-      payload,
-      { max_gas_amount: "10000" }
-    );
-    
-    // Sign and submit transaction
-    const signedTxn = await aptosClient.signTransaction(adminAccount, transaction);
-    const result = await aptosClient.submitTransaction(signedTxn);
-    
-    // Wait for transaction confirmation
-    await aptosClient.waitForTransaction(result.hash);
-    
-    console.log(`✅ MultiStockMock module initialized successfully`);
-    console.log(`   Transaction hash: ${result.hash}`);
-    
-  } catch (error) {
-    console.error("❌ Failed to initialize MultiStockMock module:", error);
-    throw error;
-  }
-}
-
-/**
- * Register a mock stock in the MultiStockMock module
- * Calls the register_stock() function
- */
-async function registerStock(
-  ticker: string, 
-  name: string, 
-  decimals: number
-): Promise<void> {
-  try {
-    console.log(`📈 Registering stock: ${ticker} (${name})`);
-    
-    // Create transaction payload for register_stock() function
-    const payload = {
-      function: `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::register_stock`,
-      type_arguments: [],
-      arguments: [ticker, name, decimals]
-    };
-    
-    // Submit transaction
-    const transaction = await aptosClient.generateTransaction(
-      adminAccount.address(),
-      payload,
-      { max_gas_amount: "10000" }
-    );
-    
-    // Sign and submit transaction
-    const signedTxn = await aptosClient.signTransaction(adminAccount, transaction);
-    const result = await aptosClient.submitTransaction(signedTxn);
-    
-    // Wait for transaction confirmation
-    await aptosClient.waitForTransaction(result.hash);
-    
-    console.log(`✅ Stock ${ticker} registered successfully`);
-    console.log(`   Transaction hash: ${result.hash}`);
-    
-  } catch (error) {
-    console.error(`❌ Failed to register stock ${ticker}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Register all configured mock stocks
- */
-async function registerAllStocks(): Promise<void> {
-  try {
-    console.log("\n📊 Registering all mock stocks...");
-    
-    for (const stock of CONFIG.MOCK_STOCKS) {
-      await registerStock(stock.ticker, stock.name, stock.decimals);
-      // Add delay between transactions to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Validate configuration
+    if (!config.adminPrivateKey || !config.adminAddress || !config.moduleAddress) {
+      throw new Error("Missing required configuration. Please check your environment variables.");
     }
-    
-    console.log("✅ All mock stocks registered successfully");
-    
-  } catch (error) {
-    console.error("❌ Failed to register all stocks:", error);
-    throw error;
-  }
-}
 
-/**
- * Mint mock tokens to a specific account
- * Calls the mint() function
- */
-async function mintTokens(
-  ticker: string,
-  recipientAddress: string,
-  amount: number
-): Promise<void> {
-  try {
-    console.log(`🪙 Minting ${amount} ${ticker} tokens to ${recipientAddress}`);
-    
-    // Create transaction payload for mint() function
-    const payload = {
-      function: `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::mint`,
-      type_arguments: [],
-      arguments: [ticker, recipientAddress, amount]
-    };
-    
-    // Submit transaction
-    const transaction = await aptosClient.generateTransaction(
-      adminAccount.address(),
-      payload,
-      { max_gas_amount: "10000" }
-    );
-    
-    // Sign and submit transaction
-    const signedTxn = await aptosClient.signTransaction(adminAccount, transaction);
-    const result = await aptosClient.submitTransaction(signedTxn);
-    
-    // Wait for transaction confirmation
-    await aptosClient.waitForTransaction(result.hash);
-    
-    console.log(`✅ Minted ${amount} ${ticker} tokens successfully`);
-    console.log(`   Transaction hash: ${result.hash}`);
-    
-  } catch (error) {
-    console.error(`❌ Failed to mint ${ticker} tokens:`, error);
-    throw error;
-  }
-}
+    console.log(`📍 Module Address: ${config.moduleAddress}`);
+    console.log(`👤 Admin Address: ${config.adminAddress}`);
+    console.log(`🌐 Network: ${aptosConfig.network}`);
 
-/**
- * Mint tokens to all test accounts for all stocks
- */
-async function mintTokensToAllAccounts(): Promise<void> {
-  try {
-    console.log("\n🪙 Minting tokens to all test accounts...");
-    
-    for (const stock of CONFIG.MOCK_STOCKS) {
-      for (const testAccount of CONFIG.TEST_ACCOUNTS) {
-        await mintTokens(stock.ticker, testAccount, stock.initialSupply);
-        // Add delay between transactions
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    // Create admin account
+    const adminAccount = createAccountFromPrivateKey(config.adminPrivateKey);
+    console.log(`✅ Admin account created: ${adminAccount.accountAddress}`);
+
+    // Check admin account balance
+    await checkAccountBalance(adminAccount.accountAddress);
+
+    // Initialize MultiStockMock module
+    await initializeMultiStockMock(adminAccount);
+
+    // Register mock stocks
+    await registerMockStocks(adminAccount);
+
+    // Mint tokens to test accounts
+    if (config.testAccounts.length > 0) {
+      await mintTokensToTestAccounts(adminAccount);
     }
-    
-    console.log("✅ Tokens minted to all test accounts successfully");
-    
-  } catch (error) {
-    console.error("❌ Failed to mint tokens to all accounts:", error);
-    throw error;
-  }
-}
 
-/**
- * Set mock oracle price for a stock
- * Calls the set_price() function
- */
-async function setStockPrice(ticker: string, price: number): Promise<void> {
-  try {
-    console.log(`💰 Setting price for ${ticker}: $${price}`);
-    
-    // Create transaction payload for set_price() function
-    const payload = {
-      function: `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::set_price`,
-      type_arguments: [],
-      arguments: [ticker, Math.floor(price * 100000000)] // Convert to smallest unit
-    };
-    
-    // Submit transaction
-    const transaction = await aptosClient.generateTransaction(
-      adminAccount.address(),
-      payload,
-      { max_gas_amount: "10000" }
-    );
-    
-    // Sign and submit transaction
-    const signedTxn = await aptosClient.signTransaction(adminAccount, transaction);
-    const result = await aptosClient.submitTransaction(signedTxn);
-    
-    // Wait for transaction confirmation
-    await aptosClient.waitForTransaction(result.hash);
-    
-    console.log(`✅ Price set for ${ticker} successfully: $${price}`);
-    console.log(`   Transaction hash: ${result.hash}`);
-    
-  } catch (error) {
-    console.error(`❌ Failed to set price for ${ticker}:`, error);
-    throw error;
-  }
-}
+    // Set initial oracle prices
+    await setInitialOraclePrices(adminAccount);
 
-/**
- * Set initial prices for all stocks
- */
-async function setAllStockPrices(): Promise<void> {
-  try {
-    console.log("\n💰 Setting initial prices for all stocks...");
-    
-    for (const stock of CONFIG.MOCK_STOCKS) {
-      await setStockPrice(stock.ticker, stock.initialPrice);
-      // Add delay between transactions
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
-    console.log("✅ All stock prices set successfully");
+    console.log("🎉 MultiStockMock setup completed successfully!");
     
   } catch (error) {
-    console.error("❌ Failed to set all stock prices:", error);
-    throw error;
-  }
-}
-
-/**
- * Verify the setup by checking module state
- */
-async function verifySetup(): Promise<void> {
-  try {
-    console.log("\n🔍 Verifying setup...");
-    
-    // Check if module exists
-    await aptosClient.getAccountResource(
-      CONFIG.MODULE_ADDRESS,
-      `${CONFIG.MODULE_ADDRESS}::${CONFIG.MODULE_NAME}::MultiStockMock`
-    );
-    
-    console.log("✅ MultiStockMock module is deployed and accessible");
-    
-    // You can add more verification logic here
-    // For example, checking registered stocks, token supplies, etc.
-    
-  } catch (error) {
-    console.error("❌ Setup verification failed:", error);
-    throw error;
-  }
-}
-
-/**
- * Main function to run the complete setup
- */
-async function main(): Promise<void> {
-  try {
-    console.log("🚀 Starting MultiStockMock setup for Avila Protocol...\n");
-    
-    // Step 1: Initialize Aptos connection
-    await initializeAptosConnection();
-    
-    // Step 2: Initialize MultiStockMock module
-    await initializeMultiStockMock();
-    
-    // Step 3: Register all mock stocks
-    await registerAllStocks();
-    
-    // Step 4: Mint tokens to test accounts
-    await mintTokensToAllAccounts();
-    
-    // Step 5: Set initial stock prices
-    await setAllStockPrices();
-    
-    // Step 6: Verify setup
-    await verifySetup();
-    
-    console.log("\n🎉 MultiStockMock setup completed successfully!");
-    console.log("\n📋 Summary:");
-    console.log(`   - ${CONFIG.MOCK_STOCKS.length} stocks registered`);
-    console.log(`   - Tokens minted to ${CONFIG.TEST_ACCOUNTS.length} test accounts`);
-    console.log(`   - Initial prices set for all stocks`);
-    console.log("\n🔧 The mock stocks are now ready for testing the Avila Protocol!");
-    
-  } catch (error) {
-    console.error("\n💥 Setup failed:", error);
+    console.error("❌ Setup failed:", error);
     process.exit(1);
   }
 }
 
-// Export functions for potential reuse
-export {
-  initializeAptosConnection,
-  initializeMultiStockMock,
-  registerStock,
-  registerAllStocks,
-  mintTokens,
-  mintTokensToAllAccounts,
-  setStockPrice,
-  setAllStockPrices,
-  verifySetup
-};
+/**
+ * Check account balance
+ */
+async function checkAccountBalance(accountAddress: AccountAddress): Promise<void> {
+  try {
+    const { getAptosFullNode } = await import("@aptos-labs/ts-sdk");
+    
+    const response = await getAptosFullNode({
+      aptosConfig,
+      originMethod: "checkAccountBalance",
+      path: `accounts/${accountAddress}/resource/0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`,
+      params: {}
+    });
 
-// Run the main function if this script is executed directly
+    if (response.data && typeof response.data === 'object' && 'coin' in response.data) {
+      const balance = (response.data as any).coin.value;
+      console.log(`💰 Account balance: ${balance} APT`);
+      
+      if (BigInt(balance) < BigInt(1000000)) { // Less than 0.001 APT
+        console.warn("⚠️  Low balance detected. Consider funding the account.");
+      }
+    }
+  } catch (error) {
+    console.warn("⚠️  Could not check account balance:", error);
+  }
+}
+
+/**
+ * Initialize MultiStockMock module
+ */
+async function initializeMultiStockMock(adminAccount: Account): Promise<void> {
+  try {
+    console.log("🔧 Initializing MultiStockMock module...");
+    
+    const { postAptosFullNode } = await import("@aptos-labs/ts-sdk");
+    
+    const payload = {
+      function: `${config.moduleAddress}::${config.moduleName}::initialize`,
+      type_arguments: [],
+      arguments: []
+    };
+
+    const response = await postAptosFullNode({
+      aptosConfig,
+      originMethod: "initializeMultiStockMock",
+      path: "transactions",
+      body: payload
+    });
+
+    console.log("✅ MultiStockMock module initialized");
+    if (response.data && typeof response.data === 'object' && 'hash' in response.data) {
+      console.log(`📝 Transaction hash: ${(response.data as any).hash}`);
+    }
+    
+  } catch (error: any) {
+    if (error.message.includes("already exists")) {
+      console.log("ℹ️  MultiStockMock module already initialized");
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Register mock stocks
+ */
+async function registerMockStocks(adminAccount: Account): Promise<void> {
+  console.log("📊 Registering mock stocks...");
+  
+  const { postAptosFullNode } = await import("@aptos-labs/ts-sdk");
+  
+  for (const stock of mockStocks) {
+    try {
+      console.log(`  📈 Registering ${stock.symbol}...`);
+      
+      const payload = {
+        function: `${config.moduleAddress}::${config.moduleName}::register_stock`,
+        type_arguments: [],
+        arguments: [
+          stock.symbol,
+          stock.name,
+          stock.decimals,
+          Math.floor(stock.initialPrice * 100000000), // Convert to smallest unit
+          stock.description
+        ]
+      };
+
+      const response = await postAptosFullNode({
+        aptosConfig,
+        originMethod: "registerMockStock",
+        path: "transactions",
+        body: payload
+      });
+
+      console.log(`    ✅ ${stock.symbol} registered`);
+      if (response.data && typeof response.data === 'object' && 'hash' in response.data) {
+        console.log(`       Transaction: ${(response.data as any).hash}`);
+      }
+      
+    } catch (error: any) {
+      if (error.message.includes("already exists")) {
+        console.log(`    ℹ️  ${stock.symbol} already registered`);
+      } else {
+        console.error(`    ❌ Failed to register ${stock.symbol}:`, error.message);
+      }
+    }
+  }
+}
+
+/**
+ * Mint tokens to test accounts
+ */
+async function mintTokensToTestAccounts(adminAccount: Account): Promise<void> {
+  console.log("🪙 Minting tokens to test accounts...");
+  
+  const { postAptosFullNode } = await import("@aptos-labs/ts-sdk");
+  
+  for (const testAccount of config.testAccounts) {
+    try {
+      console.log(`  🎯 Minting to ${testAccount}...`);
+      
+      for (const stock of mockStocks) {
+        const payload = {
+          function: `${config.moduleAddress}::${config.moduleName}::mint_tokens`,
+          type_arguments: [],
+          arguments: [
+            testAccount,
+            stock.symbol,
+            "1000000000" // 10 tokens (assuming 8 decimals)
+          ]
+        };
+
+        const response = await postAptosFullNode({
+          aptosConfig,
+          originMethod: "mintTokensToTestAccount",
+          path: "transactions",
+          body: payload
+        });
+
+        console.log(`    ✅ Minted ${stock.symbol} to ${testAccount}`);
+        if (response.data && typeof response.data === 'object' && 'hash' in response.data) {
+          console.log(`       Transaction: ${(response.data as any).hash}`);
+        }
+      }
+      
+    } catch (error) {
+      console.error(`    ❌ Failed to mint to ${testAccount}:`, error.message);
+    }
+  }
+}
+
+/**
+ * Set initial oracle prices
+ */
+async function setInitialOraclePrices(adminAccount: Account): Promise<void> {
+  console.log("📊 Setting initial oracle prices...");
+  
+  const { postAptosFullNode } = await import("@aptos-labs/ts-sdk");
+  
+  for (const stock of mockStocks) {
+    try {
+      console.log(`  💰 Setting price for ${stock.symbol}::set_oracle_price`);
+      
+      const payload = {
+        function: `${config.moduleAddress}::${config.moduleName}::set_oracle_price`,
+        type_arguments: [],
+        arguments: [
+          stock.symbol,
+          Math.floor(stock.initialPrice * 100000000) // Convert to smallest unit
+        ]
+      };
+
+      const response = await postAptosFullNode({
+        aptosConfig,
+        originMethod: "setInitialOraclePrice",
+        path: "transactions",
+        body: payload
+      });
+
+      console.log(`    ✅ ${stock.symbol} price set to $${stock.initialPrice}`);
+      if (response.data && typeof response.data === 'object' && 'hash' in response.data) {
+        console.log(`       Transaction: ${(response.data as any).hash}`);
+      }
+      
+    } catch (error) {
+      console.error(`    ❌ Failed to set price for ${stock.symbol}:`, error.message);
+    }
+  }
+}
+
+/**
+ * Display setup summary
+ */
+function displaySummary(): void {
+  console.log("\n📋 Setup Summary:");
+  console.log("==================");
+  console.log(`🌐 Network: ${aptosConfig.network}`);
+  console.log(`📍 Module: ${config.moduleAddress}::${config.moduleName}`);
+  console.log(`👤 Admin: ${config.adminAddress}`);
+  console.log(`📊 Stocks: ${mockStocks.length} registered`);
+  console.log(`👥 Test Accounts: ${config.testAccounts.length}`);
+  
+  console.log("\n📈 Registered Stocks:");
+  mockStocks.forEach(stock => {
+    console.log(`  • ${stock.symbol}: $${stock.initialPrice} (${stock.description})`);
+  });
+  
+  if (config.testAccounts.length > 0) {
+    console.log("\n👥 Test Accounts:");
+    config.testAccounts.forEach(account => {
+      console.log(`  • ${account}`);
+    });
+  }
+  
+  console.log("\n🎯 Next Steps:");
+  console.log("  1. Verify transactions on Aptos Explorer");
+  console.log("  2. Test token transfers between accounts");
+  console.log("  3. Test oracle price updates");
+  console.log("  4. Integrate with your options trading protocol");
+}
+
+// Run the setup
 if (require.main === module) {
-  main().catch(console.error);
-} 
+  main()
+    .then(() => {
+      displaySummary();
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("❌ Setup failed:", error);
+      process.exit(1);
+    });
+}
+
+export { main, mockStocks, config }; 

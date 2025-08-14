@@ -1,7 +1,7 @@
 // ============================================================================
 // AVILA PROTOCOL - MARKET DATA SERVER
 // ============================================================================
-// Simple Express server to expose market data service via REST API
+// Main entry point for the market data service
 
 // Load environment variables from .env file
 import dotenv from 'dotenv';
@@ -16,7 +16,7 @@ import { MarketDataService } from './marketDataService';
 // ============================================================================
 
 const app = express();
-const PORT = parseInt(process.env['PORT'] || '3001', 10);
+const PORT = parseInt(process.env['PORT'] || '3000', 10);
 const HOST = process.env['HOST'] || '0.0.0.0';
 
 // Initialize market data service
