@@ -4,25 +4,26 @@
   "description": "Decentralized options trading platform on Aptos",
   "private": true,
   "workspaces": [
-    "backend/typescript",
+    "backend",
     "frontend"
   ],
   "scripts": {
+    "start": "cd backend && npm install && npm run start",
     "build:contracts": "cd backend/smart-contracts && aptos move compile",
     "test:contracts": "cd backend/smart-contracts && aptos move test",
-    "build:backend": "cd backend/typescript && npm run build",
+    "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run build:contracts && npm run build:backend && npm run build:frontend",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend/typescript && npm run dev",
-    "deploy:testnet": "cd backend/typescript && npm run deploy:testnet",
-    "deploy:mainnet": "cd backend/typescript && npm run deploy:mainnet",
-    "initialize": "cd backend/typescript && npm run initialize",
-    "verify": "cd backend/typescript && npm run verify",
+    "dev:backend": "cd backend && npm run dev",
+    "deploy:testnet": "cd backend && npm run deploy:testnet",
+    "deploy:mainnet": "cd backend && npm run deploy:mainnet",
+    "initialize": "cd backend && npm run initialize",
+    "verify": "cd backend && npm run verify",
     "lint": "cd backend/smart-contracts && aptos move check",
     "clean": "cd backend/smart-contracts && aptos move clean",
     "format": "cd backend/smart-contracts && aptos move format",
-    "install:all": "npm install && cd backend/typescript && npm install && cd ../../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "keywords": [
     "aptos",
