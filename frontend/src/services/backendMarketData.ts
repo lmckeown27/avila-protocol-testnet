@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Backend API configuration
-const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://avila-protocol-backend.onrender.com';
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://avila-protocol-backend.onrender.com';
 
 // Types matching the backend
 export interface NormalizedAsset {

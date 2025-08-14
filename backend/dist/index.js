@@ -48,6 +48,14 @@ app.get('/health', (_req, res) => {
         version: process.env['npm_package_version'] || '1.0.0'
     });
 });
+app.get('/api/health', (_req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: Date.now(),
+        service: 'Avila Protocol Market Data Server',
+        environment: process.env['NODE_ENV'] || 'development'
+    });
+});
 app.get('/api/market-data', async (_req, res) => {
     try {
         const data = await marketDataService.getAllMarketData();

@@ -13,6 +13,7 @@ import Governance from './pages/Governance';
 import Admin from './pages/Admin';
 import { useAppStore } from './stores/appStore';
 import { aptosService } from './services/aptos';
+import { runAllBackendTests } from './utils/testBackendConnection';
 
 function App() {
   const { setLoading, setError } = useAppStore();
@@ -34,7 +35,18 @@ function App() {
       }
     };
 
+    // Test backend connectivity
+    const testBackend = async () => {
+      try {
+        console.log('🧪 Testing backend connectivity...');
+        await runAllBackendTests();
+      } catch (error) {
+        console.error('❌ Backend connectivity test failed:', error);
+      }
+    };
+
     initializeApp();
+    testBackend();
   }, [setLoading, setError]);
 
   return (

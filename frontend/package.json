@@ -13,6 +13,7 @@
     "@aptos-labs/ts-sdk": "^4.0.0",
     "@tailwindcss/forms": "^0.5.10",
     "@vercel/analytics": "^1.5.0",
+    "axios": "^1.11.0",
     "lucide-react": "^0.539.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

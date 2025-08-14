@@ -76,6 +76,16 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+// API health endpoint for frontend testing
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    service: 'Avila Protocol Market Data Server',
+    environment: process.env['NODE_ENV'] || 'development'
+  });
+});
+
 // ============================================================================
 // MARKET DATA ENDPOINTS
 // ============================================================================
