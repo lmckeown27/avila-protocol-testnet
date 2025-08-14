@@ -1,6 +1,8 @@
+import { config } from '../config/environment';
+
 export async function testBackendConnection() {
   try {
-    const backendURL = "https://avila-protocol-testnet.onrender.com/api/health"; 
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.health}`;
     // Replace with any reliable test endpoint in your backend
     const response = await fetch(backendURL, {
       method: "GET",
@@ -23,7 +25,7 @@ export async function testBackendConnection() {
 // Additional test functions for different endpoints
 export async function testMarketDataEndpoint() {
   try {
-    const backendURL = "https://avila-protocol-testnet.onrender.com/api/market-data";
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.marketData}`;
     const response = await fetch(backendURL, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
@@ -44,7 +46,7 @@ export async function testMarketDataEndpoint() {
 
 export async function testTradFiEndpoint() {
   try {
-    const backendURL = "https://avila-protocol-testnet.onrender.com/api/market-data/tradfi";
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.tradfi}`;
     const response = await fetch(backendURL, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
@@ -65,7 +67,7 @@ export async function testTradFiEndpoint() {
 
 export async function testDeFiEndpoint() {
   try {
-    const backendURL = "https://avila-protocol-testnet.onrender.com/api/market-data/defi";
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.defi}`;
     const response = await fetch(backendURL, {
       method: "GET",
       headers: { "Content-Type": "application/json" }

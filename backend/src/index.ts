@@ -3,9 +3,24 @@
 // ============================================================================
 // Main entry point for the market data service
 
-// Load environment variables from .env file
-import dotenv from 'dotenv';
-dotenv.config();
+// Load environment variables from .env file with explicit path fallback
+import path from "path";
+import dotenv from "dotenv";
+
+const envPath = path.resolve(process.cwd(), ".env");
+dotenv.config({ path: envPath });
+
+const requiredVars = [
+  "FINNHUB_API_KEY",
+  "ALPHA_VANTAGE_API_KEY",
+  "TWELVE_DATA_API_KEY"
+];
+
+requiredVars.forEach(key => {
+  if (!process.env[key]) {
+    console.warn(`⚠️ Missing environment variable: ${key}`);
+  }
+});
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
@@ -54,6 +69,7 @@ app.get('/', (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
+      envCheck: '/env-check',
       marketData: '/api/market-data',
       tradfi: '/api/market-data/tradfi',
       defi: '/api/market-data/defi'
@@ -84,6 +100,15 @@ app.get('/api/health', (_req: Request, res: Response) => {
     service: 'Avila Protocol Market Data Server',
     environment: process.env['NODE_ENV'] || 'development'
   });
+});
+
+// Environment variables status check (does not expose actual values)
+app.get('/env-check', (req: Request, res: Response) => {
+  const status: Record<string, boolean> = {};
+  requiredVars.forEach(key => {
+    status[key] = !!process.env[key]; // true if present, false if missing
+  });
+  res.json({ status: "ok", variables: status });
 });
 
 // ============================================================================
@@ -208,6 +233,7 @@ app.listen(PORT, HOST, () => {
   console.log('🚀 Avila Protocol Market Data Server Started!');
   console.log(`📍 Server running at: http://${HOST}:${PORT}`);
   console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
+  console.log(`🔍 Environment check: http://${HOST}:${PORT}/env-check`);
   console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
   console.log(`🏛️ TradFi data: http://${HOST}:${PORT}/api/market-data/tradfi`);
   console.log(`🌐 DeFi data: http://${HOST}:${PORT}/api/market-data/defi`);

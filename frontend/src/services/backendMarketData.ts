@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { config } from '../config/environment';
 
 // Backend API configuration
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://avila-protocol-backend.onrender.com';
+const BACKEND_BASE_URL = config.backend.baseUrl;
 
 // Types matching the backend
 export interface NormalizedAsset {
@@ -40,7 +41,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
   constructor() {
     this.axiosInstance = axios.create({
       baseURL: BACKEND_BASE_URL,
-      timeout: 10000,
+      timeout: config.backend.timeout,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -64,7 +65,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async getAllMarketData(): Promise<MarketDataResponse> {
     try {
-      const response = await this.axiosInstance.get('/api/market-data');
+      const response = await this.axiosInstance.get(config.backend.endpoints.marketData);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch all market data:', error);
@@ -77,7 +78,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async getTradFiData(): Promise<NormalizedAsset[]> {
     try {
-      const response = await this.axiosInstance.get('/api/market-data/tradfi');
+      const response = await this.axiosInstance.get(config.backend.endpoints.tradfi);
       return response.data.data || response.data;
     } catch (error) {
       console.error('Failed to fetch TradFi data:', error);
@@ -90,7 +91,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async getDeFiData(): Promise<NormalizedAsset[]> {
     try {
-      const response = await this.axiosInstance.get('/api/market-data/defi');
+      const response = await this.axiosInstance.get(config.backend.endpoints.defi);
       return response.data.data || response.data;
     } catch (error) {
       console.error('Failed to fetch DeFi data:', error);

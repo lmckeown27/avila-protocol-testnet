@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Activity, RefreshCw } from 'lucide-react';
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
+import { config } from '../config/environment';
 
 const BackendStatus = () => {
   const [status, setStatus] = useState<'checking' | 'connected' | 'error'>('checking');
@@ -15,20 +16,16 @@ const BackendStatus = () => {
   const checkBackendStatus = async () => {
     setLoading(true);
     try {
-      const isHealthy = await backendMarketDataService.healthCheck();
-      if (isHealthy) {
+      // Test backend connectivity by trying to fetch market data
+      const data = await backendMarketDataService.getTradFiData();
+      if (data && data.length > 0) {
         setStatus('connected');
-        // Try to fetch sample data
-        try {
-          const data = await backendMarketDataService.getTradFiData();
-          setSampleData(data.slice(0, 3)); // Show first 3 assets
-        } catch (dataError) {
-          console.warn('Backend connected but data fetch failed:', dataError);
-        }
+        setSampleData(data.slice(0, 3)); // Show first 3 assets
       } else {
         setStatus('error');
       }
     } catch (error) {
+      console.error('Backend connection failed:', error);
       setStatus('error');
     } finally {
       setLoading(false);
@@ -112,7 +109,7 @@ const BackendStatus = () => {
       {status === 'error' && (
         <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
           <p className="text-sm text-red-700 dark:text-red-300">
-            Unable to connect to backend server. Make sure the backend is running on localhost:3001
+            Unable to connect to backend server. Backend URL: {config.backend.baseUrl}
           </p>
         </div>
       )}

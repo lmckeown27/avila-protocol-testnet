@@ -78,11 +78,6 @@ const API_CONFIG = {
     token: process.env['FINNHUB_API_KEY'] || 'demo', // Free tier available
     rateLimit: 60 // requests per minute
   },
-  polygon: {
-    baseUrl: 'https://api.polygon.io/v2',
-    token: process.env['POLYGON_API_KEY'] || 'demo', // Free tier available
-    rateLimit: 5 // requests per minute
-  },
   alphaVantage: {
     baseUrl: 'https://www.alphavantage.co/query',
     token: process.env['ALPHA_VANTAGE_API_KEY'] || 'demo', // Free tier available
@@ -107,10 +102,6 @@ const API_CONFIG = {
   cryptoCompare: {
     baseUrl: 'https://min-api.cryptocompare.com/data',
     rateLimit: 100 // requests per minute
-  },
-  binance: {
-    baseUrl: 'https://api.binance.com/api/v3',
-    rateLimit: 1200 // requests per minute
   },
 
   // DeFi APIs
@@ -141,8 +132,8 @@ const DEFAULT_TRADFI_SYMBOLS = [
 ];
 
 const DEFAULT_CRYPTO_IDS = [
-  'bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana',
-  'ripple', 'polkadot', 'dogecoin', 'avalanche-2', 'chainlink'
+  'bitcoin', 'ethereum', 'chainlink', 'cardano', 'solana',
+  'ripple', 'polkadot', 'dogecoin', 'avalanche-2', 'matic-network'
 ];
 
 const DEFAULT_DEFI_PROTOCOLS = [
@@ -327,40 +318,6 @@ export class MarketDataService {
     }
   }
 
-  private async fetchFromPolygon(): Promise<NormalizedAsset[]> {
-    try {
-      const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
-      const promises = symbols.map(async (symbol) => {
-        const response = await axios.get(`${API_CONFIG.polygon.baseUrl}/last/trade/${symbol}`, {
-          params: { apiKey: API_CONFIG.polygon.token },
-          timeout: 5000
-        });
-        return response.data;
-      });
-
-      const results = await Promise.all(promises);
-      return results
-        .filter(trade => trade.results && trade.results.price)
-        .map(trade => ({
-          asset: trade.results.T,
-          symbol: trade.results.T,
-          price: trade.results.price,
-          change24h: 0, // Polygon last trade doesn't provide 24h change
-          volume24h: trade.results.s || 0,
-          marketCap: 0,
-          source: 'Polygon',
-          lastUpdated: trade.results.t,
-          high24h: trade.results.price,
-          low24h: trade.results.price,
-          open24h: trade.results.price
-        }));
-
-    } catch (error) {
-      console.warn('⚠️ Polygon fetch failed:', error);
-      return [];
-    }
-  }
-
   private async fetchFromAlphaVantage(): Promise<NormalizedAsset[]> {
     try {
       const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
@@ -518,38 +475,6 @@ export class MarketDataService {
     }
   }
 
-  private async fetchFromBinance(): Promise<NormalizedAsset[]> {
-    try {
-      const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT'];
-      const promises = symbols.map(async (symbol) => {
-        const response = await axios.get(`${API_CONFIG.binance.baseUrl}/ticker/24hr`, {
-          params: { symbol },
-          timeout: 5000
-        });
-        return response.data;
-      });
-
-      const results = await Promise.all(promises);
-      return results.map(ticker => ({
-        asset: ticker.symbol.replace('USDT', ''),
-        symbol: ticker.symbol.replace('USDT', ''),
-        name: ticker.symbol.replace('USDT', ''),
-        price: parseFloat(ticker.lastPrice),
-        change24h: parseFloat(ticker.priceChange),
-        volume24h: parseFloat(ticker.volume),
-        marketCap: 0, // Binance doesn't provide market cap
-        source: 'Binance',
-        lastUpdated: Date.now(),
-        high24h: parseFloat(ticker.highPrice),
-        low24h: parseFloat(ticker.lowPrice)
-      }));
-
-    } catch (error) {
-      console.warn('⚠️ Binance fetch failed:', error);
-      return [];
-    }
-  }
-
   // ============================================================================
   // FALLBACK DATA METHODS
   // ============================================================================
@@ -560,7 +485,6 @@ export class MarketDataService {
   private async fetchTradFiDataFromAPIs(): Promise<NormalizedAsset[]> {
     const sources = [
       () => this.fetchFromFinnhub(),
-      () => this.fetchFromPolygon(),
       () => this.fetchFromAlphaVantage(),
       () => this.fetchFromTwelveData()
     ];
@@ -589,8 +513,7 @@ export class MarketDataService {
   private async fetchDeFiDataFromAPIs(): Promise<NormalizedAsset[]> {
     const sources = [
       () => this.fetchFromCoinGecko(),
-      () => this.fetchFromDefiLlama(),
-      () => this.fetchFromBinance()
+      () => this.fetchFromDefiLlama()
     ];
 
     // Try sources in parallel, use first successful response

@@ -5,6 +5,19 @@ export const config = {
     faucetUrl: import.meta.env.VITE_APTOS_FAUCET_URL || 'https://faucet.testnet.aptoslabs.com',
   },
   
+  // Backend Configuration
+  backend: {
+    baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://avila-protocol-testnet.onrender.com',
+    timeout: 10000,
+    endpoints: {
+      health: '/api/health',
+      marketData: '/api/market-data',
+      tradfi: '/api/market-data/tradfi',
+      defi: '/api/market-data/defi',
+      cacheStats: '/api/market-data/cache/stats',
+    },
+  },
+  
   // Contract Addresses
   contracts: {
     avilaProtocol: import.meta.env.VITE_AVILA_PROTOCOL_ADDRESS || '',
