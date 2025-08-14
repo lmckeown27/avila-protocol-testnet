@@ -9,6 +9,7 @@
     "build": "tsc",
     "build:clean": "rm -rf dist && tsc",
     "build:debug": "tsc --listFiles",
+    "build:verify": "npm run build && ls -la dist/ && echo 'Build verification complete'",
     "postinstall": "echo 'Post-install complete'",
     "test": "ts-node test_marketData.ts",
     "lint": "eslint . --ext .ts",
