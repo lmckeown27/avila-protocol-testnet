@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { useAppStore } from '../stores/appStore';
-import analyticsService from '../services/analytics';
 
 interface FeedbackData {
   type: 'bug' | 'feature' | 'general' | 'ui' | 'performance';
@@ -10,7 +8,12 @@ interface FeedbackData {
   priority: 'low' | 'medium' | 'high';
 }
 
-export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface FeedbackModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [feedback, setFeedback] = useState<FeedbackData>({
     type: 'general',
     title: '',
@@ -19,25 +22,18 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
     priority: 'medium'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addNotification } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Track feedback submission with analytics
-      analyticsService.trackFeedback(feedback.type, feedback.priority);
-      
       // For now, we'll just show a success message
       // In production, you'd send this to your backend or feedback service
       console.log('Feedback submitted:', feedback);
       
-      addNotification({
-        type: 'success',
-        title: 'Feedback Submitted!',
-        message: 'Thank you for your input. We\'ll review it and get back to you soon.'
-      });
+      // Show success message
+      alert('Thank you for your feedback! We\'ll review it and get back to you soon.');
 
       // Reset form and close modal
       setFeedback({
@@ -49,11 +45,7 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
       });
       onClose();
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Submission Failed',
-        message: 'Failed to submit feedback. Please try again.'
-      });
+      alert('Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,14 +67,14 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-group">
-            <label className="form-label">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Feedback Type
             </label>
             <select
               value={feedback.type}
               onChange={(e) => setFeedback({ ...feedback, type: e.target.value as any })}
-              className="form-select"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="bug">Bug Report</option>
               <option value="feature">Feature Request</option>
@@ -92,8 +84,8 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Title *
             </label>
             <input
@@ -101,13 +93,13 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
               required
               value={feedback.title}
               onChange={(e) => setFeedback({ ...feedback, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Brief description of your feedback"
-              className="form-input"
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Description *
             </label>
             <textarea
@@ -115,19 +107,32 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
               rows={4}
               value={feedback.description}
               onChange={(e) => setFeedback({ ...feedback, description: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Please provide detailed information..."
-              className="form-input"
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email (optional)
+            </label>
+            <input
+              type="email"
+              value={feedback.email}
+              onChange={(e) => setFeedback({ ...feedback, email: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="your@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Priority
             </label>
             <select
               value={feedback.priority}
               onChange={(e) => setFeedback({ ...feedback, priority: e.target.value as any })}
-              className="form-select"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -135,34 +140,18 @@ export default function FeedbackModal({ isOpen, onClose }: { isOpen: boolean; on
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              Email (Optional)
-            </label>
-            <input
-              type="email"
-              value={feedback.email}
-              onChange={(e) => setFeedback({ ...feedback, email: e.target.value })}
-              placeholder="your@email.com"
-              className="form-input"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              We'll only use this to follow up on your feedback
-            </p>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary flex-1 px-4 py-2"
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-primary flex-1 px-4 py-2 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </button>

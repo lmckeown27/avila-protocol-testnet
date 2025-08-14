@@ -1,32 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-// import { useAppStore } from '../stores/appStore';
-// import { walletService } from '../services/wallet';
 import FeedbackModal from './FeedbackModal';
 
-const Navbar = () => {
+interface NavbarProps {}
+
+const Navbar: React.FC<NavbarProps> = () => {
   const location = useLocation();
-  // const { isConnected } = useAppStore();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
-
-  // Wallet connection handlers removed
-  // const handleConnectWallet = async () => {
-  //   try {
-  //     await walletService.connectWallet();
-  //   } catch (error) {
-  //     console.error('Failed to connect wallet:', error);
-  //   }
-  // };
-
-  // const handleDisconnectWallet = async () => {
-  //   try {
-  //     await walletService.disconnectWallet();
-  //   } catch (error) {
-  //     console.error('Failed to disconnect wallet:', error);
-  //   }
-  // };
 
   return (
     <>
