@@ -3,9 +3,9 @@ services:
     name: avila-protocol-backend
     env: node
     plan: free
-    rootDir: backend/typescript
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    rootDir: .
+    buildCommand: npm install && npm run build:backend
+    startCommand: cd backend/typescript && npm start
     envVars:
       - key: NODE_ENV
         value: production
