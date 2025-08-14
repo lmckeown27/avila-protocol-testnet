@@ -292,7 +292,7 @@ export class MarketDataService {
           params: { symbol, token: API_CONFIG.finnhub.token },
           timeout: 5000
         });
-        return response.data;
+        return { ...response.data, symbol }; // Include the symbol in the response
       });
 
       const results = await Promise.all(promises);
