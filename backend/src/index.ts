@@ -13,7 +13,8 @@ dotenv.config({ path: envPath });
 const requiredVars = [
   "FINNHUB_API_KEY",
   "ALPHA_VANTAGE_API_KEY",
-  "TWELVE_DATA_API_KEY"
+  "TWELVE_DATA_API_KEY",
+  "COINMARKETCAP_API_KEY"
 ];
 
 requiredVars.forEach(key => {
@@ -221,8 +222,15 @@ app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response)
       });
     }
 
-    // Access the private method through a public interface or make it public
-    const marketData = await (marketDataService as any).getMarketData(symbol.toUpperCase());
+    // Determine if this is a TradFi or DeFi asset and use appropriate method
+    let marketData;
+    if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT'].includes(symbol.toUpperCase())) {
+      // TradFi asset - use TradFi method
+      marketData = await (marketDataService as any).getTradFiMarketData(symbol.toUpperCase());
+    } else {
+      // DeFi asset - use DeFi method
+      marketData = await (marketDataService as any).getDeFiMarketData(symbol.toUpperCase());
+    }
     
     return res.json({
       success: true,

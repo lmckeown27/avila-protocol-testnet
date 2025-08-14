@@ -10,7 +10,8 @@ dotenv_1.default.config({ path: envPath });
 const requiredVars = [
     "FINNHUB_API_KEY",
     "ALPHA_VANTAGE_API_KEY",
-    "TWELVE_DATA_API_KEY"
+    "TWELVE_DATA_API_KEY",
+    "COINMARKETCAP_API_KEY"
 ];
 requiredVars.forEach(key => {
     if (!process.env[key]) {
@@ -175,7 +176,13 @@ app.get('/api/market-data/enhanced/:symbol', async (req, res) => {
                 error: 'Symbol parameter is required'
             });
         }
-        const marketData = await marketDataService.getMarketData(symbol.toUpperCase());
+        let marketData;
+        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT'].includes(symbol.toUpperCase())) {
+            marketData = await marketDataService.getTradFiMarketData(symbol.toUpperCase());
+        }
+        else {
+            marketData = await marketDataService.getDeFiMarketData(symbol.toUpperCase());
+        }
         return res.json({
             success: true,
             data: {

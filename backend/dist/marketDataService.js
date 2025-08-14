@@ -72,18 +72,19 @@ class MarketDataService {
         this.pollingInterval = null;
         this.setupAxiosInterceptors();
     }
-    async getMarketData(symbol) {
-        const cached = this.marketDataCache[symbol];
+    async getTradFiMarketData(symbol) {
+        const cacheKey = `tradfi_${symbol}`;
+        const cached = this.marketDataCache[cacheKey];
         const now = Date.now();
         if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
-            console.log(`📊 Using cached market data for ${symbol}`);
+            console.log(`📊 Using cached TradFi market data for ${symbol}`);
             return { marketCap: cached.marketCap, volume: cached.volume };
         }
         let marketCap = null;
         let volume = null;
         try {
-            console.log(`🔍 Fetching market data for ${symbol} from Finnhub...`);
-            const finnhubRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/stock/metric`, {
+            console.log(`🔍 Fetching TradFi market data for ${symbol} from Finnhub...`);
+            const finnhubMetricRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/stock/metric`, {
                 params: {
                     symbol,
                     metric: 'all',
@@ -91,63 +92,149 @@ class MarketDataService {
                 },
                 timeout: 5000
             });
-            if (finnhubRes.data && finnhubRes.data.metric) {
-                marketCap = finnhubRes.data.metric.marketCapitalization || null;
-                volume = finnhubRes.data.metric.volume || finnhubRes.data.metric['10DayAverageVolume'] || null;
-                console.log(`✅ Finnhub data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+            if (finnhubMetricRes.data && finnhubMetricRes.data.metric) {
+                marketCap = finnhubMetricRes.data.metric.marketCapitalization || null;
+                console.log(`✅ Finnhub market cap for ${symbol}: ${marketCap}`);
+            }
+            const finnhubQuoteRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
+                params: {
+                    symbol,
+                    token: API_CONFIG.finnhub.token
+                },
+                timeout: 5000
+            });
+            if (finnhubQuoteRes.data && finnhubQuoteRes.data.v) {
+                volume = finnhubQuoteRes.data.v;
+                console.log(`✅ Finnhub volume for ${symbol}: ${volume}`);
+            }
+            console.log(`✅ Finnhub TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+        }
+        catch (err) {
+            console.warn(`⚠️ Finnhub TradFi market data fetch failed for ${symbol}:`, err);
+        }
+        if (!marketCap || !volume) {
+            try {
+                console.log(`🔍 Fetching TradFi market data for ${symbol} from Alpha Vantage...`);
+                if (!marketCap) {
+                    const alphaOverviewRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
+                        params: {
+                            function: 'OVERVIEW',
+                            symbol,
+                            apikey: API_CONFIG.alphaVantage.token
+                        },
+                        timeout: 5000
+                    });
+                    if (alphaOverviewRes.data && alphaOverviewRes.data.MarketCapitalization) {
+                        marketCap = parseFloat(alphaOverviewRes.data.MarketCapitalization);
+                        console.log(`✅ Alpha Vantage market cap for ${symbol}: ${marketCap}`);
+                    }
+                }
+                if (!volume) {
+                    const alphaVolumeRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
+                        params: {
+                            function: 'TIME_SERIES_DAILY',
+                            symbol,
+                            apikey: API_CONFIG.alphaVantage.token
+                        },
+                        timeout: 5000
+                    });
+                    if (alphaVolumeRes.data && alphaVolumeRes.data['Time Series (Daily)']) {
+                        const timeSeries = alphaVolumeRes.data['Time Series (Daily)'];
+                        const latestDate = Object.keys(timeSeries)[0];
+                        if (latestDate && timeSeries[latestDate]['5. volume']) {
+                            volume = parseFloat(timeSeries[latestDate]['5. volume']);
+                            console.log(`✅ Alpha Vantage volume for ${symbol}: ${volume}`);
+                        }
+                    }
+                }
+                console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+            }
+            catch (err) {
+                console.warn(`⚠️ Alpha Vantage TradFi market data fetch failed for ${symbol}:`, err);
+            }
+        }
+        this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
+        console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+        return { marketCap, volume };
+    }
+    async getDeFiMarketData(symbol) {
+        const cacheKey = `defi_${symbol}`;
+        const cached = this.marketDataCache[cacheKey];
+        const now = Date.now();
+        if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
+            console.log(`📊 Using cached DeFi market data for ${symbol}`);
+            return { marketCap: cached.marketCap, volume: cached.volume };
+        }
+        let marketCap = null;
+        let volume = null;
+        try {
+            if (API_CONFIG.coinMarketCap.token !== 'demo') {
+                console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinMarketCap...`);
+                try {
+                    const searchRes = await axios_1.default.get(`${API_CONFIG.coinMarketCap.baseUrl}/cryptocurrency/map`, {
+                        params: {
+                            symbol: symbol.toUpperCase(),
+                            limit: 1
+                        },
+                        headers: {
+                            'X-CMC_PRO_API_KEY': API_CONFIG.coinMarketCap.token
+                        },
+                        timeout: 10000
+                    });
+                    if (searchRes.data && searchRes.data.data && searchRes.data.data.length > 0) {
+                        const coinId = searchRes.data.data[0].id;
+                        console.log(`✅ Found CoinMarketCap ID for ${symbol}: ${coinId}`);
+                        const cmcRes = await axios_1.default.get(`${API_CONFIG.coinMarketCap.baseUrl}/cryptocurrency/quotes/latest`, {
+                            params: {
+                                id: coinId,
+                                convert: 'USD'
+                            },
+                            headers: {
+                                'X-CMC_PRO_API_KEY': API_CONFIG.coinMarketCap.token
+                            },
+                            timeout: 10000
+                        });
+                        if (cmcRes.data && cmcRes.data.data && cmcRes.data.data[coinId]) {
+                            const coinData = cmcRes.data.data[coinId];
+                            marketCap = coinData.quote.USD.market_cap || null;
+                            volume = coinData.quote.USD.volume_24h || null;
+                            console.log(`✅ CoinMarketCap DeFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+                        }
+                    }
+                }
+                catch (cmcErr) {
+                    console.warn(`⚠️ CoinMarketCap DeFi fetch failed for ${symbol}:`, cmcErr);
+                }
+            }
+            if (!marketCap || !volume) {
+                try {
+                    console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinGecko...`);
+                    const geckoRes = await axios_1.default.get(`${API_CONFIG.coinGecko.baseUrl}/simple/price`, {
+                        params: {
+                            ids: symbol.toLowerCase(),
+                            vs_currencies: 'usd',
+                            include_market_cap: true,
+                            include_24hr_vol: true
+                        },
+                        timeout: 10000
+                    });
+                    if (geckoRes.data && geckoRes.data[symbol.toLowerCase()]) {
+                        const coinData = geckoRes.data[symbol.toLowerCase()];
+                        marketCap = marketCap || coinData.usd_market_cap || null;
+                        volume = volume || coinData.usd_24h_vol || null;
+                        console.log(`✅ CoinGecko DeFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+                    }
+                }
+                catch (err) {
+                    console.warn(`⚠️ CoinGecko DeFi market data fetch failed for ${symbol}:`, err);
+                }
             }
         }
         catch (err) {
-            console.warn(`⚠️ Finnhub market data fetch failed for ${symbol}:`, err);
+            console.warn(`⚠️ DeFi market data fetch failed for ${symbol}:`, err);
         }
-        if (!marketCap || !volume) {
-            try {
-                console.log(`🔍 Fetching market data for ${symbol} from Alpha Vantage...`);
-                const alphaRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
-                    params: {
-                        function: 'OVERVIEW',
-                        symbol,
-                        apikey: API_CONFIG.alphaVantage.token
-                    },
-                    timeout: 5000
-                });
-                if (alphaRes.data && !marketCap) {
-                    marketCap = alphaRes.data.MarketCapitalization ? parseFloat(alphaRes.data.MarketCapitalization) : null;
-                }
-                if (alphaRes.data && !volume) {
-                    volume = alphaRes.data.Volume ? parseFloat(alphaRes.data.Volume) : null;
-                }
-                console.log(`✅ Alpha Vantage data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
-            }
-            catch (err) {
-                console.warn(`⚠️ Alpha Vantage market data fetch failed for ${symbol}:`, err);
-            }
-        }
-        if (!marketCap || !volume) {
-            try {
-                console.log(`🔍 Fetching market data for ${symbol} from Twelve Data...`);
-                const twelveRes = await axios_1.default.get(`${API_CONFIG.twelveData.baseUrl}/stocks`, {
-                    params: {
-                        symbol,
-                        apikey: API_CONFIG.twelveData.token
-                    },
-                    timeout: 5000
-                });
-                if (twelveRes.data && twelveRes.data.data && twelveRes.data.data.length > 0) {
-                    const stockData = twelveRes.data.data[0];
-                    if (!marketCap)
-                        marketCap = stockData.market_cap || null;
-                    if (!volume)
-                        volume = stockData.volume || null;
-                }
-                console.log(`✅ Twelve Data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
-            }
-            catch (err) {
-                console.warn(`⚠️ Twelve Data market data fetch failed for ${symbol}:`, err);
-            }
-        }
-        this.marketDataCache[symbol] = { marketCap, volume, timestamp: now };
-        console.log(`💾 Cached market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+        this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
+        console.log(`💾 Cached DeFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
         return { marketCap, volume };
     }
     async getAllMarketData() {
@@ -266,12 +353,12 @@ class MarketDataService {
                     params: { symbol, token: API_CONFIG.finnhub.token },
                     timeout: 5000
                 });
-                const marketData = await this.getMarketData(symbol);
+                const marketData = await this.getTradFiMarketData(symbol);
                 return {
                     ...quoteResponse.data,
                     symbol,
                     marketCap: marketData.marketCap,
-                    volume: marketData.volume
+                    volume: marketData.volume || quoteResponse.data.v
                 };
             });
             const results = await Promise.all(promises);
