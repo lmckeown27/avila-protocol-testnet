@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, Activity, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
@@ -98,14 +98,7 @@ const TradFiMarkets = () => {
     return `$${(value / 1000000000).toFixed(2)}B`;
   };
 
-  // Format volume
-  const formatVolume = (value: number) => {
-    if (value === 0) return '0';
-    if (value < 1000) return value.toLocaleString();
-    if (value < 1000000) return `${(value / 1000).toFixed(1)}K`;
-    if (value < 1000000000) return `${(value / 1000000).toFixed(1)}M`;
-    return `${(value / 1000000000).toFixed(1)}B`;
-  };
+
 
   // Get change color and icon
   const getChangeDisplay = (change: number, changePercent: number) => {
@@ -179,9 +172,7 @@ const TradFiMarkets = () => {
             </span>
           </div>
         </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatVolume(asset.volume24h)}
-        </td>
+
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           {formatCurrency(asset.marketCap)}
         </td>
@@ -232,11 +223,7 @@ const TradFiMarkets = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Volume:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{formatVolume(asset.volume24h)}</span>
-          </div>
+        <div className="grid grid-cols-1 gap-4 text-sm">
           <div>
             <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.marketCap)}</span>
@@ -251,12 +238,10 @@ const TradFiMarkets = () => {
     if (tradFiData.length === 0) return null;
     
     const totalMarketCap = tradFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
-    const totalVolume = tradFiData.reduce((sum, asset) => sum + (asset.volume24h || 0), 0);
     const avgChange = tradFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / tradFiData.length;
     
     return {
       totalMarketCap,
-      totalVolume,
       avgChange,
       assetCount: tradFiData.length
     };
@@ -270,13 +255,13 @@ const TradFiMarkets = () => {
           Traditional Finance Markets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Real-time stock and ETF market data
+          Real-time stock and ETF market data with price, market cap, and daily ranges
         </p>
       </div>
 
       {/* Market Summary Cards */}
       {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Market Cap</h3>
@@ -290,18 +275,7 @@ const TradFiMarkets = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">24h Volume</h3>
-              <Activity className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatVolume(marketSummary.totalVolume)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Total trading volume
-            </div>
-          </div>
+
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -335,15 +309,18 @@ const TradFiMarkets = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Market Data
+            Market Data (Free Tier)
           </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Displaying real-time price, market cap, and daily ranges. Volume data requires premium API access.
+          </p>
           
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search stocks and ETFs..."
+              placeholder="Search stocks and ETFs by symbol or name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -359,7 +336,6 @@ const TradFiMarkets = () => {
                 {renderTableHeader('symbol', 'Asset')}
                 {renderTableHeader('price', 'Price')}
                 {renderTableHeader('change24h', '24h Change')}
-                {renderTableHeader('volume24h', '24h Volume')}
                 {renderTableHeader('marketCap', 'Market Cap')}
                 {renderTableHeader('high24h', 'Day High')}
                 {renderTableHeader('low24h', 'Day Low')}
@@ -368,20 +344,20 @@ const TradFiMarkets = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <div className="mt-2">Loading traditional market data...</div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-red-500">
                     {error}
                   </td>
                 </tr>
               ) : filteredAndSortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No assets found matching your search.
                   </td>
                 </tr>
