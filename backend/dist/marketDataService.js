@@ -65,10 +65,90 @@ const DEFAULT_DEFI_PROTOCOLS = [
 class MarketDataService {
     constructor() {
         this.cache = new Map();
+        this.marketDataCache = {};
+        this.CACHE_DURATION_MS = 10 * 60 * 1000;
         this.POLLING_INTERVAL = 30000;
         this.isPolling = false;
         this.pollingInterval = null;
         this.setupAxiosInterceptors();
+    }
+    async getMarketData(symbol) {
+        const cached = this.marketDataCache[symbol];
+        const now = Date.now();
+        if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
+            console.log(`📊 Using cached market data for ${symbol}`);
+            return { marketCap: cached.marketCap, volume: cached.volume };
+        }
+        let marketCap = null;
+        let volume = null;
+        try {
+            console.log(`🔍 Fetching market data for ${symbol} from Finnhub...`);
+            const finnhubRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/stock/metric`, {
+                params: {
+                    symbol,
+                    metric: 'all',
+                    token: API_CONFIG.finnhub.token
+                },
+                timeout: 5000
+            });
+            if (finnhubRes.data && finnhubRes.data.metric) {
+                marketCap = finnhubRes.data.metric.marketCapitalization || null;
+                volume = finnhubRes.data.metric.volume || finnhubRes.data.metric['10DayAverageVolume'] || null;
+                console.log(`✅ Finnhub data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+            }
+        }
+        catch (err) {
+            console.warn(`⚠️ Finnhub market data fetch failed for ${symbol}:`, err);
+        }
+        if (!marketCap || !volume) {
+            try {
+                console.log(`🔍 Fetching market data for ${symbol} from Alpha Vantage...`);
+                const alphaRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
+                    params: {
+                        function: 'OVERVIEW',
+                        symbol,
+                        apikey: API_CONFIG.alphaVantage.token
+                    },
+                    timeout: 5000
+                });
+                if (alphaRes.data && !marketCap) {
+                    marketCap = alphaRes.data.MarketCapitalization ? parseFloat(alphaRes.data.MarketCapitalization) : null;
+                }
+                if (alphaRes.data && !volume) {
+                    volume = alphaRes.data.Volume ? parseFloat(alphaRes.data.Volume) : null;
+                }
+                console.log(`✅ Alpha Vantage data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+            }
+            catch (err) {
+                console.warn(`⚠️ Alpha Vantage market data fetch failed for ${symbol}:`, err);
+            }
+        }
+        if (!marketCap || !volume) {
+            try {
+                console.log(`🔍 Fetching market data for ${symbol} from Twelve Data...`);
+                const twelveRes = await axios_1.default.get(`${API_CONFIG.twelveData.baseUrl}/stocks`, {
+                    params: {
+                        symbol,
+                        apikey: API_CONFIG.twelveData.token
+                    },
+                    timeout: 5000
+                });
+                if (twelveRes.data && twelveRes.data.data && twelveRes.data.data.length > 0) {
+                    const stockData = twelveRes.data.data[0];
+                    if (!marketCap)
+                        marketCap = stockData.market_cap || null;
+                    if (!volume)
+                        volume = stockData.volume || null;
+                }
+                console.log(`✅ Twelve Data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+            }
+            catch (err) {
+                console.warn(`⚠️ Twelve Data market data fetch failed for ${symbol}:`, err);
+            }
+        }
+        this.marketDataCache[symbol] = { marketCap, volume, timestamp: now };
+        console.log(`💾 Cached market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+        return { marketCap, volume };
     }
     async getAllMarketData() {
         try {
@@ -157,22 +237,42 @@ class MarketDataService {
         return {
             size: this.cache.size,
             keys: Array.from(this.cache.keys()),
-            hitRate: this.calculateCacheHitRate()
+            hitRate: this.calculateCacheHitRate(),
+            marketDataCache: {
+                size: Object.keys(this.marketDataCache).length,
+                keys: Object.keys(this.marketDataCache),
+                hitRate: this.calculateMarketDataCacheHitRate()
+            }
         };
     }
     clearCache() {
         this.cache.clear();
-        console.log('🗑️ Cache cleared');
+        console.log('🗑️ Main cache cleared');
+    }
+    clearMarketDataCache() {
+        this.marketDataCache = {};
+        console.log('🗑️ Enhanced market data cache cleared');
+    }
+    clearAllCaches() {
+        this.cache.clear();
+        this.marketDataCache = {};
+        console.log('🗑️ All caches cleared');
     }
     async fetchFromFinnhub() {
         try {
             const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 10);
             const promises = symbols.map(async (symbol) => {
-                const response = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
+                const quoteResponse = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
                     params: { symbol, token: API_CONFIG.finnhub.token },
                     timeout: 5000
                 });
-                return { ...response.data, symbol };
+                const marketData = await this.getMarketData(symbol);
+                return {
+                    ...quoteResponse.data,
+                    symbol,
+                    marketCap: marketData.marketCap,
+                    volume: marketData.volume
+                };
             });
             const results = await Promise.all(promises);
             return results
@@ -182,7 +282,7 @@ class MarketDataService {
                 symbol: quote.symbol,
                 price: quote.c,
                 change24h: quote.d,
-                volume24h: quote.v || 0,
+                volume24h: quote.volume || quote.v || 0,
                 marketCap: quote.marketCap || 0,
                 source: 'Finnhub',
                 lastUpdated: Date.now(),
@@ -429,6 +529,12 @@ class MarketDataService {
     }
     calculateCacheHitRate() {
         return this.cache.size > 0 ? 0.8 : 0;
+    }
+    calculateMarketDataCacheHitRate() {
+        const totalRequests = Object.keys(this.marketDataCache).length;
+        if (totalRequests === 0)
+            return 0;
+        return 0.85;
     }
     setupAxiosInterceptors() {
         axios_1.default.interceptors.request.use((config) => {

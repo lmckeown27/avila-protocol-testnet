@@ -210,6 +210,57 @@ app.post('/api/market-data/cache/clear', (_req: Request, res: Response) => {
   }
 });
 
+// Enhanced market data test endpoint
+app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    if (!symbol) {
+      return res.status(400).json({
+        success: false,
+        error: 'Symbol parameter is required'
+      });
+    }
+
+    // Access the private method through a public interface or make it public
+    const marketData = await (marketDataService as any).getMarketData(symbol.toUpperCase());
+    
+    return res.json({
+      success: true,
+      data: {
+        symbol: symbol.toUpperCase(),
+        ...marketData,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error(`Error fetching enhanced market data for ${req.params.symbol}:`, error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch enhanced market data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Clear enhanced market data cache
+app.post('/api/market-data/cache/enhanced/clear', (_req: Request, res: Response) => {
+  try {
+    (marketDataService as any).clearMarketDataCache();
+    res.json({
+      success: true,
+      message: 'Enhanced market data cache cleared successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error clearing enhanced market data cache:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear enhanced market data cache',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // ============================================================================
 // ERROR HANDLING
 // ============================================================================
@@ -237,8 +288,9 @@ app.listen(PORT, HOST, () => {
   console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
   console.log(`🏛️ TradFi data: http://${HOST}:${PORT}/api/market-data/tradfi`);
   console.log(`🌐 DeFi data: http://${HOST}:${PORT}/api/market-data/defi`);
+  console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
   console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
-  console.log('✨ Ready to serve real-time market data!');
+  console.log('✨ Ready to serve real-time market data with enhanced caching!');
 });
 
 export default app;
