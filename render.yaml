@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: avila-protocol-backend
+    env: node
+    plan: free
+    buildCommand: cd backend/typescript && npm install && npm run build
+    startCommand: cd backend/typescript && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: POLYGON_API_KEY
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+      - key: COINMARKETCAP_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://avilaprotocol-liam-mckeown-s-projects.vercel.app
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main 

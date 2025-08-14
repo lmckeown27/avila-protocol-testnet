@@ -16,8 +16,8 @@ import { MarketDataService } from './marketDataService';
 // ============================================================================
 
 const app = express();
-const PORT = process.env['PORT'] || 3001;
-const HOST = process.env['HOST'] || 'localhost';
+const PORT = parseInt(process.env['PORT'] || '3001', 10);
+const HOST = process.env['HOST'] || '0.0.0.0';
 
 // Initialize market data service
 const marketDataService = new MarketDataService();
@@ -26,11 +26,21 @@ const marketDataService = new MarketDataService();
 // MIDDLEWARE
 // ============================================================================
 
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://avilaprotocol-git-main-liam-mckeown-s-projects.vercel.app'],
-  credentials: true
-}));
+// CORS configuration for production
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://avilaprotocol-git-main-liam-mckeown-s-projects.vercel.app',
+    'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
+    // Add your Vercel domain here
+    process.env['FRONTEND_URL']
+  ].filter((url): url is string => Boolean(url)),
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ============================================================================
@@ -42,7 +52,9 @@ app.get('/health', (_req: Request, res: Response) => {
     status: 'healthy',
     service: 'Avila Protocol Market Data Server',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env['NODE_ENV'] || 'development',
+    version: process.env['npm_package_version'] || '1.0.0'
   });
 });
 
@@ -164,13 +176,14 @@ app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
 // SERVER STARTUP
 // ============================================================================
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log('🚀 Avila Protocol Market Data Server Started!');
   console.log(`📍 Server running at: http://${HOST}:${PORT}`);
   console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
   console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
   console.log(`🏛️ TradFi data: http://${HOST}:${PORT}/api/market-data/tradfi`);
   console.log(`🌐 DeFi data: http://${HOST}:${PORT}/api/market-data/defi`);
+  console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
   console.log('✨ Ready to serve real-time market data!');
 });
 

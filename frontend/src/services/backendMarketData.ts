@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Backend API configuration
-const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://avila-protocol-backend.onrender.com';
 
 // Types matching the backend
 export interface NormalizedAsset {
@@ -104,7 +104,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
   async getCacheStats(): Promise<any> {
     try {
       const response = await this.axiosInstance.get('/api/market-data/cache/stats');
-      return response.data;
+      return response.data.data || response.data;
     } catch (error) {
       console.error('Failed to fetch cache stats:', error);
       throw error;
@@ -112,11 +112,11 @@ class BackendMarketDataService implements IBackendMarketDataService {
   }
 
   /**
-   * Clear the cache
+   * Clear cache
    */
   async clearCache(): Promise<void> {
     try {
-      await this.axiosInstance.delete('/api/market-data/cache/clear');
+      await this.axiosInstance.post('/api/market-data/cache/clear');
     } catch (error) {
       console.error('Failed to clear cache:', error);
       throw error;
@@ -124,26 +124,17 @@ class BackendMarketDataService implements IBackendMarketDataService {
   }
 
   /**
-   * Check if backend is healthy
+   * Health check
    */
-  async healthCheck(): Promise<boolean> {
+  async healthCheck(): Promise<any> {
     try {
       const response = await this.axiosInstance.get('/health');
-      return response.status === 200;
+      return response.data;
     } catch (error) {
-      console.error('Backend health check failed:', error);
-      return false;
+      console.error('Health check failed:', error);
+      throw error;
     }
   }
 }
 
-// Export singleton instance
-export const backendMarketDataService = new BackendMarketDataService();
-
-// Export utility functions
-export const getAllMarketData = () => backendMarketDataService.getAllMarketData();
-export const getTradFiData = () => backendMarketDataService.getTradFiData();
-export const getDeFiData = () => backendMarketDataService.getDeFiData();
-export const getCacheStats = () => backendMarketDataService.getCacheStats();
-export const clearCache = () => backendMarketDataService.clearCache();
-export const healthCheck = () => backendMarketDataService.healthCheck(); 
+export const backendMarketDataService = new BackendMarketDataService(); 
