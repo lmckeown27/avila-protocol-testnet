@@ -1,80 +1,67 @@
 "use strict";
-// Market Data Service for Mock Decentralized Options Platform
-// Fetches and normalizes data from multiple free APIs with fallback logic
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stopMarketDataPolling = exports.startMarketDataPolling = exports.getDeFiData = exports.getTradFiData = exports.getMarketData = exports.marketDataService = exports.MarketDataService = void 0;
-// Load environment variables from .env file
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const axios_1 = __importDefault(require("axios"));
-// ============================================================================
-// API CONFIGURATION
-// ============================================================================
 const API_CONFIG = {
-    // TradFi APIs
     finnhub: {
         baseUrl: 'https://finnhub.io/api/v1',
-        token: process.env['FINNHUB_API_KEY'] || 'demo', // Free tier available
-        rateLimit: 60 // requests per minute
+        token: process.env['FINNHUB_API_KEY'] || 'demo',
+        rateLimit: 60
     },
     polygon: {
         baseUrl: 'https://api.polygon.io/v2',
-        token: process.env['POLYGON_API_KEY'] || 'demo', // Free tier available
-        rateLimit: 5 // requests per minute
+        token: process.env['POLYGON_API_KEY'] || 'demo',
+        rateLimit: 5
     },
     alphaVantage: {
         baseUrl: 'https://www.alphavantage.co/query',
-        token: process.env['ALPHA_VANTAGE_API_KEY'] || 'demo', // Free tier available
-        rateLimit: 5 // requests per minute
+        token: process.env['ALPHA_VANTAGE_API_KEY'] || 'demo',
+        rateLimit: 5
     },
     twelveData: {
         baseUrl: 'https://api.twelvedata.com',
-        token: process.env['TWELVE_DATA_API_KEY'] || 'demo', // Free tier available
-        rateLimit: 8 // requests per minute
+        token: process.env['TWELVE_DATA_API_KEY'] || 'demo',
+        rateLimit: 8
     },
-    // Crypto APIs
     coinGecko: {
         baseUrl: 'https://api.coingecko.com/api/v3',
-        rateLimit: 50 // requests per minute
+        rateLimit: 50
     },
     coinMarketCap: {
         baseUrl: 'https://pro-api.coinmarketcap.com/v1',
         token: process.env['COINMARKETCAP_API_KEY'] || 'demo',
-        rateLimit: 10 // requests per minute
+        rateLimit: 10
     },
     cryptoCompare: {
         baseUrl: 'https://min-api.cryptocompare.com/data',
-        rateLimit: 100 // requests per minute
+        rateLimit: 100
     },
     binance: {
         baseUrl: 'https://api.binance.com/api/v3',
-        rateLimit: 1200 // requests per minute
+        rateLimit: 1200
     },
-    // DeFi APIs
     defiLlama: {
         baseUrl: 'https://api.llama.fi',
-        rateLimit: 100 // requests per minute
+        rateLimit: 100
     },
     uniswap: {
         baseUrl: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
-        rateLimit: 100 // requests per minute
+        rateLimit: 100
     },
-    // Sentiment APIs
     alternativeMe: {
         baseUrl: 'https://api.alternative.me',
-        rateLimit: 100 // requests per minute
+        rateLimit: 100
     }
 };
-// ============================================================================
-// DEFAULT ASSET LISTS
-// ============================================================================
 const DEFAULT_TRADFI_SYMBOLS = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX',
     'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD',
-    '^GSPC', '^DJI', '^IXIC', '^RUT' // Major indices
+    '^GSPC', '^DJI', '^IXIC', '^RUT'
 ];
 const DEFAULT_CRYPTO_IDS = [
     'bitcoin', 'ethereum', 'binancecoin', 'cardano', 'solana',
@@ -84,23 +71,14 @@ const DEFAULT_DEFI_PROTOCOLS = [
     'uniswap', 'aave', 'compound', 'makerdao', 'curve',
     'synthetix', 'yearn-finance', 'balancer', 'sushi', '1inch'
 ];
-// ============================================================================
-// MAIN MARKET DATA SERVICE CLASS
-// ============================================================================
 class MarketDataService {
     constructor() {
         this.cache = new Map();
-        this.POLLING_INTERVAL = 30000; // 30 seconds
+        this.POLLING_INTERVAL = 30000;
         this.isPolling = false;
         this.pollingInterval = null;
         this.setupAxiosInterceptors();
     }
-    // ============================================================================
-    // PUBLIC METHODS
-    // ============================================================================
-    /**
-     * Get all market data (TradFi + DeFi) with fallback logic
-     */
     async getAllMarketData() {
         try {
             const [tradfiData, defiData] = await Promise.all([
@@ -126,9 +104,6 @@ class MarketDataService {
             };
         }
     }
-    /**
-     * Get TradFi market data with fallback logic
-     */
     async getTradFiData() {
         const cacheKey = 'tradfi';
         const cached = this.getCachedData(cacheKey);
@@ -141,15 +116,11 @@ class MarketDataService {
         }
         catch (error) {
             console.error('All TradFi APIs failed, returning empty data:', error);
-            // Return empty data instead of mock data to indicate API failure
             const emptyResult = this.getEmptyTradFiData();
             this.cacheData(cacheKey, emptyResult);
             return emptyResult;
         }
     }
-    /**
-     * Get DeFi market data with fallback logic
-     */
     async getDeFiData() {
         const cacheKey = 'defi';
         const cached = this.getCachedData(cacheKey);
@@ -162,15 +133,11 @@ class MarketDataService {
         }
         catch (error) {
             console.error('All DeFi APIs failed, returning empty data:', error);
-            // Return empty data instead of mock data to indicate API failure
             const emptyResult = this.getEmptyDeFiData();
             this.cacheData(cacheKey, emptyResult);
             return emptyResult;
         }
     }
-    /**
-     * Start polling for real-time updates
-     */
     startPolling(callback) {
         if (this.isPolling)
             return;
@@ -187,9 +154,6 @@ class MarketDataService {
             }
         }, this.POLLING_INTERVAL);
     }
-    /**
-     * Stop polling
-     */
     stopPolling() {
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
@@ -198,9 +162,6 @@ class MarketDataService {
         this.isPolling = false;
         console.log('⏹️ Stopped market data polling');
     }
-    /**
-     * Get cache statistics
-     */
     getCacheStats() {
         return {
             size: this.cache.size,
@@ -208,19 +169,13 @@ class MarketDataService {
             hitRate: this.calculateCacheHitRate()
         };
     }
-    /**
-     * Clear cache
-     */
     clearCache() {
         this.cache.clear();
         console.log('🗑️ Cache cleared');
     }
-    // ============================================================================
-    // TRADFI DATA SOURCES
-    // ============================================================================
     async fetchFromFinnhub() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 10); // Limit for free tier
+            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 10);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
                     params: { symbol, token: API_CONFIG.finnhub.token },
@@ -252,7 +207,7 @@ class MarketDataService {
     }
     async fetchFromPolygon() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
+            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(`${API_CONFIG.polygon.baseUrl}/last/trade/${symbol}`, {
                     params: { apiKey: API_CONFIG.polygon.token },
@@ -267,7 +222,7 @@ class MarketDataService {
                 asset: trade.results.T,
                 symbol: trade.results.T,
                 price: trade.results.price,
-                change24h: 0, // Polygon last trade doesn't provide 24h change
+                change24h: 0,
                 volume24h: trade.results.s || 0,
                 marketCap: 0,
                 source: 'Polygon',
@@ -284,7 +239,7 @@ class MarketDataService {
     }
     async fetchFromAlphaVantage() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
+            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
                     params: {
@@ -312,7 +267,7 @@ class MarketDataService {
                     asset: data['Meta Data']['2. Symbol'],
                     symbol: data['Meta Data']['2. Symbol'],
                     price: parseFloat(latestData['4. close']),
-                    change24h: 0, // Alpha Vantage intraday doesn't provide 24h change
+                    change24h: 0,
                     volume24h: parseFloat(latestData['5. volume']),
                     marketCap: 0,
                     source: 'Alpha Vantage',
@@ -331,7 +286,7 @@ class MarketDataService {
     }
     async fetchFromTwelveData() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
+            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(`${API_CONFIG.twelveData.baseUrl}/time_series`, {
                     params: {
@@ -352,7 +307,7 @@ class MarketDataService {
                     asset: data.meta.symbol,
                     symbol: data.meta.symbol,
                     price: parseFloat(latest.close),
-                    change24h: 0, // Twelve Data intraday doesn't provide 24h change
+                    change24h: 0,
                     volume24h: parseFloat(latest.volume),
                     marketCap: 0,
                     source: 'Twelve Data',
@@ -368,9 +323,6 @@ class MarketDataService {
             return [];
         }
     }
-    // ============================================================================
-    // CRYPTO & DEFI DATA SOURCES
-    // ============================================================================
     async fetchFromCoinGecko() {
         try {
             const response = await axios_1.default.get(`${API_CONFIG.coinGecko.baseUrl}/coins/markets`, {
@@ -415,7 +367,7 @@ class MarketDataService {
                 asset: protocol.name,
                 symbol: protocol.symbol.toUpperCase(),
                 name: protocol.name,
-                price: protocol.tvl / 1000000, // Convert to millions
+                price: protocol.tvl / 1000000,
                 change24h: protocol.change_1d || 0,
                 volume24h: protocol.volume_1d || 0,
                 marketCap: protocol.market_cap || protocol.tvl,
@@ -446,7 +398,7 @@ class MarketDataService {
                 price: parseFloat(ticker.lastPrice),
                 change24h: parseFloat(ticker.priceChange),
                 volume24h: parseFloat(ticker.volume),
-                marketCap: 0, // Binance doesn't provide market cap
+                marketCap: 0,
                 source: 'Binance',
                 lastUpdated: Date.now(),
                 high24h: parseFloat(ticker.highPrice),
@@ -458,12 +410,6 @@ class MarketDataService {
             return [];
         }
     }
-    // ============================================================================
-    // FALLBACK DATA METHODS
-    // ============================================================================
-    /**
-     * Fetch TradFi data from multiple APIs
-     */
     async fetchTradFiDataFromAPIs() {
         const sources = [
             () => this.fetchFromFinnhub(),
@@ -471,7 +417,6 @@ class MarketDataService {
             () => this.fetchFromAlphaVantage(),
             () => this.fetchFromTwelveData()
         ];
-        // Try sources in parallel, use first successful response
         const results = await Promise.allSettled(sources.map(source => source()));
         const successfulResults = results
             .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
@@ -484,16 +429,12 @@ class MarketDataService {
         }
         throw new Error('All TradFi data sources failed');
     }
-    /**
-     * Fetch DeFi data from multiple APIs
-     */
     async fetchDeFiDataFromAPIs() {
         const sources = [
             () => this.fetchFromCoinGecko(),
             () => this.fetchFromDefiLlama(),
             () => this.fetchFromBinance()
         ];
-        // Try sources in parallel, use first successful response
         const results = await Promise.allSettled(sources.map(source => source()));
         const successfulResults = results
             .filter((result) => result.status === 'fulfilled' && result.value.length > 0)
@@ -506,19 +447,13 @@ class MarketDataService {
         }
         throw new Error('All DeFi data sources failed');
     }
-    /**
-     * Get cached data if available and not expired
-     */
     getCachedData(key) {
         const cached = this.cache.get(key);
-        if (cached && Date.now() - cached.timestamp < 60000) { // 60 seconds TTL
+        if (cached && Date.now() - cached.timestamp < 60000) {
             return cached.data;
         }
         return null;
     }
-    /**
-     * Return empty TradFi data to indicate API failure
-     */
     getEmptyTradFiData() {
         return DEFAULT_TRADFI_SYMBOLS.map(symbol => ({
             asset: symbol,
@@ -534,9 +469,6 @@ class MarketDataService {
             open24h: 0
         }));
     }
-    /**
-     * Return empty DeFi data to indicate API failure
-     */
     getEmptyDeFiData() {
         return DEFAULT_CRYPTO_IDS.map(id => ({
             asset: id,
@@ -552,9 +484,6 @@ class MarketDataService {
             open24h: 0
         }));
     }
-    // ============================================================================
-    // HELPER METHODS
-    // ============================================================================
     getActiveDataSources() {
         const sources = [];
         if (this.cache.has('tradfi'))
@@ -572,17 +501,13 @@ class MarketDataService {
         });
     }
     calculateCacheHitRate() {
-        // Simple cache hit rate calculation
-        return this.cache.size > 0 ? 0.8 : 0; // Placeholder
+        return this.cache.size > 0 ? 0.8 : 0;
     }
     setupAxiosInterceptors() {
-        // Add request interceptor for rate limiting
         axios_1.default.interceptors.request.use((config) => {
-            // Add custom headers
             config.headers['User-Agent'] = 'Avila-Protocol-Market-Data/1.0';
             return config;
         });
-        // Add response interceptor for error handling
         axios_1.default.interceptors.response.use((response) => response, (error) => {
             if (error.response) {
                 console.warn(`⚠️ API Error ${error.response.status}: ${error.response.statusText}`);
@@ -598,12 +523,7 @@ class MarketDataService {
     }
 }
 exports.MarketDataService = MarketDataService;
-// ============================================================================
-// EXPORTS
-// ============================================================================
-// Export singleton instance
 exports.marketDataService = new MarketDataService();
-// Export utility functions
 const getMarketData = () => exports.marketDataService.getAllMarketData();
 exports.getMarketData = getMarketData;
 const getTradFiData = () => exports.marketDataService.getTradFiData();
@@ -614,4 +534,3 @@ const startMarketDataPolling = (callback) => exports.marketDataService.startPoll
 exports.startMarketDataPolling = startMarketDataPolling;
 const stopMarketDataPolling = () => exports.marketDataService.stopPolling();
 exports.stopMarketDataPolling = stopMarketDataPolling;
-//# sourceMappingURL=marketDataService.js.map

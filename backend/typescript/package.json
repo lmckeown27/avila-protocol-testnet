@@ -8,9 +8,11 @@
     "dev": "ts-node --watch server.ts",
     "build": "tsc",
     "build:clean": "rm -rf dist && tsc",
-    "postinstall": "npm run build",
+    "build:debug": "tsc --listFiles",
+    "postinstall": "echo 'Post-install complete'",
     "test": "ts-node test_marketData.ts",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "verify": "node -e \"console.log('Node.js working'); console.log('Current directory:', process.cwd()); console.log('Files:', require('fs').readdirSync('.'))\""
   },
   "keywords": [
     "market-data",

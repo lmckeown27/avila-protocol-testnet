@@ -1,49 +1,40 @@
 "use strict";
-// ============================================================================
-// AVILA PROTOCOL - MARKET DATA SERVER
-// ============================================================================
-// Simple Express server to expose market data service via REST API
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Load environment variables from .env file
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const marketDataService_1 = require("./marketDataService");
-// ============================================================================
-// SERVER CONFIGURATION
-// ============================================================================
 const app = (0, express_1.default)();
-const PORT = process.env['PORT'] || 3001;
-const HOST = process.env['HOST'] || 'localhost';
-// Initialize market data service
+const PORT = parseInt(process.env['PORT'] || '3001', 10);
+const HOST = process.env['HOST'] || '0.0.0.0';
 const marketDataService = new marketDataService_1.MarketDataService();
-// ============================================================================
-// MIDDLEWARE
-// ============================================================================
-app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'https://avilaprotocol-git-main-liam-mckeown-s-projects.vercel.app'],
-    credentials: true
-}));
+const corsOptions = {
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://avilaprotocol-git-main-liam-mckeown-s-projects.vercel.app',
+        'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
+        process.env['FRONTEND_URL']
+    ].filter((url) => Boolean(url)),
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
-// ============================================================================
-// HEALTH CHECK
-// ============================================================================
 app.get('/health', (_req, res) => {
     res.json({
         status: 'healthy',
         service: 'Avila Protocol Market Data Server',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        environment: process.env['NODE_ENV'] || 'development',
+        version: process.env['npm_package_version'] || '1.0.0'
     });
 });
-// ============================================================================
-// MARKET DATA ENDPOINTS
-// ============================================================================
-// Get all market data (TradFi + DeFi + Crypto)
 app.get('/api/market-data', async (_req, res) => {
     try {
         const data = await marketDataService.getAllMarketData();
@@ -62,7 +53,6 @@ app.get('/api/market-data', async (_req, res) => {
         });
     }
 });
-// Get TradFi market data only
 app.get('/api/market-data/tradfi', async (_req, res) => {
     try {
         const data = await marketDataService.getTradFiData();
@@ -81,7 +71,6 @@ app.get('/api/market-data/tradfi', async (_req, res) => {
         });
     }
 });
-// Get DeFi market data only
 app.get('/api/market-data/defi', async (_req, res) => {
     try {
         const data = await marketDataService.getDeFiData();
@@ -100,7 +89,6 @@ app.get('/api/market-data/defi', async (_req, res) => {
         });
     }
 });
-// Get cache statistics
 app.get('/api/market-data/cache/stats', (_req, res) => {
     try {
         const stats = marketDataService.getCacheStats();
@@ -119,7 +107,6 @@ app.get('/api/market-data/cache/stats', (_req, res) => {
         });
     }
 });
-// Clear cache
 app.post('/api/market-data/cache/clear', (_req, res) => {
     try {
         marketDataService.clearCache();
@@ -138,10 +125,6 @@ app.post('/api/market-data/cache/clear', (_req, res) => {
         });
     }
 });
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
-// Global error handler
 app.use((error, _req, res, _next) => {
     console.error('Unhandled error:', error);
     res.status(500).json({
@@ -151,17 +134,14 @@ app.use((error, _req, res, _next) => {
         timestamp: new Date().toISOString()
     });
 });
-// ============================================================================
-// SERVER STARTUP
-// ============================================================================
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
     console.log('🚀 Avila Protocol Market Data Server Started!');
     console.log(`📍 Server running at: http://${HOST}:${PORT}`);
     console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
     console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
     console.log(`🏛️ TradFi data: http://${HOST}:${PORT}/api/market-data/tradfi`);
     console.log(`🌐 DeFi data: http://${HOST}:${PORT}/api/market-data/defi`);
+    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
     console.log('✨ Ready to serve real-time market data!');
 });
 exports.default = app;
-//# sourceMappingURL=server.js.map

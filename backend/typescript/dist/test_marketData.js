@@ -1,13 +1,10 @@
 "use strict";
-// Test file for Market Data Service
-// Demonstrates basic functionality and error handling
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.testMarketDataService = testMarketDataService;
 const marketDataService_1 = require("./marketDataService");
 async function testMarketDataService() {
     console.log('🧪 Testing Market Data Service...\n');
     try {
-        // Test 1: Get all market data
         console.log('📊 Test 1: Fetching all market data...');
         const allData = await marketDataService_1.marketDataService.getAllMarketData();
         console.log(`✅ Success: ${allData.tradfi.length} TradFi assets, ${allData.defi.length} DeFi assets`);
@@ -17,7 +14,6 @@ async function testMarketDataService() {
             console.log(`⚠️ Errors: ${allData.errors.join(', ')}`);
         }
         console.log('');
-        // Test 2: Get TradFi data only
         console.log('🏛️ Test 2: Fetching TradFi data only...');
         const tradfiData = await marketDataService_1.marketDataService.getTradFiData();
         console.log(`✅ Success: ${tradfiData.length} TradFi assets`);
@@ -25,7 +21,6 @@ async function testMarketDataService() {
             console.log(`📈 Sample asset: ${tradfiData[0].asset} (${tradfiData[0].symbol}) - $${tradfiData[0].price}`);
         }
         console.log('');
-        // Test 3: Get DeFi data only
         console.log('🌐 Test 3: Fetching DeFi data only...');
         const defiData = await marketDataService_1.marketDataService.getDeFiData();
         console.log(`✅ Success: ${defiData.length} DeFi assets`);
@@ -33,19 +28,16 @@ async function testMarketDataService() {
             console.log(`📈 Sample asset: ${defiData[0].asset} (${defiData[0].symbol}) - $${defiData[0].price}`);
         }
         console.log('');
-        // Test 4: Test exported functions
         console.log('🔧 Test 4: Testing exported functions...');
         const exportedData = await (0, marketDataService_1.getMarketData)();
         console.log(`✅ Exported function success: ${exportedData.tradfi.length} TradFi, ${exportedData.defi.length} DeFi`);
         console.log('');
-        // Test 5: Cache statistics
         console.log('💾 Test 5: Cache statistics...');
         const cacheStats = marketDataService_1.marketDataService.getCacheStats();
         console.log(`📊 Cache size: ${cacheStats.size}`);
         console.log(`🔑 Cache keys: ${cacheStats.keys.join(', ')}`);
         console.log(`🎯 Cache hit rate: ${cacheStats.hitRate}`);
         console.log('');
-        // Test 6: Start and stop polling
         console.log('🔄 Test 6: Testing polling functionality...');
         let pollCount = 0;
         (0, marketDataService_1.startMarketDataPolling)((data) => {
@@ -56,16 +48,12 @@ async function testMarketDataService() {
                 (0, marketDataService_1.stopMarketDataPolling)();
             }
         });
-        // Wait for polling to complete
-        await new Promise(resolve => setTimeout(resolve, 70000)); // Wait 70 seconds for 2 polls
+        await new Promise(resolve => setTimeout(resolve, 70000));
         console.log('');
-        // Test 7: Error handling simulation
         console.log('🚨 Test 7: Testing error handling...');
         console.log('💡 Note: This test simulates API failures to test fallback logic');
-        // Clear cache to force fresh API calls
         marketDataService_1.marketDataService.clearCache();
         console.log('🗑️ Cache cleared');
-        // Try to fetch data (may trigger fallback)
         const fallbackData = await marketDataService_1.marketDataService.getAllMarketData();
         console.log(`✅ Fallback test: ${fallbackData.tradfi.length} TradFi, ${fallbackData.defi.length} DeFi assets`);
         console.log(`🔗 Data sources: ${fallbackData.dataSources.join(', ')}`);
@@ -83,7 +71,6 @@ async function testMarketDataService() {
         process.exit(1);
     }
 }
-// Run tests if this file is executed directly
 if (require.main === module) {
     testMarketDataService()
         .then(() => {
@@ -95,4 +82,3 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-//# sourceMappingURL=test_marketData.js.map
