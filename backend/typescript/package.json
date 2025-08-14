@@ -7,6 +7,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node --watch server.ts",
     "build": "tsc",
+    "build:clean": "rm -rf dist && tsc",
     "postinstall": "npm run build",
     "test": "ts-node test_marketData.ts",
     "lint": "eslint . --ext .ts"
