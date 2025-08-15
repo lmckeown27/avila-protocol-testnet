@@ -538,19 +538,24 @@ class MarketDataService {
                 },
                 timeout: 10000
             });
-            return response.data.map((coin) => ({
-                asset: coin.name,
-                symbol: coin.symbol.toUpperCase(),
-                name: coin.name,
-                price: coin.current_price,
-                change24h: coin.price_change_24h,
-                volume24h: coin.total_volume,
-                marketCap: coin.market_cap,
-                source: 'CoinGecko',
-                lastUpdated: Date.now(),
-                high24h: coin.high_24h,
-                low24h: coin.low_24h
-            }));
+            return response.data.map((coin) => {
+                const percentageChange = coin.current_price > 0
+                    ? (coin.price_change_24h / coin.current_price) * 100
+                    : 0;
+                return {
+                    asset: coin.name,
+                    symbol: coin.symbol.toUpperCase(),
+                    name: coin.name,
+                    price: coin.current_price,
+                    change24h: percentageChange,
+                    volume24h: coin.total_volume,
+                    marketCap: coin.market_cap,
+                    source: 'CoinGecko',
+                    lastUpdated: Date.now(),
+                    high24h: coin.high_24h,
+                    low24h: coin.low_24h
+                };
+            });
         }
         catch (error) {
             console.warn('⚠️ CoinGecko fetch failed:', error);
@@ -574,7 +579,10 @@ class MarketDataService {
                 volume24h: protocol.volume_1d || 0,
                 marketCap: protocol.market_cap || protocol.tvl,
                 source: 'DefiLlama',
-                lastUpdated: Date.now()
+                lastUpdated: Date.now(),
+                high24h: protocol.tvl / 1000000,
+                low24h: protocol.tvl / 1000000,
+                open24h: protocol.tvl / 1000000
             }));
         }
         catch (error) {
