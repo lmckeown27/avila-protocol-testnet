@@ -178,21 +178,30 @@ app.get('/api/market-data/enhanced/:symbol', async (req, res) => {
             });
         }
         let marketData;
-        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT'].includes(symbol.toUpperCase())) {
+        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
             marketData = await marketDataService.getTradFiMarketData(symbol.toUpperCase());
         }
         else {
             marketData = await marketDataService.getDeFiMarketData(symbol.toUpperCase());
         }
+        const responseData = {
+            symbol: symbol.toUpperCase(),
+            marketCap: marketData.marketCap,
+            volume: marketData.volume,
+            timestamp: new Date().toISOString()
+        };
+        if (marketData.tvl !== undefined) {
+            responseData.tvl = marketData.tvl;
+        }
+        if (marketData.pe !== undefined) {
+            responseData.pe = marketData.pe;
+        }
+        if (marketData.dividend !== undefined) {
+            responseData.dividend = marketData.dividend;
+        }
         return res.json({
             success: true,
-            data: {
-                symbol: symbol.toUpperCase(),
-                marketCap: marketData.marketCap,
-                volume: marketData.volume,
-                ...(marketData.tvl !== undefined && { tvl: marketData.tvl }),
-                timestamp: new Date().toISOString()
-            }
+            data: responseData
         });
     }
     catch (error) {

@@ -225,7 +225,7 @@ app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response)
 
     // Determine if this is a TradFi or DeFi asset and use appropriate method
     let marketData;
-    if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT'].includes(symbol.toUpperCase())) {
+    if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
       // TradFi asset - use TradFi method
       marketData = await (marketDataService as any).getTradFiMarketData(symbol.toUpperCase());
     } else {
@@ -233,15 +233,30 @@ app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response)
       marketData = await (marketDataService as any).getDeFiMarketData(symbol.toUpperCase());
     }
     
+    // Build response data based on asset type
+    const responseData: any = {
+      symbol: symbol.toUpperCase(),
+      marketCap: marketData.marketCap,
+      volume: marketData.volume,
+      timestamp: new Date().toISOString()
+    };
+
+    // Add DeFi-specific fields
+    if (marketData.tvl !== undefined) {
+      responseData.tvl = marketData.tvl;
+    }
+
+    // Add TradFi-specific fields
+    if (marketData.pe !== undefined) {
+      responseData.pe = marketData.pe;
+    }
+    if (marketData.dividend !== undefined) {
+      responseData.dividend = marketData.dividend;
+    }
+
     return res.json({
       success: true,
-      data: {
-        symbol: symbol.toUpperCase(),
-        marketCap: marketData.marketCap,
-        volume: marketData.volume,
-        ...(marketData.tvl !== undefined && { tvl: marketData.tvl }),
-        timestamp: new Date().toISOString()
-      }
+      data: responseData
     });
   } catch (error) {
     console.error(`Error fetching enhanced market data for ${req.params.symbol}:`, error);

@@ -78,10 +78,17 @@ class MarketDataService {
         const now = Date.now();
         if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
             console.log(`📊 Using cached TradFi market data for ${symbol}`);
-            return { marketCap: cached.marketCap, volume: cached.volume };
+            return {
+                marketCap: cached.marketCap,
+                volume: cached.volume,
+                pe: cached.pe,
+                dividend: cached.dividend
+            };
         }
         let marketCap = null;
         let volume = null;
+        let pe = null;
+        let dividend = null;
         try {
             console.log(`🔍 Fetching TradFi market data for ${symbol} from Finnhub...`);
             const finnhubMetricRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/stock/metric`, {
@@ -94,7 +101,8 @@ class MarketDataService {
             });
             if (finnhubMetricRes.data && finnhubMetricRes.data.metric) {
                 marketCap = finnhubMetricRes.data.metric.marketCapitalization || null;
-                console.log(`✅ Finnhub market cap for ${symbol}: ${marketCap}`);
+                pe = finnhubMetricRes.data.metric.peBasicExclExtraTTM || null;
+                console.log(`✅ Finnhub market cap for ${symbol}: ${marketCap}, P/E: ${pe}`);
             }
             const finnhubQuoteRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
                 params: {
@@ -115,18 +123,26 @@ class MarketDataService {
         if (!marketCap || !volume) {
             try {
                 console.log(`🔍 Fetching TradFi market data for ${symbol} from Alpha Vantage...`);
-                if (!marketCap) {
-                    const alphaOverviewRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
-                        params: {
-                            function: 'OVERVIEW',
-                            symbol,
-                            apikey: API_CONFIG.alphaVantage.token
-                        },
-                        timeout: 5000
-                    });
-                    if (alphaOverviewRes.data && alphaOverviewRes.data.MarketCapitalization) {
+                const alphaOverviewRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
+                    params: {
+                        function: 'OVERVIEW',
+                        symbol,
+                        apikey: API_CONFIG.alphaVantage.token
+                    },
+                    timeout: 5000
+                });
+                if (alphaOverviewRes.data) {
+                    if (!marketCap && alphaOverviewRes.data.MarketCapitalization) {
                         marketCap = parseFloat(alphaOverviewRes.data.MarketCapitalization);
                         console.log(`✅ Alpha Vantage market cap for ${symbol}: ${marketCap}`);
+                    }
+                    if (!pe && alphaOverviewRes.data.PERatio) {
+                        pe = parseFloat(alphaOverviewRes.data.PERatio);
+                        console.log(`✅ Alpha Vantage P/E for ${symbol}: ${pe}`);
+                    }
+                    if (alphaOverviewRes.data.DividendYield) {
+                        dividend = parseFloat(alphaOverviewRes.data.DividendYield);
+                        console.log(`✅ Alpha Vantage dividend yield for ${symbol}: ${dividend}`);
                     }
                 }
                 if (!volume) {
@@ -147,15 +163,40 @@ class MarketDataService {
                         }
                     }
                 }
-                console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+                console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
             }
             catch (err) {
                 console.warn(`⚠️ Alpha Vantage TradFi market data fetch failed for ${symbol}:`, err);
             }
         }
-        this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
-        console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
-        return { marketCap, volume };
+        if (!marketCap || !volume || !pe) {
+            try {
+                console.log(`🔍 Fetching TradFi market data for ${symbol} from Twelve Data...`);
+                const twelveRes = await axios_1.default.get(`${API_CONFIG.twelveData.baseUrl}/stocks`, {
+                    params: {
+                        symbol,
+                        apikey: API_CONFIG.twelveData.token
+                    },
+                    timeout: 5000
+                });
+                if (twelveRes.data && twelveRes.data.data && twelveRes.data.data.length > 0) {
+                    const stockData = twelveRes.data.data[0];
+                    if (!marketCap)
+                        marketCap = stockData.market_cap || null;
+                    if (!volume)
+                        volume = stockData.volume || null;
+                    if (!pe)
+                        pe = stockData.pe_ratio || null;
+                    console.log(`✅ Twelve Data TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
+                }
+            }
+            catch (err) {
+                console.warn(`⚠️ Twelve Data TradFi market data fetch failed for ${symbol}:`, err);
+            }
+        }
+        this.marketDataCache[cacheKey] = { marketCap, volume, pe, dividend, timestamp: now };
+        console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
+        return { marketCap, volume, pe, dividend };
     }
     async getDeFiMarketData(symbol) {
         const cacheKey = `defi_${symbol}`;

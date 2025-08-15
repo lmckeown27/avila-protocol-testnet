@@ -148,12 +148,14 @@ const DEFAULT_DEFI_PROTOCOLS = [
 export class MarketDataService {
   private cache = new Map<string, { data: any; timestamp: number }>();
   
-  // Enhanced cache for market cap, volume, and TVL data
+  // Enhanced cache for market cap, volume, TVL, and fundamental data
   private marketDataCache: { 
     [symbol: string]: { 
       marketCap: number | null; 
       volume: number | null; 
       tvl?: number | null;
+      pe?: number | null;
+      dividend?: number | null;
       timestamp: number 
     } 
   } = {};
@@ -174,7 +176,7 @@ export class MarketDataService {
   /**
    * Enhanced function to retrieve TradFi market data (stocks, ETFs)
    */
-  private async getTradFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null }> {
+  private async getTradFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null; dividend?: number | null }> {
     const cacheKey = `tradfi_${symbol}`;
     const cached = this.marketDataCache[cacheKey];
     const now = Date.now();
@@ -182,11 +184,18 @@ export class MarketDataService {
     // Return cached data if still valid
     if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
       console.log(`📊 Using cached TradFi market data for ${symbol}`);
-      return { marketCap: cached.marketCap, volume: cached.volume };
+      return { 
+        marketCap: cached.marketCap, 
+        volume: cached.volume,
+        pe: cached.pe,
+        dividend: cached.dividend
+      };
     }
 
     let marketCap: number | null = null;
     let volume: number | null = null;
+    let pe: number | null = null;
+    let dividend: number | null = null;
 
     try {
       // Use Finnhub for TradFi assets (stocks, ETFs)
@@ -204,7 +213,8 @@ export class MarketDataService {
       
       if (finnhubMetricRes.data && finnhubMetricRes.data.metric) {
         marketCap = finnhubMetricRes.data.metric.marketCapitalization || null;
-        console.log(`✅ Finnhub market cap for ${symbol}: ${marketCap}`);
+        pe = finnhubMetricRes.data.metric.peBasicExclExtraTTM || null;
+        console.log(`✅ Finnhub market cap for ${symbol}: ${marketCap}, P/E: ${pe}`);
       }
 
       // Get volume from quote endpoint
@@ -231,20 +241,33 @@ export class MarketDataService {
       try {
         console.log(`🔍 Fetching TradFi market data for ${symbol} from Alpha Vantage...`);
         
-        // Try OVERVIEW for market cap
-        if (!marketCap) {
-          const alphaOverviewRes = await axios.get(API_CONFIG.alphaVantage.baseUrl, {
-            params: {
-              function: 'OVERVIEW',
-              symbol,
-              apikey: API_CONFIG.alphaVantage.token
-            },
-            timeout: 5000
-          });
-          
-          if (alphaOverviewRes.data && alphaOverviewRes.data.MarketCapitalization) {
+        // Try OVERVIEW for comprehensive fundamental data
+        const alphaOverviewRes = await axios.get(API_CONFIG.alphaVantage.baseUrl, {
+          params: {
+            function: 'OVERVIEW',
+            symbol,
+            apikey: API_CONFIG.alphaVantage.token
+          },
+          timeout: 5000
+        });
+        
+        if (alphaOverviewRes.data) {
+          // Market cap (if not already from Finnhub)
+          if (!marketCap && alphaOverviewRes.data.MarketCapitalization) {
             marketCap = parseFloat(alphaOverviewRes.data.MarketCapitalization);
             console.log(`✅ Alpha Vantage market cap for ${symbol}: ${marketCap}`);
+          }
+          
+          // P/E ratio (if not already from Finnhub)
+          if (!pe && alphaOverviewRes.data.PERatio) {
+            pe = parseFloat(alphaOverviewRes.data.PERatio);
+            console.log(`✅ Alpha Vantage P/E for ${symbol}: ${pe}`);
+          }
+          
+          // Dividend yield
+          if (alphaOverviewRes.data.DividendYield) {
+            dividend = parseFloat(alphaOverviewRes.data.DividendYield);
+            console.log(`✅ Alpha Vantage dividend yield for ${symbol}: ${dividend}`);
           }
         }
 
@@ -269,17 +292,44 @@ export class MarketDataService {
           }
         }
         
-        console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+        console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
       } catch (err) {
         console.warn(`⚠️ Alpha Vantage TradFi market data fetch failed for ${symbol}:`, err);
       }
     }
 
-    // Cache the results with TradFi prefix
-    this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
-    console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+    // Use Twelve Data as final fallback - Most comprehensive fallback
+    if (!marketCap || !volume || !pe) {
+      try {
+        console.log(`🔍 Fetching TradFi market data for ${symbol} from Twelve Data...`);
+        
+        const twelveRes = await axios.get(`${API_CONFIG.twelveData.baseUrl}/stocks`, {
+          params: {
+            symbol,
+            apikey: API_CONFIG.twelveData.token
+          },
+          timeout: 5000
+        });
+        
+        if (twelveRes.data && twelveRes.data.data && twelveRes.data.data.length > 0) {
+          const stockData = twelveRes.data.data[0];
+          
+          if (!marketCap) marketCap = stockData.market_cap || null;
+          if (!volume) volume = stockData.volume || null;
+          if (!pe) pe = stockData.pe_ratio || null;
+          
+          console.log(`✅ Twelve Data TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Twelve Data TradFi market data fetch failed for ${symbol}:`, err);
+      }
+    }
 
-    return { marketCap, volume };
+    // Cache the results with TradFi prefix (including new fields)
+    this.marketDataCache[cacheKey] = { marketCap, volume, pe, dividend, timestamp: now };
+    console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
+
+    return { marketCap, volume, pe, dividend };
   }
 
   /**
