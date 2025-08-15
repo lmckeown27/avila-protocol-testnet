@@ -182,7 +182,7 @@ const DeFiMarkets = () => {
           {formatCurrency(asset.marketCap)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {asset.tvl ? formatCurrency(asset.tvl) : 'N/A'}
+
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           {formatCurrency(asset.high24h)}
@@ -238,12 +238,12 @@ const DeFiMarkets = () => {
             <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.high24h)}</span>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400">TVL:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{asset.tvl ? formatCurrency(asset.tvl) : 'N/A'}</span>
-          </div>
-          <div>
             <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
             <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.marketCap)}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">24h Low:</span>
+            <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.low24h)}</span>
           </div>
         </div>
       </div>
@@ -256,13 +256,11 @@ const DeFiMarkets = () => {
     
     const totalMarketCap = deFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
     const totalVolume = deFiData.reduce((sum, asset) => sum + (asset.volume24h || 0), 0);
-    const totalTVL = deFiData.reduce((sum, asset) => sum + (asset.tvl || 0), 0);
     const avgChange = deFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / deFiData.length;
     
     return {
       totalMarketCap,
       totalVolume,
-      totalTVL,
       avgChange,
       assetCount: deFiData.length
     };
@@ -276,13 +274,13 @@ const DeFiMarkets = () => {
           Decentralized Finance Markets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Real-time cryptocurrency market data with TVL, volume, and market cap from multiple APIs
+          Real-time cryptocurrency market data with volume and market cap from multiple APIs
         </p>
       </div>
 
       {/* Market Summary Cards */}
       {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Value</h3>
@@ -309,18 +307,7 @@ const DeFiMarkets = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total TVL</h3>
-              <TrendingUp className="w-5 h-5 text-indigo-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatCurrency(marketSummary.totalTVL)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              DeFi protocol value
-            </div>
-          </div>
+
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -380,7 +367,6 @@ const DeFiMarkets = () => {
                 {renderTableHeader('change24h', '24h Change')}
                 {renderTableHeader('volume24h', '24h Volume')}
                 {renderTableHeader('marketCap', 'Market Cap')}
-                {renderTableHeader('tvl', 'TVL')}
                 {renderTableHeader('high24h', '24h High')}
                 {renderTableHeader('low24h', '24h Low')}
               </tr>
@@ -388,20 +374,20 @@ const DeFiMarkets = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                     <div className="mt-2">Loading decentralized market data...</div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-red-500">
                     {error}
                   </td>
                 </tr>
               ) : filteredAndSortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No assets found matching your search.
                   </td>
                 </tr>
