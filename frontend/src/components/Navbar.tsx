@@ -29,6 +29,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
               <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
               <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
+              <Link to="/defi-protocols" className={`nav-link ${isActive('/defi-protocols') ? 'active' : ''}`}>DeFi Protocols</Link>
               <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
             </div>
 

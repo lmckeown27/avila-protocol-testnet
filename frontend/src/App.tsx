@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Markets from './pages/Markets';
 import TradFiMarkets from './pages/TradFiMarkets';
 import DeFiMarkets from './pages/DeFiMarkets';
+import DeFiProtocols from './pages/DeFiProtocols';
 import Trade from './pages/Trade';
 import Portfolio from './pages/Portfolio';
 import Governance from './pages/Governance';
@@ -61,6 +62,7 @@ function App() {
             <Route path="/markets" element={<Markets />} />
             <Route path="/tradfi-markets" element={<TradFiMarkets />} />
             <Route path="/defi-markets" element={<DeFiMarkets />} />
+            <Route path="/defi-protocols" element={<DeFiProtocols />} />
             <Route path="/trade" element={<Trade />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/governance" element={<Governance />} />

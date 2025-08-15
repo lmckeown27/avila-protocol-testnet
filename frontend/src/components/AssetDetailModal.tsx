@@ -16,14 +16,22 @@ interface Asset {
   spot_price?: number;
   change?: number;
   changePercent?: number;
+  change24h?: number;
   volume?: number;
+  volume24h?: number;
   marketCap?: number;
   high?: number;
+  high24h?: number;
   low?: number;
+  low24h?: number;
   open?: number;
   previousClose?: number;
   exchange?: string;
   lastUpdated?: number;
+  // Enhanced data fields
+  pe?: number | null;
+  dividend?: number | null;
+  tvl?: number | null;
 }
 
 interface AssetDetailModalProps {
@@ -217,6 +225,62 @@ const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModa
               </div>
             </div>
           </div>
+
+          {/* Enhanced Data Section */}
+          {(asset.pe !== null || asset.dividend !== null || asset.tvl !== null) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {asset.pe !== null && asset.pe !== undefined && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      P/E Ratio
+                    </span>
+                  </div>
+                  <div className="text-xl font-semibold text-blue-900 dark:text-blue-100">
+                    {asset.pe.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Price-to-Earnings
+                  </div>
+                </div>
+              )}
+
+              {asset.dividend !== null && asset.dividend !== undefined && (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <DollarSign className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                      Dividend Yield
+                    </span>
+                  </div>
+                  <div className="text-xl font-semibold text-green-900 dark:text-green-100">
+                    {asset.dividend.toFixed(2)}%
+                  </div>
+                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    Annual yield
+                  </div>
+                </div>
+              )}
+
+              {asset.tvl !== null && asset.tvl !== undefined && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <BarChart3 className="w-5 h-5 text-purple-500" />
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                      Total Value Locked
+                    </span>
+                  </div>
+                  <div className="text-xl font-semibold text-purple-900 dark:text-purple-100">
+                    {formatCurrency(asset.tvl)}
+                  </div>
+                  <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                    DeFi protocol value
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Historical Chart */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
