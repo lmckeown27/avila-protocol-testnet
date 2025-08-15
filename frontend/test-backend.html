@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="data"></div>
+
+    <script>
+        async function testBackend() {
+            try {
+                // Test health endpoint
+                const healthResponse = await fetch('http://localhost:3000/health');
+                const healthData = await healthResponse.json();
+                
+                document.getElementById('status').innerHTML = '✅ Backend connected successfully!';
+                document.getElementById('data').innerHTML = `
+                    <h3>Health Check Response:</h3>
+                    <pre>${JSON.stringify(healthData, null, 2)}</pre>
+                `;
+
+                // Test stocks endpoint
+                const stocksResponse = await fetch('http://localhost:3000/api/market-data/stocks');
+                const stocksData = await stocksResponse.json();
+                
+                document.getElementById('data').innerHTML += `
+                    <h3>Stocks Data Response:</h3>
+                    <pre>${JSON.stringify(stocksData, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Connection failed: ${error.message}`;
+                console.error('Backend connection error:', error);
+            }
+        }
+
+        testBackend();
+    </script>
+</body>
+</html> 

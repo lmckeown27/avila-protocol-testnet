@@ -7,7 +7,7 @@ export const config = {
   
   // Backend Configuration
   backend: {
-    baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://avila-protocol-testnet.onrender.com',
+    baseUrl: import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://avila-protocol-testnet.onrender.com'),
     timeout: 10000,
     endpoints: {
       health: '/api/health',
