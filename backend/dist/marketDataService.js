@@ -420,22 +420,19 @@ class MarketDataService {
             const results = await Promise.all(promises);
             return results
                 .filter(quote => quote.c && quote.c > 0)
-                .map(quote => {
-                const percentageChange = quote.dp || 0;
-                return {
-                    asset: quote.symbol,
-                    symbol: quote.symbol,
-                    price: quote.c,
-                    change24h: percentageChange,
-                    volume24h: quote.volume || quote.v || 0,
-                    marketCap: quote.marketCap || 0,
-                    source: 'Finnhub',
-                    lastUpdated: Date.now(),
-                    high24h: quote.h,
-                    low24h: quote.l,
-                    open24h: quote.o
-                };
-            });
+                .map(quote => ({
+                asset: quote.symbol,
+                symbol: quote.symbol,
+                price: quote.c,
+                change24h: quote.d,
+                volume24h: quote.volume || quote.v || 0,
+                marketCap: quote.marketCap || 0,
+                source: 'Finnhub',
+                lastUpdated: Date.now(),
+                high24h: quote.h,
+                low24h: quote.l,
+                open24h: quote.o
+            }));
         }
         catch (error) {
             console.warn('⚠️ Finnhub fetch failed:', error);

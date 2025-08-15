@@ -634,24 +634,19 @@ export class MarketDataService {
       const results = await Promise.all(promises);
       return results
         .filter(quote => quote.c && quote.c > 0)
-        .map(quote => {
-          // Get the percentage change from Finnhub (this should be the correct 24h % change)
-          const percentageChange = quote.dp || 0; // dp = daily percentage change
-          
-          return {
-            asset: quote.symbol,
-            symbol: quote.symbol,
-            price: quote.c,
-            change24h: percentageChange, // Use the actual percentage change from API
-            volume24h: quote.volume || quote.v || 0,
-            marketCap: quote.marketCap || 0,
-            source: 'Finnhub',
-            lastUpdated: Date.now(),
-            high24h: quote.h,
-            low24h: quote.l,
-            open24h: quote.o
-          };
-        });
+        .map(quote => ({
+          asset: quote.symbol,
+          symbol: quote.symbol,
+          price: quote.c,
+          change24h: quote.d, // Use the correct percentage change from Finnhub
+          volume24h: quote.volume || quote.v || 0,
+          marketCap: quote.marketCap || 0,
+          source: 'Finnhub',
+          lastUpdated: Date.now(),
+          high24h: quote.h,
+          low24h: quote.l,
+          open24h: quote.o
+        }));
 
     } catch (error) {
       console.warn('⚠️ Finnhub fetch failed:', error);
