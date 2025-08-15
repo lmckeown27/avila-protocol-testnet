@@ -20,66 +20,41 @@ requiredVars.forEach(key => {
 });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const marketDataService_1 = require("./marketDataService");
+const enhancedMarketDataService_1 = require("./enhancedMarketDataService");
+const rateLimitManager_1 = require("./rateLimitManager");
 const app = (0, express_1.default)();
-const PORT = parseInt(process.env['PORT'] || '3000', 10);
-const HOST = process.env['HOST'] || '0.0.0.0';
-const marketDataService = new marketDataService_1.MarketDataService();
-const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://avilaprotocol-git-main-liam-mckeown-s-projects.vercel.app',
-        'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
-        process.env['FRONTEND_URL']
-    ].filter((url) => Boolean(url)),
-    credentials: true,
-    optionsSuccessStatus: 200
-};
-app.use((0, cors_1.default)(corsOptions));
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || 'localhost';
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-app.get('/', (_req, res) => {
-    res.json({
-        status: "Backend running",
-        service: 'Avila Protocol Market Data Server',
-        timestamp: new Date().toISOString(),
-        endpoints: {
-            health: '/health',
-            envCheck: '/env-check',
-            marketData: '/api/market-data',
-            stocks: '/api/market-data/stocks',
-            digitalAssets: '/api/market-data/digital-assets'
-        }
-    });
-});
-app.get('/health', (_req, res) => {
-    res.json({
-        status: 'healthy',
-        service: 'Avila Markets Server',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env['NODE_ENV'] || 'development',
-        version: process.env['npm_package_version'] || '1.0.0'
-    });
-});
 app.get('/api/health', (_req, res) => {
     res.json({
-        status: 'ok',
-        timestamp: Date.now(),
-        service: 'Avila Markets Server',
-        environment: process.env['NODE_ENV'] || 'development'
+        success: true,
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
     });
 });
-app.get('/env-check', (req, res) => {
-    const status = {};
-    requiredVars.forEach(key => {
-        status[key] = !!process.env[key];
+app.get('/env-check', (_req, res) => {
+    const envVars = {
+        NODE_ENV: process.env.NODE_ENV || 'not set',
+        PORT: process.env.PORT || 'not set',
+        FINNHUB_API_KEY: process.env.FINNHUB_API_KEY ? 'set' : 'not set',
+        ALPHA_VANTAGE_API_KEY: process.env.ALPHA_VANTAGE_API_KEY ? 'set' : 'not set',
+        TWELVE_DATA_API_KEY: process.env.TWELVE_DATA_API_KEY ? 'set' : 'not set',
+        COINMARKETCAP_API_KEY: process.env.COINMARKETCAP_API_KEY ? 'set' : 'not set'
+    };
+    res.json({
+        success: true,
+        environment: envVars,
+        timestamp: new Date().toISOString()
     });
-    res.json({ status: "ok", variables: status });
 });
 app.get('/api/market-data', async (_req, res) => {
     try {
-        const data = await marketDataService.getAllMarketData();
+        console.log('📊 Fetching all market data...');
+        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getAllMarketData();
         res.json({
             success: true,
             data,
@@ -87,7 +62,7 @@ app.get('/api/market-data', async (_req, res) => {
         });
     }
     catch (error) {
-        console.error('Error fetching all market data:', error);
+        console.error('Error fetching market data:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch market data',
@@ -97,7 +72,8 @@ app.get('/api/market-data', async (_req, res) => {
 });
 app.get('/api/market-data/stocks', async (_req, res) => {
     try {
-        const data = await marketDataService.getStockData();
+        console.log('📈 Fetching Stock Market data...');
+        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
         res.json({
             success: true,
             data,
@@ -115,7 +91,8 @@ app.get('/api/market-data/stocks', async (_req, res) => {
 });
 app.get('/api/market-data/digital-assets', async (_req, res) => {
     try {
-        const data = await marketDataService.getDeFiData();
+        console.log('🌐 Fetching Digital Assets data...');
+        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
         res.json({
             success: true,
             data,
@@ -131,27 +108,57 @@ app.get('/api/market-data/digital-assets', async (_req, res) => {
         });
     }
 });
-app.get('/api/market-data/cache/stats', (_req, res) => {
+app.get('/api/market-data/enhanced/:symbol', async (req, res) => {
     try {
-        const stats = marketDataService.getCacheStats();
+        const { symbol } = req.params;
+        console.log(`🔍 Fetching enhanced data for ${symbol}`);
+        let marketData;
+        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
+            marketData = await enhancedMarketDataService_1.enhancedMarketDataService.getEnhancedStockData(symbol.toUpperCase());
+        }
+        else {
+            marketData = { message: 'Enhanced data not available for this asset type' };
+        }
         res.json({
             success: true,
-            data: stats,
+            data: marketData,
             timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error(`Error fetching enhanced data for ${req.params.symbol}:`, error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch enhanced data',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+app.get('/api/market-data/cache/stats', (_req, res) => {
+    try {
+        const cacheStats = enhancedMarketDataService_1.enhancedMarketDataService.getCacheStats();
+        const rateLimitStatus = enhancedMarketDataService_1.enhancedMarketDataService.getRateLimitStatus();
+        res.json({
+            success: true,
+            data: {
+                cache: cacheStats,
+                rateLimits: rateLimitStatus,
+                timestamp: new Date().toISOString()
+            }
         });
     }
     catch (error) {
         console.error('Error fetching cache stats:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch cache stats',
+            error: 'Failed to fetch cache statistics',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 });
 app.post('/api/market-data/cache/clear', (_req, res) => {
     try {
-        marketDataService.clearCache();
+        enhancedMarketDataService_1.enhancedMarketDataService.clearCache();
         res.json({
             success: true,
             message: 'Cache cleared successfully',
@@ -167,85 +174,59 @@ app.post('/api/market-data/cache/clear', (_req, res) => {
         });
     }
 });
-app.get('/api/market-data/enhanced/:symbol', async (req, res) => {
+app.get('/api/rate-limits/status', (_req, res) => {
     try {
-        const { symbol } = req.params;
-        if (!symbol) {
-            return res.status(400).json({
-                success: false,
-                error: 'Symbol parameter is required'
-            });
-        }
-        let marketData;
-        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
-            marketData = await marketDataService.getStockMarketData(symbol.toUpperCase());
-        }
-        else {
-            marketData = await marketDataService.getDeFiMarketData(symbol.toUpperCase());
-        }
-        const responseData = {
-            symbol: symbol.toUpperCase(),
-            marketCap: marketData.marketCap,
-            volume: marketData.volume,
-            timestamp: new Date().toISOString()
-        };
-        if (marketData.tvl !== undefined) {
-            responseData.tvl = marketData.tvl;
-        }
-        if (marketData.pe !== undefined) {
-            responseData.pe = marketData.pe;
-        }
-        return res.json({
-            success: true,
-            data: responseData
-        });
-    }
-    catch (error) {
-        console.error(`Error fetching enhanced market data for ${req.params.symbol}:`, error);
-        return res.status(500).json({
-            success: false,
-            error: 'Failed to fetch enhanced market data',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.post('/api/market-data/cache/enhanced/clear', (_req, res) => {
-    try {
-        marketDataService.clearMarketDataCache();
+        const status = enhancedMarketDataService_1.enhancedMarketDataService.getRateLimitStatus();
         res.json({
             success: true,
-            message: 'Enhanced market data cache cleared successfully',
+            data: status,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error clearing enhanced market data cache:', error);
+        console.error('Error fetching rate limit status:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to clear enhanced market data cache',
+            error: 'Failed to fetch rate limit status',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 });
+app.use('*', (_req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'Endpoint not found',
+        message: 'The requested endpoint does not exist'
+    });
+});
 app.use((error, _req, res, _next) => {
-    console.error('Unhandled error:', error);
+    console.error('Global error handler:', error);
     res.status(500).json({
         success: false,
         error: 'Internal server error',
-        message: error.message,
-        timestamp: new Date().toISOString()
+        message: error.message || 'An unexpected error occurred'
     });
 });
 app.listen(PORT, HOST, () => {
-    console.log('🚀 Avila Markets Server Started!');
-    console.log(`📍 Server running at: http://${HOST}:${PORT}`);
-    console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
-    console.log(`🔍 Environment check: http://${HOST}:${PORT}/env-check`);
+    console.log('🚀 Enhanced Market Data Service Started');
+    console.log(`📍 Server: http://${HOST}:${PORT}`);
+    console.log(`🔍 Health check: http://${HOST}:${PORT}/api/health`);
     console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
     console.log(`📈 Stock Market data: http://${HOST}:${PORT}/api/market-data/stocks`);
     console.log(`🌐 Digital Assets data: http://${HOST}:${PORT}/api/market-data/digital-assets`);
     console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
-    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
-    console.log('✨ Ready to serve real-time market monitoring data with enhanced caching!');
+    console.log(`📊 Cache stats: http://${HOST}:${PORT}/api/market-data/cache/stats`);
+    console.log(`⚡ Rate limit status: http://${HOST}:${PORT}/api/rate-limits/status`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log('✨ Ready to serve market data with intelligent rate limiting and caching!');
 });
-exports.default = app;
+process.on('SIGTERM', () => {
+    console.log('🛑 SIGTERM received, shutting down gracefully...');
+    rateLimitManager_1.rateLimitManager.stop();
+    process.exit(0);
+});
+process.on('SIGINT', () => {
+    console.log('🛑 SIGINT received, shutting down gracefully...');
+    rateLimitManager_1.rateLimitManager.stop();
+    process.exit(0);
+});
