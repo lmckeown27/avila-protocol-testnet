@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
@@ -257,26 +257,7 @@ const TradFiMarkets = () => {
     );
   };
 
-  // Calculate market summary
-  const marketSummary = useMemo(() => {
-    if (tradFiData.length === 0) return null;
-    
-    const totalMarketCap = tradFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
-    const avgChange = tradFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / tradFiData.length;
-    
-    // Calculate average P/E ratio (excluding null values)
-    const validPERatios = tradFiData.filter(asset => asset.pe !== null && asset.pe !== undefined && asset.pe > 0);
-    const avgPERatio = validPERatios.length > 0 
-      ? validPERatios.reduce((sum, asset) => sum + (asset.pe || 0), 0) / validPERatios.length 
-      : null;
-    
-    return {
-      totalMarketCap,
-      avgChange,
-      avgPERatio,
-      assetCount: tradFiData.length
-    };
-  }, [tradFiData]);
+
 
   return (
     <div className="space-y-8 p-6">
@@ -290,64 +271,7 @@ const TradFiMarkets = () => {
         </p>
       </div>
 
-      {/* Market Summary Cards */}
-      {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Market Cap</h3>
-              <DollarSign className="w-5 h-5 text-blue-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatCurrency(marketSummary.totalMarketCap)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Across {marketSummary.assetCount} assets
-            </div>
-          </div>
 
-
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Avg Change</h3>
-              <TrendingUpIcon className="w-5 h-5 text-purple-500" />
-            </div>
-            <div className={`text-3xl font-bold mb-2 ${marketSummary.avgChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {marketSummary.avgChange >= 0 ? '+' : ''}{marketSummary.avgChange.toFixed(2)}%
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              24h average change
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Assets</h3>
-              <BarChart3 className="w-5 h-5 text-orange-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {marketSummary.assetCount}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Stocks & ETFs tracked
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Avg P/E Ratio</h3>
-              <TrendingUp className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {marketSummary.avgPERatio ? marketSummary.avgPERatio.toFixed(2) : 'N/A'}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Average P/E ratio
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Markets Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">

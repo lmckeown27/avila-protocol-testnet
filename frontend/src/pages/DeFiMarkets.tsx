@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, Activity, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
@@ -250,21 +250,7 @@ const DeFiMarkets = () => {
     );
   };
 
-  // Calculate market summary
-  const marketSummary = useMemo(() => {
-    if (digitalAssetsData.length === 0) return null;
-    
-    const totalMarketCap = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.marketCap || 0), 0);
-    const totalVolume = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.volume24h || 0), 0);
-    const avgChange = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.change24h || 0), 0) / digitalAssetsData.length;
-    
-    return {
-      totalMarketCap,
-      totalVolume,
-      avgChange,
-      assetCount: digitalAssetsData.length
-    };
-  }, [digitalAssetsData]);
+
 
   return (
     <div className="space-y-8 p-6">
@@ -278,64 +264,7 @@ const DeFiMarkets = () => {
         </p>
       </div>
 
-      {/* Market Summary Cards */}
-      {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Value</h3>
-              <DollarSign className="w-5 h-5 text-purple-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatCurrency(marketSummary.totalMarketCap)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Total market cap
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">24h Volume</h3>
-              <Activity className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatVolume(marketSummary.totalVolume)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Total trading volume
-            </div>
-          </div>
-
-
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Avg Change</h3>
-              <TrendingUpIcon className="w-5 h-5 text-blue-500" />
-            </div>
-            <div className={`text-3xl font-bold mb-2 ${marketSummary.avgChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {marketSummary.avgChange >= 0 ? '+' : ''}{marketSummary.avgChange.toFixed(2)}%
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              24h average change
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Assets</h3>
-              <BarChart3 className="w-5 h-5 text-orange-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {marketSummary.assetCount}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Cryptocurrencies tracked
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Markets Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">

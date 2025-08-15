@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TrendingUpIcon, TrendingDownIcon, BarChart3, DollarSign, Activity } from 'lucide-react';
+import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
 import { backendMarketDataService } from '../services/backendMarketData';
 import { NormalizedAsset } from '../services/backendMarketData';
 
@@ -97,20 +97,7 @@ const ETFMarket: React.FC = () => {
     };
   };
 
-  // Calculate market summary
-  const marketSummary = useMemo(() => {
-    if (etfData.length === 0) return null;
-    
-    const totalMarketCap = etfData.reduce((sum: number, asset: any) => sum + (asset.marketCap || 0), 0);
-    const avgChange = etfData.reduce((sum: number, asset: any) => sum + (asset.change24h || 0), 0) / etfData.length;
-    const totalAssets = etfData.length;
-    
-    return {
-      totalMarketCap,
-      avgChange,
-      totalAssets
-    };
-  }, [etfData]);
+
 
   if (loading && etfData.length === 0) {
     return (
@@ -168,49 +155,7 @@ const ETFMarket: React.FC = () => {
         </p>
       </div>
 
-      {/* Market Summary Cards */}
-      {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Market Cap</h3>
-              <DollarSign className="w-5 h-5 text-blue-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {formatCurrency(marketSummary.totalMarketCap)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Across {marketSummary.totalAssets} ETFs
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Avg Change</h3>
-              <Activity className="w-5 h-5 text-purple-500" />
-            </div>
-            <div className={`text-3xl font-bold mb-2 ${marketSummary.avgChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {marketSummary.avgChange >= 0 ? '+' : ''}{marketSummary.avgChange.toFixed(2)}%
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              24h average change
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active ETFs</h3>
-              <BarChart3 className="w-5 h-5 text-orange-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {marketSummary.totalAssets}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              ETFs tracked
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Search and Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
