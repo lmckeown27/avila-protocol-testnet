@@ -155,7 +155,7 @@ export class MarketDataService {
       volume: number | null; 
       tvl?: number | null;
       pe?: number | null;
-      dividend?: number | null;
+
       timestamp: number 
     } 
   } = {};
@@ -176,7 +176,7 @@ export class MarketDataService {
   /**
    * Enhanced function to retrieve TradFi market data (stocks, ETFs)
    */
-  private async getTradFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null; dividend?: number | null }> {
+  private async getTradFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null }> {
     const cacheKey = `tradfi_${symbol}`;
     const cached = this.marketDataCache[cacheKey];
     const now = Date.now();
@@ -184,18 +184,16 @@ export class MarketDataService {
     // Return cached data if still valid
     if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
       console.log(`📊 Using cached TradFi market data for ${symbol}`);
-      return { 
-        marketCap: cached.marketCap, 
-        volume: cached.volume,
-        pe: cached.pe,
-        dividend: cached.dividend
-      };
+              return { 
+          marketCap: cached.marketCap, 
+          volume: cached.volume,
+          pe: cached.pe
+        };
     }
 
     let marketCap: number | null = null;
     let volume: number | null = null;
     let pe: number | null = null;
-    let dividend: number | null = null;
 
     try {
       // Use Finnhub for TradFi assets (stocks, ETFs)
@@ -264,11 +262,7 @@ export class MarketDataService {
             console.log(`✅ Alpha Vantage P/E for ${symbol}: ${pe}`);
           }
           
-          // Dividend yield
-          if (alphaOverviewRes.data.DividendYield) {
-            dividend = parseFloat(alphaOverviewRes.data.DividendYield);
-            console.log(`✅ Alpha Vantage dividend yield for ${symbol}: ${dividend}`);
-          }
+
         }
 
         // Try TIME_SERIES_DAILY for volume
@@ -292,7 +286,7 @@ export class MarketDataService {
           }
         }
         
-        console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
+        console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
       } catch (err) {
         console.warn(`⚠️ Alpha Vantage TradFi market data fetch failed for ${symbol}:`, err);
       }
@@ -326,10 +320,10 @@ export class MarketDataService {
     }
 
     // Cache the results with TradFi prefix (including new fields)
-    this.marketDataCache[cacheKey] = { marketCap, volume, pe, dividend, timestamp: now };
-    console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
+    this.marketDataCache[cacheKey] = { marketCap, volume, pe, timestamp: now };
+    console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
 
-    return { marketCap, volume, pe, dividend };
+    return { marketCap, volume, pe };
   }
 
   /**

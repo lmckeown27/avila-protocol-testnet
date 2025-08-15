@@ -81,14 +81,12 @@ class MarketDataService {
             return {
                 marketCap: cached.marketCap,
                 volume: cached.volume,
-                pe: cached.pe,
-                dividend: cached.dividend
+                pe: cached.pe
             };
         }
         let marketCap = null;
         let volume = null;
         let pe = null;
-        let dividend = null;
         try {
             console.log(`🔍 Fetching TradFi market data for ${symbol} from Finnhub...`);
             const finnhubMetricRes = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/stock/metric`, {
@@ -140,10 +138,6 @@ class MarketDataService {
                         pe = parseFloat(alphaOverviewRes.data.PERatio);
                         console.log(`✅ Alpha Vantage P/E for ${symbol}: ${pe}`);
                     }
-                    if (alphaOverviewRes.data.DividendYield) {
-                        dividend = parseFloat(alphaOverviewRes.data.DividendYield);
-                        console.log(`✅ Alpha Vantage dividend yield for ${symbol}: ${dividend}`);
-                    }
                 }
                 if (!volume) {
                     const alphaVolumeRes = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
@@ -163,7 +157,7 @@ class MarketDataService {
                         }
                     }
                 }
-                console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
+                console.log(`✅ Alpha Vantage TradFi data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
             }
             catch (err) {
                 console.warn(`⚠️ Alpha Vantage TradFi market data fetch failed for ${symbol}:`, err);
@@ -194,9 +188,9 @@ class MarketDataService {
                 console.warn(`⚠️ Twelve Data TradFi market data fetch failed for ${symbol}:`, err);
             }
         }
-        this.marketDataCache[cacheKey] = { marketCap, volume, pe, dividend, timestamp: now };
-        console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}, Dividend: ${dividend}`);
-        return { marketCap, volume, pe, dividend };
+        this.marketDataCache[cacheKey] = { marketCap, volume, pe, timestamp: now };
+        console.log(`💾 Cached TradFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, P/E: ${pe}`);
+        return { marketCap, volume, pe };
     }
     async getDeFiMarketData(symbol) {
         const cacheKey = `defi_${symbol}`;

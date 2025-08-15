@@ -250,9 +250,6 @@ app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response)
     if (marketData.pe !== undefined) {
       responseData.pe = marketData.pe;
     }
-    if (marketData.dividend !== undefined) {
-      responseData.dividend = marketData.dividend;
-    }
 
     return res.json({
       success: true,
