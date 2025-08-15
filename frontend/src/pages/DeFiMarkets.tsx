@@ -274,7 +274,7 @@ const DeFiMarkets = () => {
           Decentralized Finance Markets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Real-time cryptocurrency market data with volume and market cap from multiple APIs
+          Monitor decentralized finance markets with real-time cryptocurrency data, volume, and market cap from multiple APIs
         </p>
       </div>
 

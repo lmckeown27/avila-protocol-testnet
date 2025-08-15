@@ -1,7 +1,7 @@
 {
-  "name": "avila-protocol-market-data",
+  "name": "avila-markets-backend",
   "version": "1.0.0",
-  "description": "Comprehensive market data service for Avila Protocol - fetches from 10+ free APIs with fallback logic",
+  "description": "Market data aggregation service for TradFi and DeFi markets - fetches from 10+ free APIs with enhanced caching and watchlist support",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -24,12 +24,12 @@
     "tradfi",
     "defi",
     "crypto",
-    "options-trading",
-    "aptos",
-    "blockchain",
+    "stock-market",
+    "watchlist",
     "api-integration",
     "real-time-data",
-    "fallback-logic"
+    "caching",
+    "financial-analytics"
   ],
   "author": "Avila Protocol Team",
   "license": "MIT",

@@ -20,7 +20,7 @@ const Navbar: React.FC<NavbarProps> = () => {
             {/* Left Column: Logo/Brand */}
             <div className="flex-shrink-0">
               <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
-                Avila Protocol
+                Avila Markets
               </Link>
             </div>
 
@@ -30,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
               <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
               <Link to="/defi-protocols" className={`nav-link ${isActive('/defi-protocols') ? 'active' : ''}`}>DeFi Protocols</Link>
-              <Link to="/portfolio" className={`nav-link ${isActive('/portfolio') ? 'active' : ''}`}>Portfolio</Link>
+              <Link to="/watchlist" className={`nav-link ${isActive('/watchlist') ? 'active' : ''}`}>Watchlist</Link>
             </div>
 
             {/* Right Column: Feedback Button Only */}

@@ -158,4 +158,23 @@ export interface ConnectionState {
   lastDisconnected: Date | null;
   reconnectAttempts: number;
   errors: DataSourceError[];
+}
+
+// Watchlist types
+export interface WatchlistItem {
+  id: string;
+  symbol: string;
+  name: string;
+  type: 'tradfi' | 'defi';
+  addedAt: Date;
+  notes?: string;
+}
+
+export interface Watchlist {
+  id: string;
+  name: string;
+  description?: string;
+  items: WatchlistItem[];
+  createdAt: Date;
+  updatedAt: Date;
 } 

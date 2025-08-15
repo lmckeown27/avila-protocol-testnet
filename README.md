@@ -1,6 +1,6 @@
-# Avila Protocol
+# Avila Markets - Market Monitoring Platform
 
-A decentralized options trading platform built on the Aptos blockchain.
+A comprehensive market monitoring platform for both Traditional Finance (TradFi) and Decentralized Finance (DeFi) markets, with advanced watchlist capabilities and real-time data from multiple APIs.
 
 ## Project Structure
 
@@ -30,6 +30,8 @@ Contains all Move smart contracts that power the Avila Protocol:
 - **Options Core**: `options_core.move` - Options contract logic
 - **Testing**: Comprehensive test suite in `complete_protocol_tests.move`
 
+*Note: Smart contracts are maintained for future trading functionality, but current focus is on market monitoring.*
+
 **Quick Start:**
 ```bash
 cd backend/smart-contracts
@@ -37,13 +39,14 @@ aptos move compile
 aptos move test
 ```
 
-### 🔧 Backend TypeScript (`backend/typescript/`)
+### 🔧 Backend TypeScript (`backend/`)
 
-TypeScript services for deployment, management, and integration:
+TypeScript services for market data aggregation and API management:
 
-- **Deployment Scripts**: Automated contract deployment
-- **Protocol Management**: Initialization and verification tools
-- **Integration Services**: API and external service connectors
+- **Market Data Service**: Real-time TradFi and DeFi data aggregation
+- **Multi-API Integration**: Finnhub, Alpha Vantage, Twelve Data, CoinGecko, CoinMarketCap, DeFi Llama
+- **Data Caching**: Optimized caching for performance and API rate limits
+- **Enhanced Data**: P/E ratios, market cap, volume, and price analytics
 
 **Quick Start:**
 ```bash
@@ -55,9 +58,14 @@ npm run deploy:testnet
 
 ### 🎨 Frontend (`frontend/`)
 
-Frontend application for user interaction (currently a placeholder).
+React-based market monitoring dashboard with watchlist functionality:
 
-**Status**: Frontend implementation pending - structure prepared for future development.
+- **TradFi Markets**: Traditional stock market data with P/E ratios and market analytics
+- **DeFi Markets**: Cryptocurrency market data with real-time price tracking
+- **DeFi Protocols**: Protocol-specific data from DeFi Llama
+- **Watchlists**: Custom watchlists for both TradFi and DeFi assets
+- **Real-time Updates**: Live market data with configurable refresh intervals
+- **Responsive Design**: Mobile-optimized interface for market monitoring on-the-go
 
 ### 📚 Documentation (`docs/`)
 

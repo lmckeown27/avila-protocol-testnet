@@ -284,7 +284,7 @@ const TradFiMarkets = () => {
           Traditional Finance Markets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Real-time stock and ETF market data with price, market cap, and daily ranges
+          Monitor traditional finance markets with real-time data, P/E ratios, and market analytics from multiple APIs
         </p>
       </div>
 

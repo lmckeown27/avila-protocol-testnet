@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: avila-protocol-backend
+    name: avila-markets-backend
     env: node
     plan: free
     rootDir: backend

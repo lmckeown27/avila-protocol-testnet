@@ -56,7 +56,7 @@ app.get('/', (_req, res) => {
 app.get('/health', (_req, res) => {
     res.json({
         status: 'healthy',
-        service: 'Avila Protocol Market Data Server',
+        service: 'Avila Markets Server',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: process.env['NODE_ENV'] || 'development',
@@ -67,7 +67,7 @@ app.get('/api/health', (_req, res) => {
     res.json({
         status: 'ok',
         timestamp: Date.now(),
-        service: 'Avila Protocol Market Data Server',
+        service: 'Avila Markets Server',
         environment: process.env['NODE_ENV'] || 'development'
     });
 });
@@ -279,7 +279,7 @@ app.use((error, _req, res, _next) => {
     });
 });
 app.listen(PORT, HOST, () => {
-    console.log('🚀 Avila Protocol Market Data Server Started!');
+    console.log('🚀 Avila Markets Server Started!');
     console.log(`📍 Server running at: http://${HOST}:${PORT}`);
     console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
     console.log(`🔍 Environment check: http://${HOST}:${PORT}/env-check`);
@@ -289,6 +289,6 @@ app.listen(PORT, HOST, () => {
     console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
     console.log(`🌐 DeFi protocols: http://${HOST}:${PORT}/api/market-data/defi-protocols`);
     console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
-    console.log('✨ Ready to serve real-time market data with enhanced caching!');
+    console.log('✨ Ready to serve real-time market monitoring data with enhanced caching!');
 });
 exports.default = app;

@@ -1,7 +1,7 @@
 {
-  "name": "avila-protocol",
+  "name": "avila-markets",
   "version": "1.0.0",
-  "description": "Decentralized options trading platform on Aptos",
+  "description": "A comprehensive market monitoring platform for TradFi and DeFi markets with watchlist capabilities",
   "private": true,
   "workspaces": [
     "backend",
@@ -26,12 +26,14 @@
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "keywords": [
-    "aptos",
-    "move",
-    "options",
+    "market-monitoring",
+    "tradfi",
     "defi",
-    "trading",
-    "blockchain"
+    "cryptocurrency",
+    "stock-market",
+    "watchlist",
+    "real-time-data",
+    "financial-analytics"
   ],
   "author": "Avila Protocol Team",
   "license": "MIT",

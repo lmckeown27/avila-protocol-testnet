@@ -8,8 +8,7 @@ import Markets from './pages/Markets';
 import TradFiMarkets from './pages/TradFiMarkets';
 import DeFiMarkets from './pages/DeFiMarkets';
 import DeFiProtocols from './pages/DeFiProtocols';
-import Trade from './pages/Trade';
-import Portfolio from './pages/Portfolio';
+import Watchlist from './components/Watchlist';
 import Governance from './pages/Governance';
 import Admin from './pages/Admin';
 import { useAppStore } from './stores/appStore';
@@ -62,9 +61,9 @@ function App() {
             <Route path="/markets" element={<Markets />} />
             <Route path="/tradfi-markets" element={<TradFiMarkets />} />
             <Route path="/defi-markets" element={<DeFiMarkets />} />
-            <Route path="/defi-protocols" element={<DeFiProtocols />} />
-            <Route path="/trade" element={<Trade />} />
-            <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/defi-protocols" element={<DeFiProtocols />} />
+                <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/portfolio" element={<Watchlist />} />
             <Route path="/governance" element={<Governance />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<Home />} />

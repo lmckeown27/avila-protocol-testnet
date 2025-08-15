@@ -235,7 +235,7 @@ const DeFiProtocols = () => {
           DeFi Protocols
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Top DeFi protocols by Total Value Locked (TVL) with real-time metrics
+          Monitor top DeFi protocols by Total Value Locked (TVL) with real-time metrics and performance analytics
         </p>
       </div>
 
