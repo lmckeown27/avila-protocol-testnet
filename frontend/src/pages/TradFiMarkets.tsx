@@ -23,8 +23,28 @@ const TradFiMarkets = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await backendMarketDataService.getTradFiData();
-        setTradFiData(data);
+        
+        // First get basic TradFi data
+        const basicData = await backendMarketDataService.getTradFiData();
+        
+        // Then enhance each asset with P/E and dividend data
+        const enhancedData = await Promise.all(
+          basicData.map(async (asset) => {
+            try {
+              const enhancedData = await backendMarketDataService.getEnhancedMarketData(asset.symbol);
+              return {
+                ...asset,
+                pe: enhancedData.pe,
+                dividend: enhancedData.dividend
+              };
+            } catch (error) {
+              console.warn(`Failed to fetch enhanced data for ${asset.symbol}:`, error);
+              return asset; // Return basic data if enhanced fetch fails
+            }
+          })
+        );
+        
+        setTradFiData(enhancedData);
       } catch (error) {
         console.error('Failed to fetch TradFi data from backend:', error);
         setError('Failed to load traditional market data from backend');
@@ -34,7 +54,7 @@ const TradFiMarkets = () => {
     };
 
     fetchTradFiData();
-    const interval = setInterval(fetchTradFiData, 60000); // Refresh every minute
+    const interval = setInterval(fetchTradFiData, 300000); // Refresh every 5 minutes (enhanced data is slower)
     return () => clearInterval(interval);
   }, []);
 
