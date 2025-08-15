@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '../config/environment';
+import { EnhancedMarketData } from '../lib/types';
 
 // Backend API configuration
 const BACKEND_BASE_URL = config.backend.baseUrl;
@@ -17,6 +18,9 @@ export interface NormalizedAsset {
   high24h: number;
   low24h: number;
   open24h: number;
+  pe?: number | null;
+  dividend?: number | null;
+  tvl?: number | null;
 }
 
 export interface MarketDataResponse {
@@ -31,6 +35,8 @@ export interface IBackendMarketDataService {
   getAllMarketData(): Promise<MarketDataResponse>;
   getTradFiData(): Promise<NormalizedAsset[]>;
   getDeFiData(): Promise<NormalizedAsset[]>;
+  getEnhancedMarketData(symbol: string): Promise<EnhancedMarketData>;
+  getDeFiProtocols(): Promise<any>;
   getCacheStats(): Promise<any>;
   clearCache(): Promise<void>;
 }
@@ -95,6 +101,32 @@ class BackendMarketDataService implements IBackendMarketDataService {
       return response.data.data || response.data;
     } catch (error) {
       console.error('Failed to fetch DeFi data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get enhanced market data for a specific symbol
+   */
+  async getEnhancedMarketData(symbol: string): Promise<EnhancedMarketData> {
+    try {
+      const response = await this.axiosInstance.get(`/api/market-data/enhanced/${symbol}`);
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch enhanced market data for ${symbol}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get DeFi protocol data (TVL, protocol metrics)
+   */
+  async getDeFiProtocols(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get('/api/market-data/defi-protocols');
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch DeFi protocols:', error);
       throw error;
     }
   }

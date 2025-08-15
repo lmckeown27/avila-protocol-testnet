@@ -177,6 +177,12 @@ const TradFiMarkets = () => {
           {formatCurrency(asset.marketCap)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+          {asset.pe ? asset.pe.toFixed(2) : 'N/A'}
+        </td>
+        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+          {asset.dividend ? `${asset.dividend.toFixed(2)}%` : 'N/A'}
+        </td>
+        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           {formatCurrency(asset.high24h)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -240,9 +246,20 @@ const TradFiMarkets = () => {
     const totalMarketCap = tradFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
     const avgChange = tradFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / tradFiData.length;
     
+    // Calculate average P/E ratio (excluding null values)
+    const validPERatios = tradFiData.filter(asset => asset.pe !== null && asset.pe !== undefined && asset.pe > 0);
+    const avgPERatio = validPERatios.length > 0 
+      ? validPERatios.reduce((sum, asset) => sum + (asset.pe || 0), 0) / validPERatios.length 
+      : null;
+    
+    // Count dividend-paying stocks
+    const dividendStocks = tradFiData.filter(asset => asset.dividend !== null && asset.dividend !== undefined && asset.dividend > 0).length;
+    
     return {
       totalMarketCap,
       avgChange,
+      avgPERatio,
+      dividendStocks,
       assetCount: tradFiData.length
     };
   }, [tradFiData]);
@@ -261,7 +278,7 @@ const TradFiMarkets = () => {
 
       {/* Market Summary Cards */}
       {marketSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Total Market Cap</h3>
@@ -302,6 +319,19 @@ const TradFiMarkets = () => {
               Stocks & ETFs tracked
             </div>
           </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Avg P/E Ratio</h3>
+              <TrendingUp className="w-5 h-5 text-green-500" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {marketSummary.avgPERatio ? marketSummary.avgPERatio.toFixed(2) : 'N/A'}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {marketSummary.dividendStocks} dividend stocks
+            </div>
+          </div>
         </div>
       )}
 
@@ -311,9 +341,9 @@ const TradFiMarkets = () => {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Market Data (Free Tier)
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Displaying real-time price, market cap, and daily ranges. Volume data requires premium API access.
-          </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Displaying real-time price, market cap, P/E ratios, dividend yields, and daily ranges. Enhanced data from multiple APIs for comprehensive market insights.
+        </p>
           
           {/* Search Bar */}
           <div className="relative">
@@ -337,6 +367,8 @@ const TradFiMarkets = () => {
                 {renderTableHeader('price', 'Price')}
                 {renderTableHeader('change24h', '24h Change')}
                 {renderTableHeader('marketCap', 'Market Cap')}
+                {renderTableHeader('pe', 'P/E Ratio')}
+                {renderTableHeader('dividend', 'Dividend')}
                 {renderTableHeader('high24h', 'Day High')}
                 {renderTableHeader('low24h', 'Day Low')}
               </tr>
@@ -344,20 +376,20 @@ const TradFiMarkets = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <div className="mt-2">Loading traditional market data...</div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-red-500">
                     {error}
                   </td>
                 </tr>
               ) : filteredAndSortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No assets found matching your search.
                   </td>
                 </tr>

@@ -96,6 +96,40 @@ export interface CoinGeckoData {
   market_cap_change_percentage_24h: number;
 }
 
+// Enhanced market data types
+export interface EnhancedMarketData {
+  symbol: string;
+  marketCap: number | null;
+  volume: number | null;
+  tvl?: number | null;
+  pe?: number | null;
+  dividend?: number | null;
+  timestamp: string;
+}
+
+export interface TradFiAsset {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: number | null;
+  volume: number | null;
+  pe: number | null;
+  dividend: number | null;
+}
+
+export interface DeFiAsset {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: number | null;
+  volume: number | null;
+  tvl: number | null;
+}
+
 export interface DeFiLlamaData {
   name: string;
   symbol: string;
