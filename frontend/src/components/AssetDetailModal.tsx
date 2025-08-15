@@ -30,7 +30,6 @@ interface Asset {
   lastUpdated?: number;
   // Enhanced data fields
   pe?: number | null;
-  dividend?: number | null;
   tvl?: number | null;
 }
 
@@ -227,8 +226,8 @@ const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModa
           </div>
 
           {/* Enhanced Data Section */}
-          {(asset.pe !== null || asset.dividend !== null || asset.tvl !== null) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {(asset.pe !== null || asset.tvl !== null) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {asset.pe !== null && asset.pe !== undefined && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
@@ -246,22 +245,7 @@ const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModa
                 </div>
               )}
 
-              {asset.dividend !== null && asset.dividend !== undefined && (
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                      Dividend Yield
-                    </span>
-                  </div>
-                  <div className="text-xl font-semibold text-green-900 dark:text-green-100">
-                    {asset.dividend.toFixed(2)}%
-                  </div>
-                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    Annual yield
-                  </div>
-                </div>
-              )}
+
 
               {asset.tvl !== null && asset.tvl !== undefined && (
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">

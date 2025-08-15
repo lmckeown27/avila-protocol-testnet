@@ -19,7 +19,6 @@ export interface NormalizedAsset {
   low24h: number;
   open24h: number;
   pe?: number | null;
-  dividend?: number | null;
   tvl?: number | null;
 }
 

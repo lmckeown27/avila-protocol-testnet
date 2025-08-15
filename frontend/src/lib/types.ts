@@ -103,7 +103,6 @@ export interface EnhancedMarketData {
   volume: number | null;
   tvl?: number | null;
   pe?: number | null;
-  dividend?: number | null;
   timestamp: string;
 }
 
@@ -116,7 +115,6 @@ export interface TradFiAsset {
   marketCap: number | null;
   volume: number | null;
   pe: number | null;
-  dividend: number | null;
 }
 
 export interface DeFiAsset {

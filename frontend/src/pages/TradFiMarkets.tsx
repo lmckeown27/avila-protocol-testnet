@@ -27,15 +27,14 @@ const TradFiMarkets = () => {
         // First get basic TradFi data
         const basicData = await backendMarketDataService.getTradFiData();
         
-        // Then enhance each asset with P/E and dividend data
+        // Then enhance each asset with P/E data
         const enhancedData = await Promise.all(
           basicData.map(async (asset) => {
             try {
               const enhancedData = await backendMarketDataService.getEnhancedMarketData(asset.symbol);
               return {
                 ...asset,
-                pe: enhancedData.pe,
-                dividend: enhancedData.dividend
+                pe: enhancedData.pe
               };
             } catch (error) {
               console.warn(`Failed to fetch enhanced data for ${asset.symbol}:`, error);
@@ -200,9 +199,6 @@ const TradFiMarkets = () => {
           {asset.pe ? asset.pe.toFixed(2) : 'N/A'}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {asset.dividend ? `${asset.dividend.toFixed(2)}%` : 'N/A'}
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           {formatCurrency(asset.high24h)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -272,14 +268,10 @@ const TradFiMarkets = () => {
       ? validPERatios.reduce((sum, asset) => sum + (asset.pe || 0), 0) / validPERatios.length 
       : null;
     
-    // Count dividend-paying stocks
-    const dividendStocks = tradFiData.filter(asset => asset.dividend !== null && asset.dividend !== undefined && asset.dividend > 0).length;
-    
     return {
       totalMarketCap,
       avgChange,
       avgPERatio,
-      dividendStocks,
       assetCount: tradFiData.length
     };
   }, [tradFiData]);
@@ -349,7 +341,7 @@ const TradFiMarkets = () => {
               {marketSummary.avgPERatio ? marketSummary.avgPERatio.toFixed(2) : 'N/A'}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {marketSummary.dividendStocks} dividend stocks
+              Average P/E ratio
             </div>
           </div>
         </div>
@@ -362,7 +354,7 @@ const TradFiMarkets = () => {
             Market Data (Free Tier)
           </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Displaying real-time price, market cap, P/E ratios, dividend yields, and daily ranges. Enhanced data from multiple APIs for comprehensive market insights.
+          Displaying real-time price, market cap, P/E ratios, and daily ranges. Enhanced data from multiple APIs for comprehensive market insights.
         </p>
           
           {/* Search Bar */}
@@ -388,7 +380,6 @@ const TradFiMarkets = () => {
                 {renderTableHeader('change24h', '24h Change')}
                 {renderTableHeader('marketCap', 'Market Cap')}
                 {renderTableHeader('pe', 'P/E Ratio')}
-                {renderTableHeader('dividend', 'Dividend')}
                 {renderTableHeader('high24h', 'Day High')}
                 {renderTableHeader('low24h', 'Day Low')}
               </tr>
@@ -396,20 +387,20 @@ const TradFiMarkets = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <div className="mt-2">Loading traditional market data...</div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-red-500">
                     {error}
                   </td>
                 </tr>
               ) : filteredAndSortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     No assets found matching your search.
                   </td>
                 </tr>
