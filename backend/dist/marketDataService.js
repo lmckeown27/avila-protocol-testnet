@@ -163,10 +163,11 @@ class MarketDataService {
         const now = Date.now();
         if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
             console.log(`📊 Using cached DeFi market data for ${symbol}`);
-            return { marketCap: cached.marketCap, volume: cached.volume };
+            return { marketCap: cached.marketCap, volume: cached.volume, tvl: cached.tvl };
         }
         let marketCap = null;
         let volume = null;
+        let tvl = null;
         try {
             if (API_CONFIG.coinMarketCap.token !== 'demo') {
                 console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinMarketCap...`);
@@ -206,6 +207,26 @@ class MarketDataService {
                     console.warn(`⚠️ CoinMarketCap DeFi fetch failed for ${symbol}:`, cmcErr);
                 }
             }
+            try {
+                console.log(`🔍 Fetching DeFi protocol data for ${symbol} from DeFi Llama...`);
+                const defiLlamaRes = await axios_1.default.get(`${API_CONFIG.defiLlama.baseUrl}/protocols`, {
+                    timeout: 8000
+                });
+                if (defiLlamaRes.data && Array.isArray(defiLlamaRes.data)) {
+                    const protocol = defiLlamaRes.data.find(p => {
+                        var _a, _b;
+                        return ((_a = p.symbol) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === symbol.toLowerCase() ||
+                            ((_b = p.name) === null || _b === void 0 ? void 0 : _b.toLowerCase().includes(symbol.toLowerCase()));
+                    });
+                    if (protocol) {
+                        tvl = protocol.tvl || null;
+                        console.log(`✅ DeFi Llama protocol data for ${symbol}: TVL: ${tvl}`);
+                    }
+                }
+            }
+            catch (defiErr) {
+                console.warn(`⚠️ DeFi Llama fetch failed for ${symbol}:`, defiErr);
+            }
             if (!marketCap || !volume) {
                 try {
                     console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinGecko...`);
@@ -233,9 +254,9 @@ class MarketDataService {
         catch (err) {
             console.warn(`⚠️ DeFi market data fetch failed for ${symbol}:`, err);
         }
-        this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
-        console.log(`💾 Cached DeFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
-        return { marketCap, volume };
+        this.marketDataCache[cacheKey] = { marketCap, volume, tvl, timestamp: now };
+        console.log(`💾 Cached DeFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, TVL: ${tvl}`);
+        return { marketCap, volume, tvl };
     }
     async getAllMarketData() {
         try {

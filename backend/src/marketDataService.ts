@@ -148,11 +148,12 @@ const DEFAULT_DEFI_PROTOCOLS = [
 export class MarketDataService {
   private cache = new Map<string, { data: any; timestamp: number }>();
   
-  // Enhanced cache for market cap and volume data
+  // Enhanced cache for market cap, volume, and TVL data
   private marketDataCache: { 
     [symbol: string]: { 
       marketCap: number | null; 
       volume: number | null; 
+      tvl?: number | null;
       timestamp: number 
     } 
   } = {};
@@ -284,7 +285,7 @@ export class MarketDataService {
   /**
    * Enhanced function to retrieve DeFi market data (cryptocurrencies)
    */
-  private async getDeFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null }> {
+  private async getDeFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; tvl?: number | null }> {
     const cacheKey = `defi_${symbol}`;
     const cached = this.marketDataCache[cacheKey];
     const now = Date.now();
@@ -292,14 +293,15 @@ export class MarketDataService {
     // Return cached data if still valid
     if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
       console.log(`📊 Using cached DeFi market data for ${symbol}`);
-      return { marketCap: cached.marketCap, volume: cached.volume };
+      return { marketCap: cached.marketCap, volume: cached.volume, tvl: cached.tvl };
     }
 
     let marketCap: number | null = null;
     let volume: number | null = null;
+    let tvl: number | null = null;
 
     try {
-      // Use CoinMarketCap for DeFi assets (cryptocurrencies)
+      // Use CoinMarketCap for DeFi assets (cryptocurrencies) - Fastest for basic metrics
       if (API_CONFIG.coinMarketCap.token !== 'demo') {
         console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinMarketCap...`);
         try {
@@ -343,7 +345,32 @@ export class MarketDataService {
         }
       }
 
-      // Fallback to CoinGecko for DeFi if needed
+      // Use DeFi Llama for TVL and protocol-specific data - Best for DeFi insights
+      try {
+        console.log(`🔍 Fetching DeFi protocol data for ${symbol} from DeFi Llama...`);
+        
+        // Try to get protocol TVL data
+        const defiLlamaRes = await axios.get(`${API_CONFIG.defiLlama.baseUrl}/protocols`, {
+          timeout: 8000
+        });
+        
+        if (defiLlamaRes.data && Array.isArray(defiLlamaRes.data)) {
+          // Find protocol by symbol (case-insensitive)
+          const protocol = defiLlamaRes.data.find(p => 
+            p.symbol?.toLowerCase() === symbol.toLowerCase() ||
+            p.name?.toLowerCase().includes(symbol.toLowerCase())
+          );
+          
+          if (protocol) {
+            tvl = protocol.tvl || null;
+            console.log(`✅ DeFi Llama protocol data for ${symbol}: TVL: ${tvl}`);
+          }
+        }
+      } catch (defiErr) {
+        console.warn(`⚠️ DeFi Llama fetch failed for ${symbol}:`, defiErr);
+      }
+
+      // Fallback to CoinGecko for DeFi if needed - Most comprehensive fallback
       if (!marketCap || !volume) {
         try {
           console.log(`🔍 Fetching DeFi market data for ${symbol} from CoinGecko...`);
@@ -371,11 +398,11 @@ export class MarketDataService {
       console.warn(`⚠️ DeFi market data fetch failed for ${symbol}:`, err);
     }
 
-    // Cache the results with DeFi prefix
-    this.marketDataCache[cacheKey] = { marketCap, volume, timestamp: now };
-    console.log(`💾 Cached DeFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}`);
+    // Cache the results with DeFi prefix (including TVL)
+    this.marketDataCache[cacheKey] = { marketCap, volume, tvl, timestamp: now };
+    console.log(`💾 Cached DeFi market data for ${symbol}: Market Cap: ${marketCap}, Volume: ${volume}, TVL: ${tvl}`);
 
-    return { marketCap, volume };
+    return { marketCap, volume, tvl };
   }
 
   // ============================================================================
