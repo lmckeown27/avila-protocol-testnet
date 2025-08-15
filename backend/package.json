@@ -15,7 +15,9 @@
     "lint": "eslint . --ext .ts",
     "verify": "node -e \"console.log('Node.js working'); console.log('Current directory:', process.cwd()); console.log('Files:', require('fs').readdirSync('.'))\"",
     "prebuild": "echo 'Starting build process...'",
-    "postbuild": "echo 'Build complete. Checking output...' && ls -la dist/ && echo 'Build verification complete'"
+    "postbuild": "echo 'Build complete. Checking output...' && ls -la dist/ && echo 'Build verification complete'",
+    "render:build": "npm ci --only=production && npm run build:clean",
+    "render:start": "npm start"
   },
   "keywords": [
     "market-data",
