@@ -14,7 +14,8 @@ import axios, { AxiosResponse, AxiosError } from 'axios';
 export interface NormalizedAsset {
   asset: string;
   price: number;
-  change24h: number;
+  change24h: number; // Percentage change
+
   volume24h: number;
   marketCap: number;
   source: string;
@@ -633,19 +634,24 @@ export class MarketDataService {
       const results = await Promise.all(promises);
       return results
         .filter(quote => quote.c && quote.c > 0)
-        .map(quote => ({
-          asset: quote.symbol,
-          symbol: quote.symbol,
-          price: quote.c,
-          change24h: quote.d,
-          volume24h: quote.volume || quote.v || 0,
-          marketCap: quote.marketCap || 0,
-          source: 'Finnhub',
-          lastUpdated: Date.now(),
-          high24h: quote.h,
-          low24h: quote.l,
-          open24h: quote.o
-        }));
+        .map(quote => {
+          // Get the percentage change from Finnhub (this should be the correct 24h % change)
+          const percentageChange = quote.dp || 0; // dp = daily percentage change
+          
+          return {
+            asset: quote.symbol,
+            symbol: quote.symbol,
+            price: quote.c,
+            change24h: percentageChange, // Use the actual percentage change from API
+            volume24h: quote.volume || quote.v || 0,
+            marketCap: quote.marketCap || 0,
+            source: 'Finnhub',
+            lastUpdated: Date.now(),
+            high24h: quote.h,
+            low24h: quote.l,
+            open24h: quote.o
+          };
+        });
 
     } catch (error) {
       console.warn('⚠️ Finnhub fetch failed:', error);
@@ -684,7 +690,7 @@ export class MarketDataService {
             asset: data['Meta Data']['2. Symbol'],
             symbol: data['Meta Data']['2. Symbol'],
             price: parseFloat(latestData['4. close']),
-            change24h: 0, // Alpha Vantage intraday doesn't provide 24h change
+            change24h: 0, // Alpha Vantage intraday doesn't provide 24h change // Alpha Vantage intraday doesn't provide 24h change
             volume24h: parseFloat(latestData['5. volume']),
             marketCap: 0,
             source: 'Alpha Vantage',
@@ -726,7 +732,7 @@ export class MarketDataService {
             asset: data.meta.symbol,
             symbol: data.meta.symbol,
             price: parseFloat(latest.close),
-            change24h: 0, // Twelve Data intraday doesn't provide 24h change
+            change24h: 0, // Twelve Data intraday doesn't provide 24h change // Twelve Data intraday doesn't provide 24h change
             volume24h: parseFloat(latest.volume),
             marketCap: 0,
             source: 'Twelve Data',

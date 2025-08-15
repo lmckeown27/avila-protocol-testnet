@@ -181,15 +181,14 @@ const TradFiMarkets = () => {
           {formatCurrency(asset.price)}
         </td>
         <td className="px-4 py-4 whitespace-nowrap">
-          <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
-            {changeDisplay.icon}
-            <span className="font-medium">
-              {asset.change24h >= 0 ? '+' : ''}{formatCurrency(asset.change24h)}
-            </span>
-            <span className="text-sm">
-              ({asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%)
-            </span>
-          </div>
+                      <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
+              {changeDisplay.icon}
+              <div className="text-right">
+                <div className="font-medium">
+                  {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
+                </div>
+              </div>
+            </div>
         </td>
 
         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -238,9 +237,12 @@ const TradFiMarkets = () => {
             </div>
             <div className={`flex items-center justify-end space-x-1 ${changeDisplay.color}`}>
               {changeDisplay.icon}
-              <span className="text-sm">
-                {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
-              </span>
+              <div className="text-right">
+                <div className="text-sm">
+                  {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
+                </div>
+
+              </div>
             </div>
           </div>
         </div>

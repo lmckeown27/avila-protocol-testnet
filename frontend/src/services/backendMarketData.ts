@@ -10,7 +10,8 @@ export interface NormalizedAsset {
   asset: string;
   symbol: string;
   price: number;
-  change24h: number;
+  change24h: number; // Percentage change
+
   volume24h: number;
   marketCap: number;
   source: string;
