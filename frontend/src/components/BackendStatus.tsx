@@ -17,7 +17,7 @@ const BackendStatus = () => {
     setLoading(true);
     try {
       // Test backend connectivity by trying to fetch market data
-      const data = await backendMarketDataService.getTradFiData();
+      const data = await backendMarketDataService.getStockData();
       if (data && data.length > 0) {
         setStatus('connected');
         setSampleData(data.slice(0, 3)); // Show first 3 assets

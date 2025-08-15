@@ -5,7 +5,7 @@ import AssetDetailModal from '../components/AssetDetailModal';
 
 const DeFiMarkets = () => {
   // State for DeFi data
-  const [deFiData, setDeFiData] = useState<NormalizedAsset[]>([]);
+  const [digitalAssetsData, setDigitalAssetsData] = useState<NormalizedAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,28 +19,28 @@ const DeFiMarkets = () => {
 
   // Fetch DeFi data from backend
   useEffect(() => {
-    const fetchDeFiData = async () => {
+    const fetchDigitalAssetsData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await backendMarketDataService.getDeFiData();
-        setDeFiData(data);
+        const data = await backendMarketDataService.getDigitalAssetsData();
+        setDigitalAssetsData(data);
       } catch (error) {
-        console.error('Failed to fetch DeFi data from backend:', error);
+        console.error('Failed to fetch Digital Assets data from backend:', error);
         setError('Failed to load decentralized market data from backend');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDeFiData();
-    const interval = setInterval(fetchDeFiData, 60000); // Refresh every minute
+          fetchDigitalAssetsData();
+      const interval = setInterval(fetchDigitalAssetsData, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
-    let filtered = deFiData.filter(asset =>
+    let filtered = digitalAssetsData.filter((asset: any) =>
       asset.asset.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -67,7 +67,7 @@ const DeFiMarkets = () => {
     }
 
     return filtered;
-  }, [deFiData, search, sortConfig]);
+  }, [digitalAssetsData, search, sortConfig]);
 
   // Handle sorting
   const handleSort = (key: keyof NormalizedAsset) => {
@@ -252,29 +252,29 @@ const DeFiMarkets = () => {
 
   // Calculate market summary
   const marketSummary = useMemo(() => {
-    if (deFiData.length === 0) return null;
+    if (digitalAssetsData.length === 0) return null;
     
-    const totalMarketCap = deFiData.reduce((sum, asset) => sum + (asset.marketCap || 0), 0);
-    const totalVolume = deFiData.reduce((sum, asset) => sum + (asset.volume24h || 0), 0);
-    const avgChange = deFiData.reduce((sum, asset) => sum + (asset.change24h || 0), 0) / deFiData.length;
+    const totalMarketCap = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.marketCap || 0), 0);
+    const totalVolume = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.volume24h || 0), 0);
+    const avgChange = digitalAssetsData.reduce((sum: number, asset: any) => sum + (asset.change24h || 0), 0) / digitalAssetsData.length;
     
     return {
       totalMarketCap,
       totalVolume,
       avgChange,
-      assetCount: deFiData.length
+      assetCount: digitalAssetsData.length
     };
-  }, [deFiData]);
+  }, [digitalAssetsData]);
 
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Decentralized Finance Markets
+          Digital Assets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor decentralized finance markets with real-time cryptocurrency data, volume, and market cap from multiple APIs
+          Monitor digital asset markets with real-time cryptocurrency data, volume, and market cap from multiple APIs
         </p>
       </div>
 

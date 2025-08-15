@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stopMarketDataPolling = exports.startMarketDataPolling = exports.getDeFiData = exports.getTradFiData = exports.getMarketData = exports.marketDataService = exports.MarketDataService = void 0;
+exports.stopMarketDataPolling = exports.startMarketDataPolling = exports.getDeFiData = exports.getStockData = exports.getMarketData = exports.marketDataService = exports.MarketDataService = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const axios_1 = __importDefault(require("axios"));
@@ -49,7 +49,7 @@ const API_CONFIG = {
         rateLimit: 100
     }
 };
-const DEFAULT_TRADFI_SYMBOLS = [
+const DEFAULT_STOCK_SYMBOLS = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX',
     'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD',
     '^GSPC', '^DJI', '^IXIC', '^RUT'
@@ -72,8 +72,8 @@ class MarketDataService {
         this.pollingInterval = null;
         this.setupAxiosInterceptors();
     }
-    async getTradFiMarketData(symbol) {
-        const cacheKey = `tradfi_${symbol}`;
+    async getStockMarketData(symbol) {
+        const cacheKey = `stock_${symbol}`;
         const cached = this.marketDataCache[cacheKey];
         const now = Date.now();
         if (cached && now - cached.timestamp < this.CACHE_DURATION_MS) {
@@ -296,7 +296,7 @@ class MarketDataService {
     async getAllMarketData() {
         try {
             const [tradfiData, defiData] = await Promise.all([
-                this.getTradFiData(),
+                this.getStockData(),
                 this.getDeFiData()
             ]);
             return {
@@ -310,7 +310,7 @@ class MarketDataService {
         catch (error) {
             console.error('Failed to fetch market data:', error);
             return {
-                tradfi: this.getEmptyTradFiData(),
+                tradfi: this.getEmptyStockData(),
                 defi: this.getEmptyDeFiData(),
                 timestamp: Date.now(),
                 dataSources: ['API Failure'],
@@ -318,7 +318,7 @@ class MarketDataService {
             };
         }
     }
-    async getTradFiData() {
+    async getStockData() {
         const cacheKey = 'tradfi';
         const cached = this.getCachedData(cacheKey);
         if (cached)
@@ -330,7 +330,7 @@ class MarketDataService {
         }
         catch (error) {
             console.error('All TradFi APIs failed, returning empty data:', error);
-            const emptyResult = this.getEmptyTradFiData();
+            const emptyResult = this.getEmptyStockData();
             this.cacheData(cacheKey, emptyResult);
             return emptyResult;
         }
@@ -403,13 +403,13 @@ class MarketDataService {
     }
     async fetchFromFinnhub() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 10);
+            const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 10);
             const promises = symbols.map(async (symbol) => {
                 const quoteResponse = await axios_1.default.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
                     params: { symbol, token: API_CONFIG.finnhub.token },
                     timeout: 5000
                 });
-                const marketData = await this.getTradFiMarketData(symbol);
+                const marketData = await this.getStockMarketData(symbol);
                 return {
                     ...quoteResponse.data,
                     symbol,
@@ -441,7 +441,7 @@ class MarketDataService {
     }
     async fetchFromAlphaVantage() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5);
+            const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 5);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(API_CONFIG.alphaVantage.baseUrl, {
                     params: {
@@ -488,7 +488,7 @@ class MarketDataService {
     }
     async fetchFromTwelveData() {
         try {
-            const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5);
+            const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 5);
             const promises = symbols.map(async (symbol) => {
                 const response = await axios_1.default.get(`${API_CONFIG.twelveData.baseUrl}/time_series`, {
                     params: {
@@ -632,8 +632,8 @@ class MarketDataService {
         }
         return null;
     }
-    getEmptyTradFiData() {
-        return DEFAULT_TRADFI_SYMBOLS.map(symbol => ({
+    getEmptyStockData() {
+        return DEFAULT_STOCK_SYMBOLS.map((symbol) => ({
             asset: symbol,
             symbol: symbol,
             price: 0,
@@ -664,10 +664,10 @@ class MarketDataService {
     }
     getActiveDataSources() {
         const sources = [];
-        if (this.cache.has('tradfi'))
-            sources.push('TradFi APIs');
+        if (this.cache.has('stock'))
+            sources.push('Stock Market APIs');
         if (this.cache.has('defi'))
-            sources.push('DeFi APIs');
+            sources.push('Digital Assets APIs');
         if (sources.length === 0)
             sources.push('Fallback');
         return sources;
@@ -710,8 +710,8 @@ exports.MarketDataService = MarketDataService;
 exports.marketDataService = new MarketDataService();
 const getMarketData = () => exports.marketDataService.getAllMarketData();
 exports.getMarketData = getMarketData;
-const getTradFiData = () => exports.marketDataService.getTradFiData();
-exports.getTradFiData = getTradFiData;
+const getStockData = () => exports.marketDataService.getStockData();
+exports.getStockData = getStockData;
 const getDeFiData = () => exports.marketDataService.getDeFiData();
 exports.getDeFiData = getDeFiData;
 const startMarketDataPolling = (callback) => exports.marketDataService.startPolling(callback);

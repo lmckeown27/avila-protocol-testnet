@@ -25,7 +25,7 @@ const TradFiMarkets = () => {
         setError(null);
         
         // First get basic TradFi data
-        const basicData = await backendMarketDataService.getTradFiData();
+        const basicData = await backendMarketDataService.getStockData();
         
         // Then enhance each asset with P/E data
         const enhancedData = await Promise.all(
@@ -283,10 +283,10 @@ const TradFiMarkets = () => {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Traditional Finance Markets
+          Stock Market
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor traditional finance markets with real-time data, P/E ratios, and market analytics from multiple APIs
+          Monitor stock market data with real-time pricing, P/E ratios, and market analytics from multiple APIs
         </p>
       </div>
 

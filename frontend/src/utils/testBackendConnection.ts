@@ -46,7 +46,7 @@ export async function testMarketDataEndpoint() {
 
 export async function testTradFiEndpoint() {
   try {
-    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.tradfi}`;
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.stocks}`;
     const response = await fetch(backendURL, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
@@ -67,7 +67,7 @@ export async function testTradFiEndpoint() {
 
 export async function testDeFiEndpoint() {
   try {
-    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.defi}`;
+    const backendURL = `${config.backend.baseUrl}${config.backend.endpoints.digitalAssets}`;
     const response = await fetch(backendURL, {
       method: "GET",
       headers: { "Content-Type": "application/json" }

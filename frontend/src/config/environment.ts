@@ -12,8 +12,8 @@ export const config = {
     endpoints: {
       health: '/api/health',
       marketData: '/api/market-data',
-      tradfi: '/api/market-data/tradfi',
-      defi: '/api/market-data/defi',
+        stocks: '/api/market-data/stocks',
+  digitalAssets: '/api/market-data/digital-assets',
       cacheStats: '/api/market-data/cache/stats',
     },
   },

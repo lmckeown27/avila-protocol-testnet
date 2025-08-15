@@ -65,8 +65,8 @@ const Watchlist = () => {
       
       // Fetch TradFi data
       if (tradfiItems.length > 0) {
-        const tradfiData = await backendMarketDataService.getTradFiData();
-        const tradfiMap = new Map(tradfiData.map(asset => [asset.symbol, asset]));
+              const tradfiData = await backendMarketDataService.getStockData();
+      const tradfiMap = new Map(tradfiData.map(asset => [asset.symbol, asset]));
         data.tradfi = tradfiItems
           .map(item => tradfiMap.get(item.symbol))
           .filter(Boolean) as NormalizedAsset[];
@@ -74,8 +74,8 @@ const Watchlist = () => {
       
       // Fetch DeFi data
       if (defiItems.length > 0) {
-        const defiData = await backendMarketDataService.getDeFiData();
-        const defiMap = new Map(defiData.map(asset => [asset.symbol, asset]));
+              const defiData = await backendMarketDataService.getDigitalAssetsData();
+      const defiMap = new Map(defiData.map((asset: any) => [asset.symbol, asset]));
         data.defi = defiItems
           .map(item => defiMap.get(item.symbol))
           .filter(Boolean) as NormalizedAsset[];
@@ -166,14 +166,14 @@ const Watchlist = () => {
       let results: NormalizedAsset[] = [];
       
       if (selectedAssetType === 'tradfi') {
-        const tradfiData = await backendMarketDataService.getTradFiData();
-        results = tradfiData.filter(asset => 
+        const tradfiData = await backendMarketDataService.getStockData();
+        results = tradfiData.filter((asset: any) => 
           asset.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
           asset.asset.toLowerCase().includes(searchQuery.toLowerCase())
         );
       } else {
-        const defiData = await backendMarketDataService.getDeFiData();
-        results = defiData.filter(asset => 
+        const defiData = await backendMarketDataService.getDigitalAssetsData();
+        results = defiData.filter((asset: any) => 
           asset.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
           asset.asset.toLowerCase().includes(searchQuery.toLowerCase())
         );

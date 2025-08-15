@@ -73,8 +73,8 @@ app.get('/', (_req: Request, res: Response) => {
       health: '/health',
       envCheck: '/env-check',
       marketData: '/api/market-data',
-      tradfi: '/api/market-data/tradfi',
-      defi: '/api/market-data/defi'
+      stocks: '/api/market-data/stocks',
+      digitalAssets: '/api/market-data/digital-assets'
     }
   });
 });
@@ -136,27 +136,27 @@ app.get('/api/market-data', async (_req: Request, res: Response) => {
   }
 });
 
-// Get TradFi market data only
-app.get('/api/market-data/tradfi', async (_req: Request, res: Response) => {
+// Get Stock Market data only
+app.get('/api/market-data/stocks', async (_req: Request, res: Response) => {
   try {
-    const data = await marketDataService.getTradFiData();
+    const data = await marketDataService.getStockData();
     res.json({
       success: true,
       data,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching TradFi data:', error);
+    console.error('Error fetching Stock Market data:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch TradFi data',
+      error: 'Failed to fetch Stock Market data',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
-// Get DeFi market data only
-app.get('/api/market-data/defi', async (_req: Request, res: Response) => {
+// Get Digital Assets market data only
+app.get('/api/market-data/digital-assets', async (_req: Request, res: Response) => {
   try {
     const data = await marketDataService.getDeFiData();
     res.json({
@@ -165,10 +165,10 @@ app.get('/api/market-data/defi', async (_req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching DeFi data:', error);
+    console.error('Error fetching Digital Assets data:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch DeFi data',
+      error: 'Failed to fetch Digital Assets data',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -226,10 +226,10 @@ app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response)
     // Determine if this is a TradFi or DeFi asset and use appropriate method
     let marketData;
     if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
-      // TradFi asset - use TradFi method
-      marketData = await (marketDataService as any).getTradFiMarketData(symbol.toUpperCase());
+              // Stock Market asset - use Stock Market method
+              marketData = await (marketDataService as any).getStockMarketData(symbol.toUpperCase());
     } else {
-      // DeFi asset - use DeFi method
+              // Digital Asset - use Digital Asset method
       marketData = await (marketDataService as any).getDeFiMarketData(symbol.toUpperCase());
     }
     
@@ -284,52 +284,52 @@ app.post('/api/market-data/cache/enhanced/clear', (_req: Request, res: Response)
   }
 });
 
-// DeFi protocol data endpoint (TVL, protocol metrics)
-app.get('/api/market-data/defi-protocols', async (_req: Request, res: Response) => {
-  try {
-    console.log('🔍 DeFi protocol data request');
-    
-    const response = await axios.get('https://api.llama.fi/protocols', {
-      timeout: 10000
-    });
-    
-    if (response.data && Array.isArray(response.data)) {
-      // Get top 20 protocols by TVL
-      const topProtocols = response.data
-        .filter((p: any) => p.tvl && p.tvl > 0)
-        .sort((a: any, b: any) => (b.tvl || 0) - (a.tvl || 0))
-        .slice(0, 20)
-        .map((protocol: any) => ({
-          name: protocol.name,
-          symbol: protocol.symbol,
-          tvl: protocol.tvl,
-          change1h: protocol.change_1h,
-          change1d: protocol.change_1d,
-          change7d: protocol.change_7d,
-          chains: protocol.chains,
-          category: protocol.category
-        }));
-      
-      return res.json({
-        success: true,
-        data: topProtocols,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    return res.status(404).json({ 
-      success: false, 
-      error: 'No DeFi protocol data available' 
-    });
-  } catch (error) {
-    console.error('DeFi protocol data error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch DeFi protocol data',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+// DeFi protocol data endpoint (TVL, protocol metrics) - temporarily disabled
+// app.get('/api/market-data/defi-protocols', async (_req: Request, res: Response) => {
+//   try {
+//     console.log('🔍 DeFi protocol data request');
+//     
+//     const response = await axios.get('https://api.llama.fi/protocols', {
+//       timeout: 10000
+//     });
+//     
+//     if (response.data && Array.isArray(response.data)) {
+//       // Get top 20 protocols by TVL
+//       const topProtocols = response.data
+//         .filter((p: any) => p.tvl && p.tvl > 0)
+//         .sort((a: any, b: any) => (b.tvl || 0) - (a.tvl || 0))
+//       .slice(0, 20)
+//         .map((protocol: any) => ({
+//           name: protocol.name,
+//           symbol: protocol.symbol,
+//           tvl: protocol.tvl,
+//           change1h: protocol.change_1h,
+//           change1d: protocol.change_1d,
+//           change7d: protocol.change_7d,
+//           chains: protocol.chains,
+//           category: protocol.category
+//         }));
+//       
+//       return res.json({
+//         success: true,
+//         data: topProtocols,
+//         timestamp: new Date().toISOString()
+//       });
+//     }
+//     
+//     return res.status(404).json({ 
+//       success: false, 
+//       error: 'No DeFi protocol data available' 
+//     });
+//   } catch (error) {
+//     console.error('DeFi protocol data error:', error);
+//     return res.status(500).json({ 
+//       success: false, 
+//       error: 'Failed to fetch DeFi protocol data',
+//       message: error instanceof Error ? error.message : 'Unknown error'
+//     });
+//   }
+// });
 
 // ============================================================================
 // ERROR HANDLING
@@ -356,10 +356,10 @@ app.listen(PORT, HOST, () => {
   console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
   console.log(`🔍 Environment check: http://${HOST}:${PORT}/env-check`);
   console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
-  console.log(`🏛️ TradFi data: http://${HOST}:${PORT}/api/market-data/tradfi`);
-  console.log(`🌐 DeFi data: http://${HOST}:${PORT}/api/market-data/defi`);
+      console.log(`📈 Stock Market data: http://${HOST}:${PORT}/api/market-data/stocks`);
+      console.log(`🌐 Digital Assets data: http://${HOST}:${PORT}/api/market-data/digital-assets`);
   console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
-  console.log(`🌐 DeFi protocols: http://${HOST}:${PORT}/api/market-data/defi-protocols`);
+  // console.log(`🌐 DeFi protocols: http://${HOST}:${PORT}/api/market-data/defi-protocols`);
   console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
   console.log('✨ Ready to serve real-time market monitoring data with enhanced caching!');
 });

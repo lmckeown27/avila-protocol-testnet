@@ -33,8 +33,8 @@ export interface MarketDataResponse {
 
 export interface IBackendMarketDataService {
   getAllMarketData(): Promise<MarketDataResponse>;
-  getTradFiData(): Promise<NormalizedAsset[]>;
-  getDeFiData(): Promise<NormalizedAsset[]>;
+  getStockData(): Promise<NormalizedAsset[]>;
+  getDigitalAssetsData(): Promise<NormalizedAsset[]>;
   getEnhancedMarketData(symbol: string): Promise<EnhancedMarketData>;
   getDeFiProtocols(): Promise<any>;
   getCacheStats(): Promise<any>;
@@ -80,27 +80,27 @@ class BackendMarketDataService implements IBackendMarketDataService {
   }
 
   /**
-   * Get TradFi market data only
+   * Get Stock Market data only
    */
-  async getTradFiData(): Promise<NormalizedAsset[]> {
+  async getStockData(): Promise<NormalizedAsset[]> {
     try {
-      const response = await this.axiosInstance.get(config.backend.endpoints.tradfi);
+      const response = await this.axiosInstance.get(config.backend.endpoints.stocks);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('Failed to fetch TradFi data:', error);
+      console.error('Failed to fetch Stock Market data:', error);
       throw error;
     }
   }
 
   /**
-   * Get DeFi market data only
+   * Get Digital Assets market data only
    */
-  async getDeFiData(): Promise<NormalizedAsset[]> {
+  async getDigitalAssetsData(): Promise<NormalizedAsset[]> {
     try {
-      const response = await this.axiosInstance.get(config.backend.endpoints.defi);
+      const response = await this.axiosInstance.get(config.backend.endpoints.digitalAssets);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('Failed to fetch DeFi data:', error);
+      console.error('Failed to fetch Digital Assets data:', error);
       throw error;
     }
   }

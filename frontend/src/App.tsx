@@ -5,8 +5,9 @@ import Navbar from './components/Navbar';
 import TestnetBanner from './components/NotificationContainer';
 import Home from './pages/Home';
 import Markets from './pages/Markets';
-import TradFiMarkets from './pages/TradFiMarkets';
-import DeFiMarkets from './pages/DeFiMarkets';
+import StockMarket from './pages/TradFiMarkets';
+import DigitalAssets from './pages/DeFiMarkets';
+import ETFMarket from './pages/ETFMarket';
 import DeFiProtocols from './pages/DeFiProtocols';
 import Watchlist from './components/Watchlist';
 import Governance from './pages/Governance';
@@ -59,8 +60,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/markets" element={<Markets />} />
-            <Route path="/tradfi-markets" element={<TradFiMarkets />} />
-            <Route path="/defi-markets" element={<DeFiMarkets />} />
+                    <Route path="/stock-market" element={<StockMarket />} />
+        <Route path="/digital-assets" element={<DigitalAssets />} />
+        <Route path="/etf-market" element={<ETFMarket />} />
                     <Route path="/defi-protocols" element={<DeFiProtocols />} />
                 <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/portfolio" element={<Watchlist />} />

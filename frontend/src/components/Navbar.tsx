@@ -27,9 +27,10 @@ const Navbar: React.FC<NavbarProps> = () => {
             {/* Center Column: Navigation Links */}
             <div className="hidden md:flex flex-1 justify-center space-x-12">
               <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>Home</Link>
-              <Link to="/tradfi-markets" className={`nav-link ${isActive('/tradfi-markets') ? 'active' : ''}`}>TradFi Markets</Link>
-              <Link to="/defi-markets" className={`nav-link ${isActive('/defi-markets') ? 'active' : ''}`}>DeFi Markets</Link>
-              <Link to="/defi-protocols" className={`nav-link ${isActive('/defi-protocols') ? 'active' : ''}`}>DeFi Protocols</Link>
+                      <Link to="/stock-market" className={`nav-link ${isActive('/stock-market') ? 'active' : ''}`}>Stock Market</Link>
+        <Link to="/digital-assets" className={`nav-link ${isActive('/digital-assets') ? 'active' : ''}`}>Digital Assets</Link>
+        <Link to="/etf-market" className={`nav-link ${isActive('/etf-market') ? 'active' : ''}`}>ETF Market</Link>
+              {/* <Link to="/defi-protocols" className={`nav-link ${isActive('/defi-protocols') ? 'active' : ''}`}>DeFi Protocols</Link> */}
               <Link to="/watchlist" className={`nav-link ${isActive('/watchlist') ? 'active' : ''}`}>Watchlist</Link>
             </div>
 

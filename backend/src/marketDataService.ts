@@ -126,7 +126,7 @@ const API_CONFIG = {
 // DEFAULT ASSET LISTS
 // ============================================================================
 
-const DEFAULT_TRADFI_SYMBOLS = [
+const DEFAULT_STOCK_SYMBOLS = [
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSFT', 'META', 'NVDA', 'NFLX',
   'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD',
   '^GSPC', '^DJI', '^IXIC', '^RUT' // Major indices
@@ -177,8 +177,8 @@ export class MarketDataService {
   /**
    * Enhanced function to retrieve TradFi market data (stocks, ETFs)
    */
-  private async getTradFiMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null }> {
-    const cacheKey = `tradfi_${symbol}`;
+  private async getStockMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null }> {
+          const cacheKey = `stock_${symbol}`;
     const cached = this.marketDataCache[cacheKey];
     const now = Date.now();
 
@@ -460,7 +460,7 @@ export class MarketDataService {
   async getAllMarketData(): Promise<MarketDataResponse> {
     try {
       const [tradfiData, defiData] = await Promise.all([
-        this.getTradFiData(),
+        this.getStockData(),
         this.getDeFiData()
       ]);
 
@@ -474,7 +474,7 @@ export class MarketDataService {
     } catch (error) {
       console.error('Failed to fetch market data:', error);
       return {
-        tradfi: this.getEmptyTradFiData(),
+        tradfi: this.getEmptyStockData(),
         defi: this.getEmptyDeFiData(),
         timestamp: Date.now(),
         dataSources: ['API Failure'],
@@ -486,7 +486,7 @@ export class MarketDataService {
   /**
    * Get TradFi market data with fallback logic
    */
-  async getTradFiData(): Promise<NormalizedAsset[]> {
+  async getStockData(): Promise<NormalizedAsset[]> {
     const cacheKey = 'tradfi';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
@@ -498,7 +498,7 @@ export class MarketDataService {
     } catch (error) {
       console.error('All TradFi APIs failed, returning empty data:', error);
       // Return empty data instead of mock data to indicate API failure
-      const emptyResult = this.getEmptyTradFiData();
+              const emptyResult = this.getEmptyStockData();
       this.cacheData(cacheKey, emptyResult);
       return emptyResult;
     }
@@ -607,12 +607,12 @@ export class MarketDataService {
   }
 
   // ============================================================================
-  // TRADFI DATA SOURCES
+  // STOCK MARKET DATA SOURCES
   // ============================================================================
 
   private async fetchFromFinnhub(): Promise<NormalizedAsset[]> {
     try {
-      const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 10); // Limit for free tier
+      const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 10); // Limit for free tier
       const promises = symbols.map(async (symbol) => {
         // Fetch basic quote data
         const quoteResponse = await axios.get(`${API_CONFIG.finnhub.baseUrl}/quote`, {
@@ -621,7 +621,7 @@ export class MarketDataService {
         });
         
         // Fetch enhanced market data (market cap and volume)
-        const marketData = await this.getTradFiMarketData(symbol);
+        const marketData = await this.getStockMarketData(symbol);
         
         return { 
           ...quoteResponse.data, 
@@ -656,7 +656,7 @@ export class MarketDataService {
 
   private async fetchFromAlphaVantage(): Promise<NormalizedAsset[]> {
     try {
-      const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
+      const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 5); // Limit for free tier
       const promises = symbols.map(async (symbol) => {
         const response = await axios.get(API_CONFIG.alphaVantage.baseUrl, {
           params: {
@@ -705,7 +705,7 @@ export class MarketDataService {
 
   private async fetchFromTwelveData(): Promise<NormalizedAsset[]> {
     try {
-      const symbols = DEFAULT_TRADFI_SYMBOLS.slice(0, 5); // Limit for free tier
+      const symbols = DEFAULT_STOCK_SYMBOLS.slice(0, 5); // Limit for free tier
       const promises = symbols.map(async (symbol) => {
         const response = await axios.get(`${API_CONFIG.twelveData.baseUrl}/time_series`, {
           params: {
@@ -745,7 +745,7 @@ export class MarketDataService {
   }
 
   // ============================================================================
-  // CRYPTO & DEFI DATA SOURCES
+  // DIGITAL ASSETS DATA SOURCES
   // ============================================================================
 
   private async fetchFromCoinGecko(): Promise<NormalizedAsset[]> {
@@ -894,8 +894,8 @@ export class MarketDataService {
   /**
    * Return empty TradFi data to indicate API failure
    */
-  private getEmptyTradFiData(): NormalizedAsset[] {
-    return DEFAULT_TRADFI_SYMBOLS.map(symbol => ({
+  private getEmptyStockData(): NormalizedAsset[] {
+    return DEFAULT_STOCK_SYMBOLS.map((symbol: string) => ({
       asset: symbol,
       symbol: symbol,
       price: 0,
@@ -935,8 +935,8 @@ export class MarketDataService {
 
   private getActiveDataSources(): string[] {
     const sources: string[] = [];
-    if (this.cache.has('tradfi')) sources.push('TradFi APIs');
-    if (this.cache.has('defi')) sources.push('DeFi APIs');
+    if (this.cache.has('stock')) sources.push('Stock Market APIs');
+    if (this.cache.has('defi')) sources.push('Digital Assets APIs');
     if (sources.length === 0) sources.push('Fallback');
     return sources;
   }
@@ -996,7 +996,7 @@ export const marketDataService = new MarketDataService();
 
 // Export utility functions
 export const getMarketData = () => marketDataService.getAllMarketData();
-export const getTradFiData = () => marketDataService.getTradFiData();
+export const getStockData = () => marketDataService.getStockData();
 export const getDeFiData = () => marketDataService.getDeFiData();
 export const startMarketDataPolling = (callback?: (data: MarketDataResponse) => void) => 
   marketDataService.startPolling(callback);
