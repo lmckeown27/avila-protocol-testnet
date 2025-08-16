@@ -7,7 +7,7 @@ export const config = {
   
   // Backend Configuration
   backend: {
-    baseUrl: import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://avila-protocol-testnet.onrender.com'),
+    baseUrl: import.meta.env.VITE_BACKEND_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:3000' : 'https://avila-protocol-testnet.onrender.com'),
     timeout: 10000,
     endpoints: {
       health: '/api/health',
@@ -24,6 +24,9 @@ export const config = {
       rateLimitsTiming: '/api/rate-limits/timing',
       rateLimitsRotation: '/api/rate-limits/rotation',
       cacheStats: '/api/market-data/cache/stats',
+      enhancedMarketData: '/api/market-data/enhanced',
+      defiProtocols: '/api/market-data/defi-protocols',
+      cacheClear: '/api/market-data/cache/clear',
     },
   },
   

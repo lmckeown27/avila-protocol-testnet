@@ -55,6 +55,10 @@ class BackendMarketDataService implements IBackendMarketDataService {
   private axiosInstance;
 
   constructor() {
+    console.log('🔧 BackendMarketDataService initialized with baseURL:', BACKEND_BASE_URL);
+    console.log('🔧 Environment mode:', import.meta.env.MODE);
+    console.log('🔧 Available endpoints:', config.backend.endpoints);
+    
     this.axiosInstance = axios.create({
       baseURL: BACKEND_BASE_URL,
       timeout: config.backend.timeout,
@@ -146,7 +150,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async getEnhancedMarketData(symbol: string): Promise<EnhancedMarketData> {
     try {
-      const response = await this.axiosInstance.get(`/api/market-data/enhanced/${symbol}`);
+      const response = await this.axiosInstance.get(`${config.backend.endpoints.enhancedMarketData}/${symbol}`);
       return response.data.data;
     } catch (error) {
       console.error(`Failed to fetch enhanced market data for ${symbol}:`, error);
@@ -159,7 +163,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async getDeFiProtocols(): Promise<any> {
     try {
-      const response = await this.axiosInstance.get('/api/market-data/defi-protocols');
+      const response = await this.axiosInstance.get(config.backend.endpoints.defiProtocols);
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch DeFi protocols:', error);
@@ -276,7 +280,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async clearCache(): Promise<void> {
     try {
-      await this.axiosInstance.post('/api/market-data/cache/clear');
+      await this.axiosInstance.post(config.backend.endpoints.cacheClear);
     } catch (error) {
       console.error('Failed to clear cache:', error);
       throw error;
