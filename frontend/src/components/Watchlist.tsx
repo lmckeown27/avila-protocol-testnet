@@ -431,55 +431,105 @@ const Watchlist = () => {
                 </div>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Asset
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Type
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Price
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          24h Change
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Market Cap
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {loading ? (
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
                         <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                            <div className="mt-2">Loading watchlist data...</div>
-                          </td>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Asset
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Type
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            24h Change
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Market Cap
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
-                      ) : selectedWatchlist.items.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                            No assets in this watchlist yet. Add some assets to get started!
-                          </td>
-                        </tr>
-                      ) : (
-                        selectedWatchlist.items.map(item => {
-                          const assetData = watchlistData[item.type]?.find(
-                            asset => asset.symbol === item.symbol
-                          );
-                          
-                          if (!assetData) {
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {loading ? (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                              <div className="mt-2">Loading watchlist data...</div>
+                            </td>
+                          </tr>
+                        ) : selectedWatchlist.items.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                              No assets in this watchlist yet. Add some assets to get started!
+                            </td>
+                          </tr>
+                        ) : (
+                          selectedWatchlist.items.map(item => {
+                            const assetData = watchlistData[item.type]?.find(
+                              asset => asset.symbol === item.symbol
+                            );
+                            
+                            if (!assetData) {
+                              return (
+                                <tr key={item.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-400">
+                                        {item.symbol.charAt(0)}
+                                      </div>
+                                      <div className="ml-3">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                          {item.symbol}
+                                        </div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                                          {item.name}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      item.type === 'tradfi' 
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                                    }`}>
+                                      {item.type === 'tradfi' ? 'TradFi' : 'DeFi'}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    Loading...
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    Loading...
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    Loading...
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button
+                                      onClick={() => removeAssetFromWatchlist(item.id)}
+                                      className="text-red-600 hover:text-red-900 p-1"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            
+                            const changeDisplay = getChangeDisplay(assetData.change24h);
+                            
                             return (
                               <tr key={item.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
-                                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-400">
+                                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center text-sm font-bold text-purple-600 dark:text-purple-400">
                                       {item.symbol.charAt(0)}
                                     </div>
                                     <div className="ml-3">
@@ -487,7 +537,7 @@ const Watchlist = () => {
                                         {item.symbol}
                                       </div>
                                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                                        {item.name}
+                                        {assetData.asset}
                                       </div>
                                     </div>
                                   </div>
@@ -501,14 +551,19 @@ const Watchlist = () => {
                                     {item.type === 'tradfi' ? 'TradFi' : 'DeFi'}
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  Loading...
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                  {formatCurrency(assetData.price)}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  Loading...
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
+                                    {changeDisplay.icon}
+                                    <span className="font-medium">
+                                      {assetData.change24h >= 0 ? '+' : ''}{assetData.change24h.toFixed(2)}%
+                                    </span>
+                                  </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  Loading...
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {formatCurrency(assetData.marketCap)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                   <button
@@ -520,64 +575,11 @@ const Watchlist = () => {
                                 </td>
                               </tr>
                             );
-                          }
-                          
-                          const changeDisplay = getChangeDisplay(assetData.change24h);
-                          
-                          return (
-                            <tr key={item.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center text-sm font-bold text-purple-600 dark:text-purple-400">
-                                    {item.symbol.charAt(0)}
-                                  </div>
-                                  <div className="ml-3">
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                      {item.symbol}
-                                    </div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                      {assetData.asset}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  item.type === 'tradfi' 
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                                }`}>
-                                  {item.type === 'tradfi' ? 'TradFi' : 'DeFi'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                {formatCurrency(assetData.price)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
-                                  {changeDisplay.icon}
-                                  <span className="font-medium">
-                                    {assetData.change24h >= 0 ? '+' : ''}{assetData.change24h.toFixed(2)}%
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                {formatCurrency(assetData.marketCap)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button
-                                  onClick={() => removeAssetFromWatchlist(item.id)}
-                                  className="text-red-600 hover:text-red-900 p-1"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </>

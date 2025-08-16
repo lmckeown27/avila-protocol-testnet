@@ -192,109 +192,112 @@ const ETFMarket: React.FC = () => {
       {/* ETF Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('symbol')}>
-                  ETF
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('price')}>
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('change24h')}>
-                  24H Change
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('marketCap')}>
-                  Market Cap
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Source
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAndSortedData.map((etf) => {
-                const changeDisplay = getChangeDisplay(etf.change24h);
-                return (
-                  <tr key={etf.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {etf.symbol}
+          {/* Desktop Table View */}
+          <div className="hidden md:block max-h-96 overflow-y-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('symbol')}>
+                    ETF
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('price')}>
+                    Price
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('change24h')}>
+                    24H Change
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('marketCap')}>
+                    Market Cap
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Source
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredAndSortedData.map((etf) => {
+                  const changeDisplay = getChangeDisplay(etf.change24h);
+                  return (
+                    <tr key={etf.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {etf.symbol}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {etf.asset}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {etf.asset}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {formatPrice(etf.price)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
+                          {changeDisplay.icon}
+                          <span className="font-medium">
+                            {etf.change24h >= 0 ? '+' : ''}{etf.change24h.toFixed(2)}%
+                          </span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {etf.marketCap ? formatCurrency(etf.marketCap) : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {etf.source}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden max-h-96 overflow-y-auto p-4 space-y-4">
+            {filteredAndSortedData.map((etf) => {
+              const changeDisplay = getChangeDisplay(etf.change24h);
+              return (
+                <div key={etf.symbol} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {etf.symbol}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {formatPrice(etf.price)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {etf.asset}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {formatPrice(etf.price)}
+                      </div>
                       <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
                         {changeDisplay.icon}
-                        <span className="font-medium">
+                        <span className="text-sm">
                           {etf.change24h >= 0 ? '+' : ''}{etf.change24h.toFixed(2)}%
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {etf.marketCap ? formatCurrency(etf.marketCap) : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {etf.source}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white">
+                        {etf.marketCap ? formatCurrency(etf.marketCap) : 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Source:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white">{etf.source}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {filteredAndSortedData.map((etf) => {
-          const changeDisplay = getChangeDisplay(etf.change24h);
-          return (
-            <div key={etf.symbol} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {etf.symbol}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {etf.asset}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {formatPrice(etf.price)}
-                  </div>
-                  <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
-                    {changeDisplay.icon}
-                    <span className="text-sm">
-                      {etf.change24h >= 0 ? '+' : ''}{etf.change24h.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white">
-                    {etf.marketCap ? formatCurrency(etf.marketCap) : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Source:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white">{etf.source}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       {/* Refresh Button */}

@@ -288,46 +288,48 @@ const DeFiMarkets = () => {
 
         <div className="overflow-x-auto">
           {/* Desktop Table View */}
-          <table className="hidden md:table w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                {renderTableHeader('asset', 'Asset')}
-                {renderTableHeader('price', 'Price')}
-                {renderTableHeader('change24h', '24h Change')}
-                {renderTableHeader('volume24h', '24h Volume')}
-                {renderTableHeader('marketCap', 'Market Cap')}
-                {renderTableHeader('high24h', '24h High')}
-                {renderTableHeader('low24h', '24h Low')}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {loading ? (
+          <div className="hidden md:block max-h-96 overflow-y-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                    <div className="mt-2">Loading decentralized market data...</div>
-                  </td>
+                  {renderTableHeader('asset', 'Asset')}
+                  {renderTableHeader('price', 'Price')}
+                  {renderTableHeader('change24h', '24h Change')}
+                  {renderTableHeader('volume24h', '24h Volume')}
+                  {renderTableHeader('marketCap', 'Market Cap')}
+                  {renderTableHeader('high24h', '24h High')}
+                  {renderTableHeader('low24h', '24h Low')}
                 </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-red-500">
-                    {error}
-                  </td>
-                </tr>
-              ) : filteredAndSortedData.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    No assets found matching your search.
-                  </td>
-                </tr>
-              ) : (
-                filteredAndSortedData.map(asset => renderTableRow(asset))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                      <div className="mt-2">Loading decentralized market data...</div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-red-500">
+                      {error}
+                    </td>
+                  </tr>
+                ) : filteredAndSortedData.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      No assets found matching your search.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAndSortedData.map(asset => renderTableRow(asset))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden p-4 space-y-4">
+          <div className="md:hidden max-h-96 overflow-y-auto p-4 space-y-4">
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>

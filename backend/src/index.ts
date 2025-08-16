@@ -26,7 +26,9 @@ requiredVars.forEach(key => {
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { enhancedMarketDataService } from './enhancedMarketDataService';
-import { rateLimitManager } from './rateLimitManager';
+import { paginatedMarketDataService } from './paginatedMarketDataService';
+import { enhancedRateLimitMonitor } from './enhancedRateLimitMonitor';
+import { companyDiscoveryService } from './companyDiscoveryService';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -70,7 +72,7 @@ app.get('/env-check', (_req: Request, res: Response) => {
 });
 
 // ============================================================================
-// MARKET DATA ENDPOINTS
+// LEGACY MARKET DATA ENDPOINTS (for backward compatibility)
 // ============================================================================
 
 // Get all market data
@@ -136,6 +138,205 @@ app.get('/api/market-data/digital-assets', async (_req: Request, res: Response) 
   }
 });
 
+// ============================================================================
+// NEW PAGINATED ENDPOINTS
+// ============================================================================
+
+// Get paginated stocks with search and filtering
+app.get('/api/stocks', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 25;
+    const sortBy = req.query.sortBy as string || 'symbol';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'asc';
+    const search = req.query.search as string;
+    const category = req.query.category as string;
+
+    console.log(`📈 Fetching stocks page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
+    
+    const data = await paginatedMarketDataService.getStocks({
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      category
+    });
+    
+    res.json({
+      success: true,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching paginated stocks:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch stocks',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get paginated ETFs with search and filtering
+app.get('/api/etfs', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 25;
+    const sortBy = req.query.sortBy as string || 'symbol';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'asc';
+    const search = req.query.search as string;
+    const category = req.query.category as string;
+
+    console.log(`📊 Fetching ETFs page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
+    
+    const data = await paginatedMarketDataService.getETFs({
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      category
+    });
+    
+    res.json({
+      success: true,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching paginated ETFs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch ETFs',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get paginated crypto with search and filtering
+app.get('/api/crypto', async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 25;
+    const sortBy = req.query.sortBy as string || 'marketCap';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+    const search = req.query.search as string;
+    const category = req.query.category as string;
+
+    console.log(`🌐 Fetching crypto page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
+    
+    const data = await paginatedMarketDataService.getCrypto({
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      category
+    });
+    
+    res.json({
+      success: true,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching paginated crypto:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch crypto',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ============================================================================
+// SEARCH ENDPOINTS
+// ============================================================================
+
+// Search across all asset types
+app.get('/api/search', async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string;
+    const category = req.query.category as 'stock' | 'etf' | 'crypto';
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query is required',
+        message: 'Please provide a search query using the "q" parameter'
+      });
+    }
+
+    console.log(`🔍 Searching for "${query}" in category: ${category || 'all'}`);
+    
+    const results = await paginatedMarketDataService.searchAssets(query, category);
+    
+    return res.json({
+      success: true,
+      data: results,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error searching assets:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to search assets',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ============================================================================
+// CATEGORY ENDPOINTS
+// ============================================================================
+
+// Get available categories for each asset type (now dynamically generated)
+app.get('/api/categories', async (_req: Request, res: Response) => {
+  try {
+    const discoveredCompanies = await companyDiscoveryService.getDiscoveredCompanies();
+    
+    // Generate categories dynamically from discovered companies
+    const categories = {
+      stocks: groupCompaniesBySector(discoveredCompanies.stocks || []),
+      etfs: groupCompaniesBySector(discoveredCompanies.etfs || []),
+      crypto: groupCompaniesBySector(discoveredCompanies.crypto || [])
+    };
+
+    res.json({
+      success: true,
+      data: categories,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch categories',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Helper function to group companies by sector
+function groupCompaniesBySector(companies: any[]) {
+  const grouped: Record<string, string[]> = {};
+  
+  companies.forEach(company => {
+    const sector = company.sector || 'Other';
+    if (!grouped[sector]) {
+      grouped[sector] = [];
+    }
+    grouped[sector].push(company.symbol);
+  });
+  
+  return grouped;
+}
+
+// ============================================================================
+// ENHANCED DATA ENDPOINTS
+// ============================================================================
+
 // Enhanced market data for specific symbol
 app.get('/api/market-data/enhanced/:symbol', async (req: Request, res: Response) => {
   try {
@@ -198,6 +399,7 @@ app.get('/api/market-data/cache/stats', (_req: Request, res: Response) => {
 app.post('/api/market-data/cache/clear', (_req: Request, res: Response) => {
   try {
     enhancedMarketDataService.clearCache();
+    paginatedMarketDataService.clearCache();
     
     res.json({
       success: true,
@@ -215,13 +417,13 @@ app.post('/api/market-data/cache/clear', (_req: Request, res: Response) => {
 });
 
 // ============================================================================
-// RATE LIMIT STATUS ENDPOINTS
+// RATE LIMIT MONITORING ENDPOINTS
 // ============================================================================
 
-// Get rate limit status for all APIs
+// Get comprehensive rate limit status for all APIs
 app.get('/api/rate-limits/status', (_req: Request, res: Response) => {
   try {
-    const status = enhancedMarketDataService.getRateLimitStatus();
+    const status = enhancedRateLimitMonitor.getRateLimitStatus();
     
     res.json({
       success: true,
@@ -233,6 +435,173 @@ app.get('/api/rate-limits/status', (_req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch rate limit status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get detailed API health status
+app.get('/api/health/apis', (_req: Request, res: Response) => {
+  try {
+    const healthStatus = enhancedRateLimitMonitor.getHealthStatus();
+    
+    res.json({
+      success: true,
+      data: healthStatus,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching API health status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch API health status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get detailed metrics for a specific API
+app.get('/api/rate-limits/metrics/:apiName', (req: Request, res: Response) => {
+  try {
+    const { apiName } = req.params;
+    const metrics = enhancedRateLimitMonitor.getAPIMetrics(apiName);
+    
+    res.json({
+      success: true,
+      data: metrics,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`Error fetching metrics for ${req.params.apiName}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch API metrics',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ============================================================================
+// COMPANY DISCOVERY ENDPOINTS
+// ============================================================================
+
+// Get discovered companies
+app.get('/api/companies', async (_req: Request, res: Response) => {
+  try {
+    console.log('🔍 Fetching discovered companies...');
+    const companies = await companyDiscoveryService.getDiscoveredCompanies();
+    
+    res.json({
+      success: true,
+      data: companies,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching discovered companies:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch discovered companies',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get company discovery statistics
+app.get('/api/companies/stats', async (_req: Request, res: Response) => {
+  try {
+    console.log('📊 Fetching company discovery statistics...');
+    const stats = companyDiscoveryService.getDiscoveryStats();
+    
+    res.json({
+      success: true,
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching company discovery stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch company discovery stats',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Search discovered companies
+app.get('/api/companies/search', async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string;
+    const category = req.query.category as 'stock' | 'etf' | 'crypto';
+
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query is required',
+        message: 'Please provide a search query using the "q" parameter'
+      });
+    }
+
+    console.log(`🔍 Searching companies for "${query}" in category: ${category || 'all'}`);
+    
+    const results = await companyDiscoveryService.searchCompanies(query, category);
+    
+    return res.json({
+      success: true,
+      data: results,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error searching companies:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to search companies',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get companies by sector
+app.get('/api/companies/sector/:sector', async (req: Request, res: Response) => {
+  try {
+    const { sector } = req.params;
+    const category = req.query.category as 'stock' | 'etf' | 'crypto';
+
+    console.log(`🏷️  Fetching companies in sector "${sector}" for category: ${category || 'all'}`);
+    
+    const results = await companyDiscoveryService.getCompaniesBySector(sector, category);
+    
+    res.json({
+      success: true,
+      data: results,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`Error fetching companies in sector ${req.params.sector}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch companies by sector',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Force refresh of company discovery
+app.post('/api/companies/refresh', async (_req: Request, res: Response) => {
+  try {
+    console.log('🔄 Forcing company discovery refresh...');
+    const companies = await companyDiscoveryService.refreshCompanies();
+    
+    res.json({
+      success: true,
+      data: companies,
+      message: 'Company discovery refreshed successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error refreshing company discovery:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh company discovery',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -266,28 +635,38 @@ app.use((error: any, _req: Request, res: Response, _next: any) => {
 // ============================================================================
 
 app.listen(PORT, HOST, () => {
-  console.log('🚀 Enhanced Market Data Service Started');
-  console.log(`📍 Server: http://${HOST}:${PORT}`);
-  console.log(`🔍 Health check: http://${HOST}:${PORT}/api/health`);
-  console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
-  console.log(`📈 Stock Market data: http://${HOST}:${PORT}/api/market-data/stocks`);
-  console.log(`🌐 Digital Assets data: http://${HOST}:${PORT}/api/market-data/digital-assets`);
-  console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
-  console.log(`📊 Cache stats: http://${HOST}:${PORT}/api/market-data/cache/stats`);
-  console.log(`⚡ Rate limit status: http://${HOST}:${PORT}/api/rate-limits/status`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log('✨ Ready to serve market data with intelligent rate limiting and caching!');
+  console.log('🚀 Enhanced Market Data Service with Pagination Started');
+  console.log('📍 Server: http://localhost:3000');
+  console.log('🔍 Health check: http://localhost:3000/api/health');
+  console.log('📊 Market data: http://localhost:3000/api/market-data');
+  console.log('📈 Stock Market data: http://localhost:3000/api/market-data/stocks');
+  console.log('🌐 Digital Assets data: http://localhost:3000/api/market-data/digital-assets');
+  console.log('📈 Paginated Stocks: http://localhost:3000/api/stocks?page=1&limit=25');
+  console.log('📊 Paginated ETFs: http://localhost:3000/api/etfs?page=1&limit=25');
+  console.log('🌐 Paginated Crypto: http://localhost:3000/api/crypto?page=1&limit=25');
+  console.log('🔍 Search: http://localhost:3000/api/search?q=AAPL');
+  console.log('🏷️  Categories: http://localhost:3000/api/categories');
+  console.log('🔍 Companies: http://localhost:3000/api/companies');
+  console.log('📊 Company Stats: http://localhost:3000/api/companies/stats');
+  console.log('🔍 Company Search: http://localhost:3000/api/companies/search?q=AAPL');
+  console.log('🏷️  Companies by Sector: http://localhost:3000/api/companies/sector/Technology');
+  console.log('🔧 Enhanced market data: http://localhost:3000/api/market-data/enhanced/:symbol');
+  console.log('📊 Cache stats: http://localhost:3000/api/market-data/cache/stats');
+  console.log('⚡ Rate limit status: http://localhost:3000/api/rate-limits/status');
+  console.log('🏥 API health: http://localhost:3000/api/health/apis');
+  console.log('🌍 Environment: development');
+  console.log('✨ Ready to serve paginated market data with intelligent rate limiting and caching!');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('🛑 SIGTERM received, shutting down gracefully...');
-  rateLimitManager.stop();
+  enhancedRateLimitMonitor.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('🛑 SIGINT received, shutting down gracefully...');
-  rateLimitManager.stop();
+  enhancedRateLimitMonitor.stop();
   process.exit(0);
 });
