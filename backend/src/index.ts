@@ -35,7 +35,17 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
+    'https://avila-protocol-testnet.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // ============================================================================
