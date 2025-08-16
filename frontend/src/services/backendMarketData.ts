@@ -34,11 +34,21 @@ export interface MarketDataResponse {
 export interface IBackendMarketDataService {
   getAllMarketData(): Promise<MarketDataResponse>;
   getStockData(): Promise<NormalizedAsset[]>;
+  getETFsData(): Promise<NormalizedAsset[]>;
+  getCryptoData(): Promise<NormalizedAsset[]>;
   getDigitalAssetsData(): Promise<NormalizedAsset[]>;
   getEnhancedMarketData(symbol: string): Promise<EnhancedMarketData>;
   getDeFiProtocols(): Promise<any>;
   getCacheStats(): Promise<any>;
   clearCache(): Promise<void>;
+  searchAssets(query: string): Promise<any>;
+  getCategories(): Promise<any>;
+  getCompanies(): Promise<any>;
+  getCompaniesStats(): Promise<any>;
+  getRateLimitsStatus(): Promise<any>;
+  getRateLimitsTiming(): Promise<any>;
+  getRateLimitsRotation(): Promise<any>;
+  healthCheck(): Promise<any>;
 }
 
 class BackendMarketDataService implements IBackendMarketDataService {
@@ -93,6 +103,32 @@ class BackendMarketDataService implements IBackendMarketDataService {
   }
 
   /**
+   * Get ETFs data only
+   */
+  async getETFsData(): Promise<NormalizedAsset[]> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.etfs);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch ETFs data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Crypto data only
+   */
+  async getCryptoData(): Promise<NormalizedAsset[]> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.crypto);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch Crypto data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get Digital Assets market data only
    */
   async getDigitalAssetsData(): Promise<NormalizedAsset[]> {
@@ -132,11 +168,102 @@ class BackendMarketDataService implements IBackendMarketDataService {
   }
 
   /**
+   * Search assets
+   */
+  async searchAssets(query: string): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(`${config.backend.endpoints.search}?q=${encodeURIComponent(query)}`);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to search assets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get categories
+   */
+  async getCategories(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.categories);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get companies
+   */
+  async getCompanies(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.companies);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get companies stats
+   */
+  async getCompaniesStats(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.companiesStats);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch companies stats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get rate limits status
+   */
+  async getRateLimitsStatus(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.rateLimitsStatus);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch rate limits status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get rate limits timing
+   */
+  async getRateLimitsTiming(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.rateLimitsTiming);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch rate limits timing:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get rate limits rotation
+   */
+  async getRateLimitsRotation(): Promise<any> {
+    try {
+      const response = await this.axiosInstance.get(config.backend.endpoints.rateLimitsRotation);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Failed to fetch rate limits rotation:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get cache statistics
    */
   async getCacheStats(): Promise<any> {
     try {
-      const response = await this.axiosInstance.get('/api/market-data/cache/stats');
+      const response = await this.axiosInstance.get(config.backend.endpoints.cacheStats);
       return response.data.data || response.data;
     } catch (error) {
       console.error('Failed to fetch cache stats:', error);
@@ -161,7 +288,7 @@ class BackendMarketDataService implements IBackendMarketDataService {
    */
   async healthCheck(): Promise<any> {
     try {
-      const response = await this.axiosInstance.get('/health');
+      const response = await this.axiosInstance.get(config.backend.endpoints.health);
       return response.data;
     } catch (error) {
       console.error('Health check failed:', error);
