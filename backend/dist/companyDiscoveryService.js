@@ -16,42 +16,155 @@ const API_KEYS = {
 };
 class CompanyDiscoveryService {
     constructor() {
-        this.discoveredCompanies = null;
-        this.lastDiscoveryTime = 0;
-        this.DISCOVERY_CACHE_DURATION = 24 * 60 * 60 * 1000;
-        setInterval(() => this.refreshCompanies(), 24 * 60 * 60 * 1000);
+        this.discoveredCompanies = {
+            stocks: [],
+            etfs: [],
+            crypto: [],
+            timestamp: Date.now(),
+            dataSource: 'Progressive Discovery System'
+        };
+        this.discoveryCache = new Map();
+        this.CACHE_DURATION = 24 * 60 * 60 * 1000;
+        this.progressiveLoadingState = {
+            stocks: { currentBatch: 0, totalDiscovered: 0, maxAssets: 1200, batchSize: 100 },
+            etfs: { currentBatch: 0, totalDiscovered: 0, maxAssets: 1000, batchSize: 100 },
+            crypto: { currentBatch: 0, totalDiscovered: 0, maxAssets: 2000, batchSize: 100 }
+        };
+        setInterval(() => this.refreshDiscovery(), 60 * 60 * 1000);
     }
-    async discoverCompanies(options = {}) {
-        const now = Date.now();
-        if (this.discoveredCompanies && (now - this.lastDiscoveryTime) < this.DISCOVERY_CACHE_DURATION) {
-            console.log('📋 Using cached company discovery data');
-            return this.discoveredCompanies;
-        }
-        console.log('🔍 Starting optimized company discovery...');
+    generateCacheKey(options) {
+        return JSON.stringify(options);
+    }
+    async refreshDiscovery() {
+        console.log('🔄 Refreshing company discovery data...');
         try {
-            const [stocks, etfs, crypto] = await Promise.all([
-                this.discoverStocksOptimized(options),
-                this.discoverETFsOptimized(options),
-                this.discoverCryptoOptimized(options)
-            ]);
-            this.discoveredCompanies = {
-                stocks,
-                etfs,
-                crypto,
-                timestamp: now,
-                dataSource: 'Multiple APIs - Optimized'
-            };
-            this.lastDiscoveryTime = now;
-            console.log(`✅ Optimized discovery completed: ${stocks.length} stocks, ${etfs.length} ETFs, ${crypto.length} crypto`);
-            return this.discoveredCompanies;
+            await this.discoverCompaniesProgressive({});
+            console.log('✅ Company discovery refresh completed');
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error('❌ Company discovery failed:', errorMessage);
-            throw error;
+            console.error('❌ Company discovery refresh failed:', error);
         }
     }
-    async discoverStocksOptimized(options) {
+    async getDiscoveredCompanies(options = {}) {
+        const cacheKey = this.generateCacheKey(options);
+        if (this.discoveryCache.has(cacheKey)) {
+            const cached = this.discoveryCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.CACHE_DURATION) {
+                console.log('📋 Using cached company discovery data');
+                return cached.data;
+            }
+        }
+        console.log('🚀 Starting progressive company discovery...');
+        const result = await this.discoverCompaniesProgressive(options);
+        this.discoveryCache.set(cacheKey, {
+            data: result,
+            timestamp: Date.now()
+        });
+        return result;
+    }
+    async discoverCompaniesProgressive(options) {
+        const result = {
+            stocks: [],
+            etfs: [],
+            crypto: [],
+            timestamp: Date.now(),
+            dataSource: 'Progressive Discovery System'
+        };
+        console.log('📊 Phase 1: Initial discovery with manageable batches...');
+        result.stocks = await this.discoverStocksProgressive(options);
+        result.etfs = await this.discoverETFsProgressive(options);
+        result.crypto = await this.discoverCryptoProgressive(options);
+        console.log(`✅ Progressive discovery completed: ${result.stocks.length} stocks, ${result.etfs.length} ETFs, ${result.crypto.length} crypto`);
+        return result;
+    }
+    async discoverStocksProgressive(options = {}) {
+        const state = this.progressiveLoadingState.stocks;
+        console.log(`📈 Progressive stock discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
+        if (state.totalDiscovered < state.maxAssets) {
+            const newStocks = await this.discoverStocksOptimized({
+                ...this.getProgressiveOptions('stocks'),
+                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
+            });
+            const allStocks = [...this.discoveredCompanies.stocks, ...newStocks];
+            const uniqueStocks = this.removeDuplicates(allStocks);
+            this.discoveredCompanies.stocks = uniqueStocks.slice(0, state.maxAssets);
+            state.totalDiscovered = this.discoveredCompanies.stocks.length;
+            state.currentBatch++;
+            console.log(`📈 Stocks expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
+        }
+        return this.discoveredCompanies.stocks;
+    }
+    async discoverETFsProgressive(options = {}) {
+        const state = this.progressiveLoadingState.etfs;
+        console.log(`📊 Progressive ETF discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
+        if (state.totalDiscovered < state.maxAssets) {
+            const newETFs = await this.discoverETFsOptimized({
+                ...this.getProgressiveOptions('etfs'),
+                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
+            });
+            const allETFs = [...this.discoveredCompanies.etfs, ...newETFs];
+            const uniqueETFs = this.removeDuplicates(allETFs);
+            this.discoveredCompanies.etfs = uniqueETFs.slice(0, state.maxAssets);
+            state.totalDiscovered = this.discoveredCompanies.etfs.length;
+            state.currentBatch++;
+            console.log(`📊 ETFs expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
+        }
+        return this.discoveredCompanies.etfs;
+    }
+    async discoverCryptoProgressive(options = {}) {
+        const state = this.progressiveLoadingState.crypto;
+        console.log(`🪙 Progressive crypto discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
+        if (state.totalDiscovered < state.maxAssets) {
+            const newCrypto = await this.discoverCryptoOptimized({
+                ...this.getProgressiveOptions('crypto'),
+                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
+            });
+            const allCrypto = [...this.discoveredCompanies.crypto, ...newCrypto];
+            const uniqueCrypto = this.removeDuplicates(allCrypto);
+            this.discoveredCompanies.crypto = uniqueCrypto.slice(0, state.maxAssets);
+            state.totalDiscovered = this.discoveredCompanies.crypto.length;
+            state.currentBatch++;
+            console.log(`🪙 Crypto expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
+        }
+        return this.discoveredCompanies.crypto;
+    }
+    getProgressiveOptions(assetType) {
+        const state = this.progressiveLoadingState[assetType];
+        return {
+            maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered),
+            priority: 'medium',
+            useCache: true,
+            progressive: true,
+            batchNumber: state.currentBatch
+        };
+    }
+    getProgressiveLoadingStatus() {
+        return {
+            stocks: { ...this.progressiveLoadingState.stocks, discovered: this.discoveredCompanies.stocks.length },
+            etfs: { ...this.progressiveLoadingState.etfs, discovered: this.discoveredCompanies.etfs.length },
+            crypto: { ...this.progressiveLoadingState.crypto, discovered: this.discoveredCompanies.crypto.length }
+        };
+    }
+    async expandAssetDiscovery(assetType, targetAmount) {
+        const state = this.progressiveLoadingState[assetType];
+        const currentAmount = this.discoveredCompanies[assetType].length;
+        if (targetAmount > currentAmount) {
+            console.log(`🚀 Manually expanding ${assetType} from ${currentAmount} to ${targetAmount}`);
+            switch (assetType) {
+                case 'stocks':
+                    await this.discoverStocksProgressive();
+                    break;
+                case 'etfs':
+                    await this.discoverETFsProgressive();
+                    break;
+                case 'crypto':
+                    await this.discoverCryptoProgressive();
+                    break;
+            }
+        }
+        return this.discoveredCompanies[assetType].length;
+    }
+    async discoverStocksOptimized(options = {}) {
         console.log('📈 Discovering stocks with optimized strategy...');
         const stocks = [];
         try {
@@ -61,9 +174,9 @@ class CompanyDiscoveryService {
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Finnhub discovery failed, using fallback:', errorMessage);
+            console.warn('⚠️ Finnhub stock discovery failed:', errorMessage);
         }
-        if (stocks.length < 800) {
+        if (stocks.length < 200) {
             try {
                 const twelveDataStocks = await this.discoverStocksFromTwelveDataOptimized();
                 stocks.push(...twelveDataStocks);
@@ -71,22 +184,12 @@ class CompanyDiscoveryService {
             }
             catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ Twelve Data discovery failed:', errorMessage);
-            }
-        }
-        if (stocks.length < 200) {
-            try {
-                const alphaVantageStocks = await this.discoverStocksFromAlphaVantageOptimized();
-                stocks.push(...alphaVantageStocks);
-                console.log(`✅ Alpha Vantage: ${alphaVantageStocks.length} stocks discovered`);
-            }
-            catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ Alpha Vantage discovery failed:', errorMessage);
+                console.warn('⚠️ Twelve Data stock discovery failed:', errorMessage);
             }
         }
         const uniqueStocks = this.removeDuplicates(stocks);
-        return uniqueStocks.slice(0, 300);
+        const maxAssets = options.maxAssets || 300;
+        return uniqueStocks.slice(0, maxAssets);
     }
     async discoverStocksFromFinnhubOptimized() {
         const stocks = [];
@@ -172,7 +275,7 @@ class CompanyDiscoveryService {
         }
         return stocks;
     }
-    async discoverETFsOptimized(options) {
+    async discoverETFsOptimized(options = {}) {
         console.log('📊 Discovering ETFs with optimized strategy...');
         const etfs = [];
         try {
@@ -196,7 +299,8 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueETFs = this.removeDuplicates(etfs);
-        return uniqueETFs.slice(0, 400);
+        const maxAssets = options.maxAssets || 400;
+        return uniqueETFs.slice(0, maxAssets);
     }
     async discoverETFsFromTwelveDataOptimized() {
         const etfs = [];
@@ -246,7 +350,7 @@ class CompanyDiscoveryService {
         }
         return etfs;
     }
-    async discoverCryptoOptimized(options) {
+    async discoverCryptoOptimized(options = {}) {
         console.log('🪙 Discovering crypto with optimized strategy...');
         const crypto = [];
         try {
@@ -281,7 +385,8 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueCrypto = this.removeDuplicates(crypto);
-        return uniqueCrypto.slice(0, 800);
+        const maxAssets = options.maxAssets || 800;
+        return uniqueCrypto.slice(0, maxAssets);
     }
     async discoverCryptoFromCoinGeckoOptimized() {
         const crypto = [];
@@ -753,28 +858,12 @@ class CompanyDiscoveryService {
             return true;
         });
     }
-    schedulePeriodicDiscovery() {
-        setInterval(async () => {
-            console.log('🔄 Running scheduled company discovery...');
-            try {
-                await this.discoverCompanies();
-            }
-            catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.error('Scheduled company discovery failed:', errorMessage);
-            }
-        }, this.DISCOVERY_CACHE_DURATION);
-    }
-    async getDiscoveredCompanies() {
-        if (!this.discoveredCompanies) {
-            return await this.discoverCompanies();
-        }
-        return this.discoveredCompanies;
-    }
     async refreshCompanies() {
-        this.discoveredCompanies = null;
-        this.lastDiscoveryTime = 0;
-        return await this.discoverCompanies();
+        this.discoveryCache.clear();
+        this.progressiveLoadingState.stocks.totalDiscovered = 0;
+        this.progressiveLoadingState.etfs.totalDiscovered = 0;
+        this.progressiveLoadingState.crypto.totalDiscovered = 0;
+        return await this.getDiscoveredCompanies();
     }
     async searchCompanies(query, category) {
         const companies = await this.getDiscoveredCompanies();
@@ -810,34 +899,25 @@ class CompanyDiscoveryService {
         return searchPool.filter(company => company.sector && company.sector.toLowerCase().includes(sectorLower));
     }
     getDiscoveryStats() {
-        if (!this.discoveredCompanies) {
-            return {
-                totalCompanies: 0,
-                stocks: 0,
-                etfs: 0,
-                crypto: 0,
-                lastDiscovery: null,
-                cacheStatus: 'empty'
-            };
-        }
+        const companies = this.discoveredCompanies;
         const sectors = new Set();
         const industries = new Set();
-        [...this.discoveredCompanies.stocks, ...this.discoveredCompanies.etfs, ...this.discoveredCompanies.crypto].forEach(company => {
+        [...companies.stocks, ...companies.etfs, ...companies.crypto].forEach(company => {
             if (company.sector)
                 sectors.add(company.sector);
             if (company.industry)
                 industries.add(company.industry);
         });
         return {
-            totalCompanies: this.discoveredCompanies.stocks.length + this.discoveredCompanies.etfs.length + this.discoveredCompanies.crypto.length,
-            stocks: this.discoveredCompanies.stocks.length,
-            etfs: this.discoveredCompanies.etfs.length,
-            crypto: this.discoveredCompanies.crypto.length,
+            totalCompanies: companies.stocks.length + companies.etfs.length + companies.crypto.length,
+            stocks: companies.stocks.length,
+            etfs: companies.etfs.length,
+            crypto: companies.crypto.length,
             uniqueSectors: sectors.size,
             uniqueIndustries: industries.size,
-            lastDiscovery: new Date(this.discoveredCompanies.timestamp).toISOString(),
-            cacheStatus: 'valid',
-            dataSource: this.discoveredCompanies.dataSource
+            lastDiscovery: new Date(companies.timestamp || Date.now()).toISOString(),
+            cacheStatus: 'active',
+            progressiveLoading: this.getProgressiveLoadingStatus()
         };
     }
 }

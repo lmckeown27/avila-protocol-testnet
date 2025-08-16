@@ -546,6 +546,62 @@ app.post('/api/companies/refresh', async (_req, res) => {
         });
     }
 });
+app.get('/api/progressive-loading/status', async (_req, res) => {
+    try {
+        const status = companyDiscoveryService_1.companyDiscoveryService.getProgressiveLoadingStatus();
+        res.json({
+            success: true,
+            data: status,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('Error getting progressive loading status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get progressive loading status',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+app.post('/api/progressive-loading/expand', async (req, res) => {
+    try {
+        const { assetType, targetAmount } = req.body;
+        if (!assetType || !targetAmount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameters',
+                message: 'assetType and targetAmount are required'
+            });
+        }
+        if (!['stocks', 'etfs', 'crypto'].includes(assetType)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid asset type',
+                message: 'assetType must be one of: stocks, etfs, crypto'
+            });
+        }
+        const newAmount = await companyDiscoveryService_1.companyDiscoveryService.expandAssetDiscovery(assetType, targetAmount);
+        return res.json({
+            success: true,
+            data: {
+                assetType,
+                previousAmount: newAmount - (targetAmount - newAmount),
+                newAmount,
+                targetAmount
+            },
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('Error expanding asset discovery:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to expand asset discovery',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
 app.use('*', (_req, res) => {
     res.status(404).json({
         success: false,
