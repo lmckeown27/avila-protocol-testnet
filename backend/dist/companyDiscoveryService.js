@@ -86,7 +86,7 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueStocks = this.removeDuplicates(stocks);
-        return uniqueStocks.slice(0, 1500);
+        return uniqueStocks.slice(0, 1200);
     }
     async discoverStocksFromFinnhubOptimized() {
         const stocks = [];
@@ -102,7 +102,7 @@ class CompanyDiscoveryService {
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data)) {
-                        const batch = data.slice(0, 200).map((stock) => ({
+                        const batch = data.slice(0, 300).map((stock) => ({
                             symbol: stock.symbol,
                             name: stock.description || stock.symbol,
                             sector: stock.primarySic || 'Unknown',
@@ -128,7 +128,7 @@ class CompanyDiscoveryService {
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'ok' && Array.isArray(data.data)) {
-                    const batch = data.data.slice(0, 400).map((stock) => ({
+                    const batch = data.data.slice(0, 600).map((stock) => ({
                         symbol: stock.symbol,
                         name: stock.name || stock.symbol,
                         sector: stock.sector || 'Unknown',
@@ -184,7 +184,7 @@ class CompanyDiscoveryService {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.warn('⚠️ Twelve Data ETF discovery failed:', errorMessage);
         }
-        if (etfs.length < 200) {
+        if (etfs.length < 400) {
             try {
                 const finnhubETFs = await this.discoverETFsFromFinnhubOptimized();
                 etfs.push(...finnhubETFs);
@@ -205,7 +205,7 @@ class CompanyDiscoveryService {
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'ok' && Array.isArray(data.data)) {
-                    const batch = data.data.slice(0, 500).map((etf) => ({
+                    const batch = data.data.slice(0, 700).map((etf) => ({
                         symbol: etf.symbol,
                         name: etf.name || etf.symbol,
                         sector: 'ETF',
@@ -225,16 +225,16 @@ class CompanyDiscoveryService {
     async discoverETFsFromFinnhubOptimized() {
         const etfs = [];
         try {
-            const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=ETF&token=${process.env.FINNHUB_API_KEY}`);
+            const response = await fetch(`https://finnhub.io/api/v1/etf/list?token=${process.env.FINNHUB_API_KEY}`);
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    const batch = data.slice(0, 200).map((etf) => ({
+                    const batch = data.slice(0, 400).map((etf) => ({
                         symbol: etf.symbol,
-                        name: etf.description || etf.symbol,
+                        name: etf.name || etf.symbol,
                         sector: 'ETF',
-                        industry: 'Exchange Traded Fund',
-                        exchange: etf.primaryExchange || 'ETF'
+                        industry: etf.category || 'Exchange Traded Fund',
+                        exchange: etf.exchange || 'ETF'
                     }));
                     etfs.push(...batch);
                 }
@@ -258,7 +258,7 @@ class CompanyDiscoveryService {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.warn('⚠️ CoinGecko discovery failed:', errorMessage);
         }
-        if (crypto.length < 800) {
+        if (crypto.length < 1000) {
             try {
                 const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCapOptimized();
                 crypto.push(...coinMarketCapCrypto);
@@ -269,7 +269,7 @@ class CompanyDiscoveryService {
                 console.warn('⚠️ CoinMarketCap discovery failed:', errorMessage);
             }
         }
-        if (crypto.length < 1000) {
+        if (crypto.length < 1200) {
             try {
                 const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaOptimized();
                 crypto.push(...defiLlamaCrypto);
@@ -281,12 +281,12 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueCrypto = this.removeDuplicates(crypto);
-        return uniqueCrypto.slice(0, 1500);
+        return uniqueCrypto.slice(0, 2000);
     }
     async discoverCryptoFromCoinGeckoOptimized() {
         const crypto = [];
         try {
-            for (let page = 1; page <= 3; page++) {
+            for (let page = 1; page <= 4; page++) {
                 const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`);
                 if (response.ok) {
                     const data = await response.json();
@@ -316,7 +316,7 @@ class CompanyDiscoveryService {
     async discoverCryptoFromCoinMarketCapOptimized() {
         const crypto = [];
         try {
-            for (let start = 1; start <= 1000; start += 500) {
+            for (let start = 1; start <= 1500; start += 500) {
                 const response = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=${start}&limit=500&convert=USD`, {
                     headers: {
                         'X-CMC_PRO_API_KEY': process.env.COINMARKETCAP_API_KEY || ''
@@ -354,7 +354,7 @@ class CompanyDiscoveryService {
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    const batch = data.slice(0, 300).map((protocol) => {
+                    const batch = data.slice(0, 500).map((protocol) => {
                         var _a, _b, _c;
                         return ({
                             symbol: ((_a = protocol.symbol) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || ((_b = protocol.name) === null || _b === void 0 ? void 0 : _b.substring(0, 5).toUpperCase()),
@@ -371,7 +371,7 @@ class CompanyDiscoveryService {
             if (chainsResponse.ok) {
                 const chainsData = await chainsResponse.json();
                 if (Array.isArray(chainsData)) {
-                    const batch = chainsData.slice(0, 100).map((chain) => {
+                    const batch = chainsData.slice(0, 200).map((chain) => {
                         var _a, _b, _c;
                         return ({
                             symbol: ((_a = chain.tokenSymbol) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || ((_b = chain.name) === null || _b === void 0 ? void 0 : _b.substring(0, 5).toUpperCase()),

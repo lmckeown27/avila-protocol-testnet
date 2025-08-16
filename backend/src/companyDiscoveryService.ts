@@ -146,13 +146,13 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueStocks = this.removeDuplicates(stocks);
-    return uniqueStocks.slice(0, 1500); // Cap at 1500 stocks
+    return uniqueStocks.slice(0, 1200); // Cap at 1200 stocks (optimized for rate limits)
   }
 
   private async discoverStocksFromFinnhubOptimized(): Promise<CompanyInfo[]> {
     const stocks: CompanyInfo[] = [];
     
-    // Use multiple free endpoints efficiently
+    // Use multiple free endpoints efficiently - MAXIMIZE within 60 req/min limit
     const endpoints = [
       '/api/v1/stock/symbol?exchange=US', // US stocks
       '/api/v1/stock/symbol?exchange=NASDAQ', // NASDAQ stocks
@@ -166,7 +166,8 @@ export class CompanyDiscoveryService {
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
-            const batch = data.slice(0, 200).map((stock: any) => ({
+            // Get maximum stocks per exchange within rate limits
+            const batch = data.slice(0, 300).map((stock: any) => ({
               symbol: stock.symbol,
               name: stock.description || stock.symbol,
               sector: stock.primarySic || 'Unknown',
@@ -191,12 +192,13 @@ export class CompanyDiscoveryService {
     const stocks: CompanyInfo[] = [];
     
     try {
-      // Use Twelve Data's symbol search efficiently - get more stocks
+      // Use Twelve Data's symbol search efficiently - MAXIMIZE within 800 req/day limit
       const response = await fetch(`https://api.twelvedata.com/stocks?country=US&apikey=${process.env.TWELVE_DATA_API_KEY}`);
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'ok' && Array.isArray(data.data)) {
-          const batch = data.data.slice(0, 400).map((stock: any) => ({
+          // Get maximum stocks within daily rate limit
+          const batch = data.data.slice(0, 600).map((stock: any) => ({
             symbol: stock.symbol,
             name: stock.name || stock.symbol,
             sector: stock.sector || 'Unknown',
@@ -262,7 +264,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 2: Use Finnhub as backup for ETF discovery
-    if (etfs.length < 200) {
+    if (etfs.length < 400) {
       try {
         const finnhubETFs = await this.discoverETFsFromFinnhubOptimized();
         etfs.push(...finnhubETFs);
@@ -275,19 +277,20 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueETFs = this.removeDuplicates(etfs);
-    return uniqueETFs.slice(0, 1000); // Cap at 1000 ETFs
+    return uniqueETFs.slice(0, 1000); // Cap at 1000 ETFs (optimized for rate limits)
   }
 
   private async discoverETFsFromTwelveDataOptimized(): Promise<CompanyInfo[]> {
     const etfs: CompanyInfo[] = [];
     
     try {
-      // Get top 500 ETFs by popularity/market cap
+      // Get maximum ETFs within 800 req/day limit
       const response = await fetch(`https://api.twelvedata.com/etfs?country=US&apikey=${process.env.TWELVE_DATA_API_KEY}`);
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'ok' && Array.isArray(data.data)) {
-          const batch = data.data.slice(0, 500).map((etf: any) => ({
+          // Get maximum ETFs within daily rate limit
+          const batch = data.data.slice(0, 700).map((etf: any) => ({
             symbol: etf.symbol,
             name: etf.name || etf.symbol,
             sector: 'ETF',
@@ -309,17 +312,18 @@ export class CompanyDiscoveryService {
     const etfs: CompanyInfo[] = [];
     
     try {
-      // Use Finnhub for ETF discovery
-      const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=ETF&token=${process.env.FINNHUB_API_KEY}`);
+      // Get maximum ETFs within 60 req/min limit
+      const response = await fetch(`https://finnhub.io/api/v1/etf/list?token=${process.env.FINNHUB_API_KEY}`);
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
-          const batch = data.slice(0, 200).map((etf: any) => ({
+          // Get maximum ETFs within rate limit
+          const batch = data.slice(0, 400).map((etf: any) => ({
             symbol: etf.symbol,
-            name: etf.description || etf.symbol,
+            name: etf.name || etf.symbol,
             sector: 'ETF',
-            industry: 'Exchange Traded Fund',
-            exchange: etf.primaryExchange || 'ETF'
+            industry: etf.category || 'Exchange Traded Fund',
+            exchange: etf.exchange || 'ETF'
           }));
           etfs.push(...batch);
         }
@@ -348,7 +352,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 2: CoinMarketCap (10,000 req/month = very generous) - MAXIMIZE USAGE
-    if (crypto.length < 800) {
+    if (crypto.length < 1000) {
       try {
         const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCapOptimized();
         crypto.push(...coinMarketCapCrypto);
@@ -360,7 +364,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 3: DeFi Llama (80 req/min = very generous) - MAXIMIZE USAGE
-    if (crypto.length < 1000) {
+    if (crypto.length < 1200) {
       try {
         const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaOptimized();
         crypto.push(...defiLlamaCrypto);
@@ -373,15 +377,15 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueCrypto = this.removeDuplicates(crypto);
-    return uniqueCrypto.slice(0, 1500); // Cap at 1500 crypto
+    return uniqueCrypto.slice(0, 2000); // Cap at 2000 crypto (optimized for rate limits)
   }
 
   private async discoverCryptoFromCoinGeckoOptimized(): Promise<CompanyInfo[]> {
     const crypto: CompanyInfo[] = [];
     
     try {
-      // Get top 1000 coins by market cap (multiple pages)
-      for (let page = 1; page <= 3; page++) {
+      // Get maximum coins by market cap within 50 req/min limit
+      for (let page = 1; page <= 4; page++) {
         const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`);
         if (response.ok) {
           const data = await response.json();
@@ -411,8 +415,8 @@ export class CompanyDiscoveryService {
     const crypto: CompanyInfo[] = [];
     
     try {
-      // Get top 1000 coins by market cap (multiple requests)
-      for (let start = 1; start <= 1000; start += 500) {
+      // Get maximum coins by market cap within 10,000 req/month limit
+      for (let start = 1; start <= 1500; start += 500) {
         const response = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=${start}&limit=500&convert=USD`, {
           headers: {
             'X-CMC_PRO_API_KEY': process.env.COINMARKETCAP_API_KEY || ''
@@ -447,12 +451,12 @@ export class CompanyDiscoveryService {
     const crypto: CompanyInfo[] = [];
     
     try {
-      // Get top protocols by TVL
+      // Get maximum protocols by TVL within 80 req/min limit
       const response = await fetch('https://api.llama.fi/protocols');
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
-          const batch = data.slice(0, 300).map((protocol: any) => ({
+          const batch = data.slice(0, 500).map((protocol: any) => ({
             symbol: protocol.symbol?.toUpperCase() || protocol.name?.substring(0, 5).toUpperCase(),
             name: protocol.name || protocol.symbol?.toUpperCase(),
             sector: 'DeFi Protocol',
@@ -463,12 +467,12 @@ export class CompanyDiscoveryService {
         }
       }
 
-      // Get top chains by TVL
+      // Get maximum chains by TVL within 80 req/min limit
       const chainsResponse = await fetch('https://api.llama.fi/chains');
       if (chainsResponse.ok) {
         const chainsData = await chainsResponse.json();
         if (Array.isArray(chainsData)) {
-          const batch = chainsData.slice(0, 100).map((chain: any) => ({
+          const batch = chainsData.slice(0, 200).map((chain: any) => ({
             symbol: chain.tokenSymbol?.toUpperCase() || chain.name?.substring(0, 5).toUpperCase(),
             name: chain.name || chain.tokenSymbol?.toUpperCase(),
             sector: 'Blockchain',
