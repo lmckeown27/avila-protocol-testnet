@@ -39,6 +39,14 @@ app.use(cors());
 app.use(express.json());
 
 // ============================================================================
+// DEBUGGING MIDDLEWARE - Log all incoming requests
+// ============================================================================
+app.use((req: Request, res: Response, next: any) => {
+  console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// ============================================================================
 // HEALTH & STATUS ENDPOINTS
 // ============================================================================
 

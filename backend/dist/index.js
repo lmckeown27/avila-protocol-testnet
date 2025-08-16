@@ -29,6 +29,10 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.use((req, res, next) => {
+    console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
+    next();
+});
 app.get('/api/health', (_req, res) => {
     res.json({
         success: true,
