@@ -262,7 +262,7 @@ Customize component props:
 - **Primary**: Finnhub real-time feed
 - **Secondary**: Financial Modeling Prep API
 - **Fallback**: Mock data with realistic values
-- **Validation**: Cross-reference with multiple sources
+- **Validation**: Cross-reference with data sources
 
 ## 🧪 Testing
 

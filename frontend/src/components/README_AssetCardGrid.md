@@ -117,7 +117,7 @@ return (
 |------|------|---------|-------------|
 | `assets` | `AssetCardData[]` | **Required** | Array of asset objects to display |
 | `title` | `string` | `'Market Assets'` | Main title for the grid |
-| `subtitle` | `string` | `'Real-time market data from multiple sources'` | Subtitle description |
+| `subtitle` | `string` | `'Real-time market data'` | Subtitle description |
 | `loading` | `boolean` | `false` | Shows loading skeleton when true |
 | `emptyMessage` | `string` | `'No assets available'` | Message when no assets exist |
 | `onCardClick` | `(asset: AssetCardData) => void` | `undefined` | Callback when card is clicked |

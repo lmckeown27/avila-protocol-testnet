@@ -267,7 +267,7 @@ const TradFiMarkets = () => {
           Stock Market
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor stock market data with real-time pricing, P/E ratios, and market analytics from multiple APIs
+          Monitor stock market data with real-time pricing, P/E ratios, and market analytics
         </p>
       </div>
 
@@ -280,7 +280,7 @@ const TradFiMarkets = () => {
             Market Data (Free Tier)
           </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Displaying real-time price, market cap, P/E ratios, and daily ranges. Enhanced data from multiple APIs for comprehensive market insights.
+          Displaying real-time price, market cap, P/E ratios, and daily ranges. Enhanced data for comprehensive market insights.
         </p>
           
           {/* Search Bar */}

@@ -260,7 +260,7 @@ const DeFiMarkets = () => {
           Digital Assets
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor digital asset markets with real-time cryptocurrency data, volume, and market cap from multiple APIs
+          Monitor digital asset markets with real-time cryptocurrency data, volume, and market cap
         </p>
       </div>
 

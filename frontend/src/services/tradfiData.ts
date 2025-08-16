@@ -44,7 +44,7 @@ class TradFiDataService {
     if (cached) return cached;
 
     try {
-      // Try to fetch real data from multiple free APIs
+      // Try to fetch real data from free APIs
       const result = await this.fetchRealMarketData(symbols);
       this.setCachedData(cacheKey, result);
       return result;
@@ -192,7 +192,7 @@ class TradFiDataService {
    * Fetch real market data from free APIs
    */
   private async fetchRealMarketData(symbols: string[]): Promise<TradFiMarketData> {
-    // Try multiple APIs in sequence for better reliability
+    // Try APIs in sequence for better reliability
     const apis = [
       () => this.fetchFromFinnhub(symbols),
       () => this.fetchFromAlphaVantage(symbols),

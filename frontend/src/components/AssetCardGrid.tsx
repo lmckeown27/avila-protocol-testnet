@@ -213,7 +213,7 @@ const AssetCard: React.FC<{
 const AssetCardGrid: React.FC<AssetCardGridProps> = ({
   assets,
   title = 'Market Assets',
-  subtitle = 'Real-time market data from multiple sources',
+  subtitle = 'Real-time market data',
   loading = false,
   emptyMessage = 'No assets available',
   onCardClick,

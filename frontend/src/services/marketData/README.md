@@ -252,7 +252,7 @@ const overallStatus = await marketDataService.getServiceStatus();
 ## 📊 Performance
 
 ### **Optimizations**
-- **Parallel Requests**: Multiple data sources fetched simultaneously
+- **Parallel Requests**: Data sources fetched simultaneously
 - **Smart Caching**: 60-second TTL prevents unnecessary API calls
 - **Rate Limiting**: Automatic delays prevent API abuse
 - **Error Recovery**: Fast failover to backup services
