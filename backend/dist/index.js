@@ -33,6 +33,28 @@ app.use((req, res, next) => {
     console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
     next();
 });
+app.get('/', (_req, res) => {
+    res.json({
+        success: true,
+        message: 'Avila Markets Backend API',
+        version: '1.0.0',
+        status: 'operational',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            health: '/api/health',
+            marketData: '/api/market-data',
+            stocks: '/api/stocks',
+            etfs: '/api/etfs',
+            crypto: '/api/crypto',
+            search: '/api/search',
+            companies: '/api/companies',
+            rateLimits: '/api/rate-limits/status',
+            progressiveLoading: '/api/progressive-loading/status'
+        },
+        documentation: 'This is the Avila Markets Backend API for market data, company discovery, and progressive asset loading.',
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 app.get('/api/health', (_req, res) => {
     res.json({
         success: true,
