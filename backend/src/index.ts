@@ -77,7 +77,8 @@ app.get('/', (_req: Request, res: Response) => {
       search: '/api/search',
       companies: '/api/companies',
       rateLimits: '/api/rate-limits/status',
-      progressiveLoading: '/api/progressive-loading/status'
+      loading: '/api/loading/status',
+      cache: '/api/cache/stats'
     },
     documentation: 'This is the Avila Markets Backend API for market data, company discovery, and progressive asset loading.',
     environment: process.env.NODE_ENV || 'development'
@@ -700,10 +701,10 @@ app.post('/api/companies/refresh', async (_req: Request, res: Response) => {
   }
 });
 
-// Get progressive loading status
-app.get('/api/progressive-loading/status', async (_req: Request, res: Response) => {
+// Get loading status
+app.get('/api/loading/status', async (_req: Request, res: Response) => {
   try {
-    const status = companyDiscoveryService.getProgressiveLoadingStatus();
+    const status = companyDiscoveryService.getLoadingStatus();
     
     res.json({
       success: true,
@@ -711,53 +712,30 @@ app.get('/api/progressive-loading/status', async (_req: Request, res: Response) 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error getting progressive loading status:', error);
+    console.error('Error getting loading status:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get progressive loading status',
+      error: 'Failed to get loading status',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
-// Force expansion of asset discovery
-app.post('/api/progressive-loading/expand', async (req: Request, res: Response) => {
+// Get cache statistics
+app.get('/api/cache/stats', async (_req: Request, res: Response) => {
   try {
-    const { assetType, targetAmount } = req.body;
+    const stats = companyDiscoveryService.getCacheStats();
     
-    if (!assetType || !targetAmount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required parameters',
-        message: 'assetType and targetAmount are required'
-      });
-    }
-    
-    if (!['stocks', 'etfs', 'crypto'].includes(assetType)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid asset type',
-        message: 'assetType must be one of: stocks, etfs, crypto'
-      });
-    }
-    
-    const newAmount = await companyDiscoveryService.expandAssetDiscovery(assetType, targetAmount);
-    
-    return res.json({
+    res.json({
       success: true,
-      data: {
-        assetType,
-        previousAmount: newAmount - (targetAmount - newAmount),
-        newAmount,
-        targetAmount
-      },
+      data: stats,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error expanding asset discovery:', error);
-    return res.status(500).json({
+    console.error('Error getting cache statistics:', error);
+    res.status(500).json({
       success: false,
-      error: 'Failed to expand asset discovery',
+      error: 'Failed to get cache statistics',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -810,9 +788,11 @@ app.listen(PORT, HOST, () => {
   console.log(`📊 Cache stats: http://${HOST}:${PORT}/api/market-data/cache/stats`);
   console.log(`⚡ Rate limit status: http://${HOST}:${PORT}/api/rate-limits/status`);
   console.log(`🏥 API health: http://${HOST}:${PORT}/api/health/apis`);
+  console.log(`📈 Loading status: http://${HOST}:${PORT}/api/loading/status`);
+  console.log(`💾 Cache statistics: http://${HOST}:${PORT}/api/cache/stats`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Binding to: ${HOST}:${PORT}`);
-  console.log('✨ Ready to serve paginated market data with intelligent rate limiting and caching!');
+  console.log('✨ Ready to serve paginated market data with enhanced caching and simplified loading!');
 });
 
 // Graceful shutdown
