@@ -3,12 +3,6 @@ import { TrendingUpIcon, TrendingDownIcon } from 'lucide-react';
 import { backendMarketDataService } from '../services/backendMarketData';
 import { NormalizedAsset } from '../services/backendMarketData';
 
-// ETF-specific symbols (focusing on major ETFs)
-const ETF_SYMBOLS = [
-  'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', 'SLV', 'TLT',
-  'XLE', 'XLF', 'XLK', 'XLV', 'XLI', 'XLP', 'XLY', 'XLB', 'XLC', 'XLU'
-];
-
 const ETFMarket: React.FC = () => {
   const [etfData, setEtfData] = useState<NormalizedAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,13 +22,9 @@ const ETFMarket: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch stock market data and filter for ETFs
-      const response = await backendMarketDataService.getStockData();
-      const etfAssets = response.filter(asset => 
-        ETF_SYMBOLS.includes(asset.symbol)
-      );
-      
-      setEtfData(etfAssets);
+      // Fetch ETF data from the correct endpoint
+      const response = await backendMarketDataService.getETFsData();
+      setEtfData(response);
     } catch (err) {
       console.error('Error fetching ETF data:', err);
       setError('Failed to fetch ETF market data');
