@@ -146,7 +146,7 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueStocks = this.removeDuplicates(stocks);
-    return uniqueStocks.slice(0, 1200); // Cap at 1200 stocks (optimized for rate limits)
+    return uniqueStocks.slice(0, 300); // Cap at 300 stocks initially (prevents rate limit overwhelm)
   }
 
   private async discoverStocksFromFinnhubOptimized(): Promise<CompanyInfo[]> {
@@ -264,7 +264,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 2: Use Finnhub as backup for ETF discovery
-    if (etfs.length < 400) {
+    if (etfs.length < 200) {
       try {
         const finnhubETFs = await this.discoverETFsFromFinnhubOptimized();
         etfs.push(...finnhubETFs);
@@ -277,7 +277,7 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueETFs = this.removeDuplicates(etfs);
-    return uniqueETFs.slice(0, 1000); // Cap at 1000 ETFs (optimized for rate limits)
+    return uniqueETFs.slice(0, 400); // Cap at 400 ETFs initially (prevents rate limit overwhelm)
   }
 
   private async discoverETFsFromTwelveDataOptimized(): Promise<CompanyInfo[]> {
@@ -352,7 +352,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 2: CoinMarketCap (10,000 req/month = very generous) - MAXIMIZE USAGE
-    if (crypto.length < 1000) {
+    if (crypto.length < 500) {
       try {
         const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCapOptimized();
         crypto.push(...coinMarketCapCrypto);
@@ -364,7 +364,7 @@ export class CompanyDiscoveryService {
     }
 
     // Strategy 3: DeFi Llama (80 req/min = very generous) - MAXIMIZE USAGE
-    if (crypto.length < 1200) {
+    if (crypto.length < 800) {
       try {
         const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaOptimized();
         crypto.push(...defiLlamaCrypto);
@@ -377,7 +377,7 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit to reasonable size
     const uniqueCrypto = this.removeDuplicates(crypto);
-    return uniqueCrypto.slice(0, 2000); // Cap at 2000 crypto (optimized for rate limits)
+    return uniqueCrypto.slice(0, 800); // Cap at 800 crypto initially (prevents rate limit overwhelm)
   }
 
   private async discoverCryptoFromCoinGeckoOptimized(): Promise<CompanyInfo[]> {

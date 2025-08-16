@@ -86,7 +86,7 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueStocks = this.removeDuplicates(stocks);
-        return uniqueStocks.slice(0, 1200);
+        return uniqueStocks.slice(0, 300);
     }
     async discoverStocksFromFinnhubOptimized() {
         const stocks = [];
@@ -184,7 +184,7 @@ class CompanyDiscoveryService {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.warn('⚠️ Twelve Data ETF discovery failed:', errorMessage);
         }
-        if (etfs.length < 400) {
+        if (etfs.length < 200) {
             try {
                 const finnhubETFs = await this.discoverETFsFromFinnhubOptimized();
                 etfs.push(...finnhubETFs);
@@ -196,7 +196,7 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueETFs = this.removeDuplicates(etfs);
-        return uniqueETFs.slice(0, 1000);
+        return uniqueETFs.slice(0, 400);
     }
     async discoverETFsFromTwelveDataOptimized() {
         const etfs = [];
@@ -258,7 +258,7 @@ class CompanyDiscoveryService {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.warn('⚠️ CoinGecko discovery failed:', errorMessage);
         }
-        if (crypto.length < 1000) {
+        if (crypto.length < 500) {
             try {
                 const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCapOptimized();
                 crypto.push(...coinMarketCapCrypto);
@@ -269,7 +269,7 @@ class CompanyDiscoveryService {
                 console.warn('⚠️ CoinMarketCap discovery failed:', errorMessage);
             }
         }
-        if (crypto.length < 1200) {
+        if (crypto.length < 800) {
             try {
                 const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaOptimized();
                 crypto.push(...defiLlamaCrypto);
@@ -281,7 +281,7 @@ class CompanyDiscoveryService {
             }
         }
         const uniqueCrypto = this.removeDuplicates(crypto);
-        return uniqueCrypto.slice(0, 2000);
+        return uniqueCrypto.slice(0, 800);
     }
     async discoverCryptoFromCoinGeckoOptimized() {
         const crypto = [];
