@@ -101,22 +101,23 @@ class EnhancedRateLimitMonitor {
         var _a, _b, _c;
         try {
             if (!this.canMakeRequest(apiName)) {
-                const config = API_SPECIFIC_LIMITS[apiName];
-                const queueItem = {
-                    id: Date.now() + Math.random(),
-                    requestFn,
-                    priority: this.calculatePriority(priority, config.priority),
-                    timestamp: Date.now(),
-                    retryCount: 0,
-                    retryDelay: config.retryDelay
-                };
-                this.requestQueues.get(apiName).push(queueItem);
-                this.requestQueues.get(apiName).sort((a, b) => b.priority - a.priority);
-                console.log(`⏳ Request queued for ${apiName} (priority: ${priority})`);
-                return new Promise((resolve, reject) => {
-                    queueItem.resolve = resolve;
-                    queueItem.reject = reject;
-                });
+                const optimalTiming = this.calculateOptimalTiming(apiName);
+                if (optimalTiming.shouldWait) {
+                    console.log(`⏱️ ${apiName} rate limit approaching. Waiting ${optimalTiming.waitTime}ms for optimal spacing.`);
+                    await new Promise(resolve => setTimeout(resolve, optimalTiming.waitTime));
+                    if (this.canMakeRequest(apiName)) {
+                        return await this.executeRequest(apiName, requestFn);
+                    }
+                }
+                const fallbackStrategy = this.getFallbackStrategy(apiName);
+                console.log(`📦 ${apiName} using fallback strategy: ${fallbackStrategy.strategy}`);
+                if (fallbackStrategy.strategy === 'wait') {
+                    await new Promise(resolve => setTimeout(resolve, fallbackStrategy.waitTime));
+                    if (this.canMakeRequest(apiName)) {
+                        return await this.executeRequest(apiName, requestFn);
+                    }
+                }
+                throw new Error(`API_UNAVAILABLE: Use cached data for ${apiName}. Next available in ${fallbackStrategy.waitTime}ms`);
             }
             return await this.executeRequest(apiName, requestFn);
         }
@@ -182,6 +183,210 @@ class EnhancedRateLimitMonitor {
         const userScore = priorityMap[userPriority];
         const apiScore = priorityMap[apiPriority];
         return (apiScore * 10) + userScore;
+    }
+    getLimitStatus(apiName) {
+        try {
+            const config = API_SPECIFIC_LIMITS[apiName];
+            if (!config) {
+                return {
+                    currentUsage: 0,
+                    limit: 0,
+                    isApproachingLimit: false,
+                    isAtLimit: false,
+                    timeUntilReset: 0,
+                    usagePercentage: 0
+                };
+            }
+            const now = Date.now();
+            const history = this.requestHistory.get(apiName) || [];
+            const minuteAgo = now - 60 * 1000;
+            const requestsThisMinute = history.filter(h => h.timestamp > minuteAgo).length;
+            const hourAgo = now - 60 * 60 * 1000;
+            const requestsThisHour = history.filter(h => h.timestamp > hourAgo).length;
+            const dayAgo = now - 24 * 60 * 60 * 1000;
+            const requestsThisDay = history.filter(h => h.timestamp > dayAgo).length;
+            const currentUsage = Math.max(requestsThisMinute, requestsThisHour, requestsThisDay);
+            const limit = Math.min(config.requestsPerMinute, config.requestsPerHour, config.requestsPerDay);
+            const usagePercentage = (currentUsage / limit) * 100;
+            const isApproachingLimit = usagePercentage >= 80 && usagePercentage < 100;
+            const isAtLimit = usagePercentage >= 100;
+            const timeUntilReset = 60000 - (now % 60000);
+            return {
+                currentUsage,
+                limit,
+                isApproachingLimit,
+                isAtLimit,
+                timeUntilReset,
+                usagePercentage: Math.round(usagePercentage)
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ Error getting limit status for ${apiName}:`, errorMessage);
+            return {
+                currentUsage: 0,
+                limit: 0,
+                isApproachingLimit: false,
+                isAtLimit: false,
+                timeUntilReset: 0,
+                usagePercentage: 0
+            };
+        }
+    }
+    getAllAPILimitStatus() {
+        const status = {};
+        Object.keys(API_SPECIFIC_LIMITS).forEach(apiName => {
+            const limitStatus = this.getLimitStatus(apiName);
+            let statusLevel = 'healthy';
+            if (limitStatus.isAtLimit) {
+                statusLevel = 'critical';
+            }
+            else if (limitStatus.isApproachingLimit) {
+                statusLevel = 'warning';
+            }
+            status[apiName] = {
+                ...limitStatus,
+                status: statusLevel
+            };
+        });
+        return status;
+    }
+    getAllAPIOptimalTiming() {
+        const timing = {};
+        Object.keys(API_SPECIFIC_LIMITS).forEach(apiName => {
+            const canMakeRequest = this.canMakeRequest(apiName);
+            const optimalTiming = this.calculateOptimalTiming(apiName);
+            const limitStatus = this.getLimitStatus(apiName);
+            const config = API_SPECIFIC_LIMITS[apiName];
+            const optimalMinuteSpacing = (60 * 1000) / config.requestsPerMinute;
+            const currentRate = canMakeRequest ? 'Ready' : 'Waiting';
+            const optimalRate = `${Math.round(1000 / optimalMinuteSpacing)} req/min`;
+            timing[apiName] = {
+                canMakeRequest,
+                waitTime: optimalTiming.waitTime,
+                nextOptimalTime: optimalTiming.nextOptimalTime,
+                currentRate,
+                optimalRate,
+                reason: optimalTiming.reason,
+                usage: `${limitStatus.currentUsage}/${limitStatus.limit} (${limitStatus.usagePercentage}%)`
+            };
+        });
+        return timing;
+    }
+    async scheduleRequestWithRotation(requestType, requestFn, priority = 'medium') {
+        try {
+            const availableAPIs = this.getAvailableAPIsForType(requestType);
+            if (availableAPIs.length === 0) {
+                throw new Error(`No APIs available for ${requestType} requests. All APIs are in cooldown.`);
+            }
+            const bestAPI = this.selectBestAPI(availableAPIs, priority);
+            if (!bestAPI) {
+                const nextAvailableTime = this.getNextAvailableAPITime(availableAPIs);
+                throw new Error(`All APIs for ${requestType} are in cooldown. Next available in ${Math.round(nextAvailableTime / 1000)}s`);
+            }
+            console.log(`🔄 API Rotation: Using ${bestAPI.name} for ${requestType} (${bestAPI.usagePercentage}% usage, ${bestAPI.waitTime}ms until next request)`);
+            const result = await this.executeRequest(bestAPI.name, () => requestFn(bestAPI.name));
+            this.updateAPIRotationTracking(bestAPI.name, requestType);
+            return {
+                data: result,
+                apiUsed: bestAPI.name,
+                rotationInfo: `Rotated to ${bestAPI.name} (${bestAPI.usagePercentage}% usage)`
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ Error in API rotation for ${requestType}:`, errorMessage);
+            throw error;
+        }
+    }
+    getAvailableAPIsForType(requestType) {
+        const availableAPIs = [];
+        const apiCapabilities = {
+            finnhub: ['stocks', 'etfs'],
+            alphaVantage: ['stocks'],
+            twelveData: ['stocks', 'etfs'],
+            coingecko: ['crypto'],
+            coinmarketcap: ['crypto'],
+            defillama: ['crypto']
+        };
+        Object.keys(API_SPECIFIC_LIMITS).forEach(apiName => {
+            var _a;
+            if ((_a = apiCapabilities[apiName]) === null || _a === void 0 ? void 0 : _a.includes(requestType)) {
+                const canMakeRequest = this.canMakeRequest(apiName);
+                const limitStatus = this.getLimitStatus(apiName);
+                const optimalTiming = this.calculateOptimalTiming(apiName);
+                const lastUsed = this.lastRequestTime.get(apiName) || 0;
+                const priority = this.calculateRotationPriority(apiName, limitStatus, lastUsed);
+                availableAPIs.push({
+                    name: apiName,
+                    canMakeRequest,
+                    usagePercentage: limitStatus.usagePercentage,
+                    waitTime: optimalTiming.waitTime,
+                    priority,
+                    lastUsed
+                });
+            }
+        });
+        return availableAPIs;
+    }
+    selectBestAPI(availableAPIs, userPriority) {
+        const readyAPIs = availableAPIs.filter(api => api.canMakeRequest);
+        if (readyAPIs.length === 0) {
+            return null;
+        }
+        readyAPIs.sort((a, b) => {
+            const userPriorityScore = this.getUserPriorityScore(userPriority);
+            const apiPriorityScore = b.priority - a.priority;
+            const usageScore = a.usagePercentage - b.usagePercentage;
+            const timeScore = Date.now() - a.lastUsed - (Date.now() - b.lastUsed);
+            return (userPriorityScore * 1000) + (apiPriorityScore * 100) + usageScore + timeScore;
+        });
+        const bestAPI = readyAPIs[0];
+        return {
+            name: bestAPI.name,
+            usagePercentage: bestAPI.usagePercentage,
+            waitTime: bestAPI.waitTime
+        };
+    }
+    calculateRotationPriority(apiName, limitStatus, lastUsed) {
+        const config = API_SPECIFIC_LIMITS[apiName];
+        const timeSinceLastUse = Date.now() - lastUsed;
+        let priority = this.getPriorityScore(config.priority);
+        if (timeSinceLastUse > 60000) {
+            priority += 10;
+        }
+        if (timeSinceLastUse > 300000) {
+            priority += 20;
+        }
+        if (limitStatus.usagePercentage < 50) {
+            priority += 15;
+        }
+        if (limitStatus.usagePercentage < 25) {
+            priority += 25;
+        }
+        if (limitStatus.isApproachingLimit) {
+            priority -= 30;
+        }
+        return priority;
+    }
+    getUserPriorityScore(priority) {
+        const priorityMap = { high: 3, medium: 2, low: 1 };
+        return priorityMap[priority];
+    }
+    getPriorityScore(priority) {
+        const priorityMap = { high: 3, medium: 2, low: 1 };
+        return priorityMap[priority];
+    }
+    getNextAvailableAPITime(availableAPIs) {
+        const waitTimes = availableAPIs
+            .filter(api => !api.canMakeRequest)
+            .map(api => api.waitTime);
+        return waitTimes.length > 0 ? Math.min(...waitTimes) : 0;
+    }
+    updateAPIRotationTracking(apiName, requestType) {
+        const rotationKey = `${apiName}_${requestType}`;
+        this.lastRequestTime.set(rotationKey, Date.now());
+        console.log(`📊 API Rotation Update: ${apiName} used for ${requestType} at ${new Date().toISOString()}`);
     }
     async executeRequest(apiName, requestFn) {
         var _a, _b;
@@ -277,6 +482,95 @@ class EnhancedRateLimitMonitor {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error(`❌ Error applying adaptive throttling to ${apiName}:`, errorMessage);
+        }
+    }
+    calculateOptimalTiming(apiName) {
+        try {
+            const config = API_SPECIFIC_LIMITS[apiName];
+            if (!config) {
+                return { shouldWait: false, waitTime: 0, nextOptimalTime: Date.now(), reason: 'No config' };
+            }
+            const now = Date.now();
+            const history = this.requestHistory.get(apiName) || [];
+            const lastRequest = this.lastRequestTime.get(apiName) || 0;
+            const timeSinceLastRequest = now - lastRequest;
+            const optimalMinuteSpacing = (60 * 1000) / config.requestsPerMinute;
+            const optimalHourSpacing = (60 * 60 * 1000) / config.requestsPerHour;
+            const optimalDaySpacing = (24 * 60 * 60 * 1000) / config.requestsPerDay;
+            const requiredSpacing = Math.max(optimalMinuteSpacing, optimalHourSpacing, optimalDaySpacing, config.cooldownPeriod);
+            if (timeSinceLastRequest < requiredSpacing) {
+                const waitTime = requiredSpacing - timeSinceLastRequest;
+                const nextOptimalTime = now + waitTime;
+                return {
+                    shouldWait: true,
+                    waitTime,
+                    nextOptimalTime,
+                    reason: `Optimal spacing: ${Math.round(waitTime)}ms to maintain ${Math.round(1000 / requiredSpacing)} req/sec`
+                };
+            }
+            const limitStatus = this.getLimitStatus(apiName);
+            if (limitStatus.isApproachingLimit) {
+                const slowdownFactor = 1.25;
+                const adjustedSpacing = requiredSpacing * slowdownFactor;
+                const waitTime = Math.max(0, adjustedSpacing - timeSinceLastRequest);
+                return {
+                    shouldWait: waitTime > 0,
+                    waitTime,
+                    nextOptimalTime: now + waitTime,
+                    reason: `Approaching limit (${limitStatus.usagePercentage}%). Slowing down to ${Math.round(1000 / adjustedSpacing)} req/sec`
+                };
+            }
+            return { shouldWait: false, waitTime: 0, nextOptimalTime: now, reason: 'Ready for request' };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ Error calculating optimal timing for ${apiName}:`, errorMessage);
+            return { shouldWait: false, waitTime: 0, nextOptimalTime: Date.now(), reason: 'Error in calculation' };
+        }
+    }
+    getFallbackStrategy(apiName) {
+        try {
+            const config = API_SPECIFIC_LIMITS[apiName];
+            const limitStatus = this.getLimitStatus(apiName);
+            if (limitStatus.isAtLimit) {
+                return {
+                    strategy: 'wait',
+                    waitTime: limitStatus.timeUntilReset,
+                    reason: `At rate limit. Resets in ${Math.round(limitStatus.timeUntilReset / 1000)}s`
+                };
+            }
+            if (limitStatus.isApproachingLimit) {
+                const optimalTiming = this.calculateOptimalTiming(apiName);
+                return {
+                    strategy: 'wait',
+                    waitTime: optimalTiming.waitTime,
+                    reason: `Approaching limit. Optimal spacing in ${Math.round(optimalTiming.waitTime)}ms`
+                };
+            }
+            const lastRequest = this.lastRequestTime.get(apiName) || 0;
+            const timeSinceLastRequest = Date.now() - lastRequest;
+            const remainingCooldown = config.cooldownPeriod - timeSinceLastRequest;
+            if (remainingCooldown > 0) {
+                return {
+                    strategy: 'wait',
+                    waitTime: remainingCooldown,
+                    reason: `In cooldown. Available in ${Math.round(remainingCooldown)}ms`
+                };
+            }
+            return {
+                strategy: 'use_cache',
+                waitTime: 0,
+                reason: 'Use cached data temporarily'
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ Error getting fallback strategy for ${apiName}:`, errorMessage);
+            return {
+                strategy: 'use_cache',
+                waitTime: 0,
+                reason: 'Error in strategy calculation'
+            };
         }
     }
     getHealthStatus() {

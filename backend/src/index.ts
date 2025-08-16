@@ -420,21 +420,89 @@ app.post('/api/market-data/cache/clear', (_req: Request, res: Response) => {
 // RATE LIMIT MONITORING ENDPOINTS
 // ============================================================================
 
-// Get comprehensive rate limit status for all APIs
+// Get rate limit status for all APIs
 app.get('/api/rate-limits/status', (_req: Request, res: Response) => {
   try {
-    const status = enhancedRateLimitMonitor.getRateLimitStatus();
-    
+    const status = enhancedRateLimitMonitor.getAllAPILimitStatus();
     res.json({
       success: true,
       data: status,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching rate limit status:', error);
+    console.error('Error getting rate limit status:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch rate limit status',
+      error: 'Failed to get rate limit status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get detailed rate limit metrics for a specific API
+app.get('/api/rate-limits/metrics/:apiName', (req: Request, res: Response) => {
+  try {
+    const apiName = req.params.apiName;
+    const status = enhancedRateLimitMonitor.getLimitStatus(apiName);
+    
+    res.json({
+      success: true,
+      data: {
+        apiName,
+        ...status
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`Error getting rate limit metrics for ${req.params.apiName}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get rate limit metrics',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get optimal timing information for maintaining constant updates
+app.get('/api/rate-limits/timing', (_req: Request, res: Response) => {
+  try {
+    const timing = enhancedRateLimitMonitor.getAllAPIOptimalTiming();
+    res.json({
+      success: true,
+      data: timing,
+      timestamp: new Date().toISOString(),
+      message: 'Optimal timing for maintaining constant updates while respecting rate limits'
+    });
+  } catch (error) {
+    console.error('Error getting optimal timing information:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get optimal timing information',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get API rotation status and coordination information
+app.get('/api/rate-limits/rotation', (_req: Request, res: Response) => {
+  try {
+    const rotationStatus = {
+      stocks: enhancedRateLimitMonitor.getAvailableAPIsForType('stocks'),
+      etfs: enhancedRateLimitMonitor.getAvailableAPIsForType('etfs'),
+      crypto: enhancedRateLimitMonitor.getAvailableAPIsForType('crypto'),
+      timestamp: new Date().toISOString(),
+      message: 'API rotation status showing how APIs work in tandem for constant updates'
+    };
+    
+    res.json({
+      success: true,
+      data: rotationStatus
+    });
+  } catch (error) {
+    console.error('Error getting API rotation status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get API rotation status',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
@@ -455,27 +523,6 @@ app.get('/api/health/apis', (_req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch API health status',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// Get detailed metrics for a specific API
-app.get('/api/rate-limits/metrics/:apiName', (req: Request, res: Response) => {
-  try {
-    const { apiName } = req.params;
-    const metrics = enhancedRateLimitMonitor.getAPIMetrics(apiName);
-    
-    res.json({
-      success: true,
-      data: metrics,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error(`Error fetching metrics for ${req.params.apiName}:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch API metrics',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
