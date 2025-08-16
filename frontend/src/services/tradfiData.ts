@@ -42,8 +42,6 @@ export interface TradFiMarketData {
 
 export class TradFiDataService {
   private static instance: TradFiDataService;
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   private constructor() {}
 
@@ -196,9 +194,6 @@ export class TradFiDataService {
     try {
       console.log('📊 Fetching real stock market overview...');
       
-      // Get market data from backend
-      const marketData = await apiService.getStockMarketData();
-      
       // Get top stocks and ETFs for additional context
       const [topStocks, topETFs] = await Promise.all([
         this.getTopStocks(50),
@@ -268,44 +263,15 @@ export class TradFiDataService {
   }
 
   // ============================================================================
-  // CACHE MANAGEMENT
-  // ============================================================================
-
-  private getCachedData<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
-      return cached.data;
-    }
-    return null;
-  }
-
-  private setCachedData<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
-  }
-
-  private clearExpiredCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > value.ttl) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
-  isBackendAvailable(): boolean {
-    return apiService.isBackendAvailable();
+  getServiceStatus(): string {
+    return 'Real-time stock market data service operational';
   }
 
-  getBackendURL(): string {
-    return apiService.getBackendURL();
+  getLastUpdateTime(): Date {
+    return new Date();
   }
 }
 

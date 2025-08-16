@@ -4,7 +4,9 @@
  * No mock data fallbacks - only real market data
  */
 
-import { MarketMetrics, TradFiAsset, DeFiAsset } from './types';
+import { 
+  MarketMetrics
+} from './types';
 
 // ============================================================================
 // API CONFIGURATION
@@ -54,8 +56,6 @@ const ENDPOINTS = {
 
 export class APIService {
   private static instance: APIService;
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   private constructor() {}
 
@@ -453,45 +453,8 @@ export class APIService {
   }
 
   // ============================================================================
-  // CACHE MANAGEMENT
+  // PRIVATE METHODS
   // ============================================================================
-
-  private getCachedData<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
-      return cached.data;
-    }
-    return null;
-  }
-
-  private setCachedData<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
-  }
-
-  private clearExpiredCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > value.ttl) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  // ============================================================================
-  // UTILITY METHODS
-  // ============================================================================
-
-  getBackendURL(): string {
-    return BACKEND_BASE_URL;
-  }
-
-  isBackendAvailable(): boolean {
-    return BACKEND_BASE_URL !== '';
-  }
 }
 
 // Export singleton instance

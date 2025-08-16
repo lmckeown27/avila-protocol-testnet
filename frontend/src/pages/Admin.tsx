@@ -37,7 +37,7 @@ export default function Admin() {
   }
 
   // Role check - using real user authentication
-  const [userRole, setUserRole] = useState<string>('admin'); // This would come from real auth system
+  const [userRole] = useState<string>('admin'); // This would come from real auth system
   
   // Check if user has admin access
   if (userRole !== 'admin') {

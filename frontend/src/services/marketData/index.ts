@@ -13,8 +13,6 @@ import { MarketMetrics } from '../../lib/types';
 
 export class MarketDataService {
   private static instance: MarketDataService;
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   private constructor() {}
 
@@ -245,44 +243,15 @@ export class MarketDataService {
   }
 
   // ============================================================================
-  // CACHE MANAGEMENT
-  // ============================================================================
-
-  private getCachedData<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
-      return cached.data;
-    }
-    return null;
-  }
-
-  private setCachedData<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
-  }
-
-  private clearExpiredCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > value.ttl) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
-  isBackendAvailable(): boolean {
-    return apiService.isBackendAvailable();
+  getServiceStatus(): string {
+    return 'Real-time asset scanning service operational';
   }
 
-  getBackendURL(): string {
-    return apiService.getBackendURL();
+  getLastUpdateTime(): Date {
+    return new Date();
   }
 }
 

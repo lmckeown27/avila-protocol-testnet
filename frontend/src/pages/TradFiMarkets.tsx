@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 

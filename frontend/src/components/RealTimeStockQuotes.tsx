@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, RefreshCw, ExternalLink } from 'lucide-react';
-import { FinnhubAPI } from '../lib/api';
+import { apiService } from '../lib/api';
 
 interface StockQuote {
   symbol: string;
@@ -38,8 +38,21 @@ export default function RealTimeStockQuotes({
       setIsLoading(true);
       setError(null);
       
-      const quotes = await FinnhubAPI.getTopStocksQuotes();
-      setStockQuotes(quotes.slice(0, maxStocks));
+      // Use the new API service to get stock data
+      const stockData = await apiService.getStockMarketData();
+      const quotes: StockQuote[] = (stockData as any).stocks?.slice(0, maxStocks).map((stock: any) => ({
+        symbol: stock.symbol,
+        currentPrice: stock.price,
+        change: stock.change24h,
+        changePercent: stock.change24h,
+        highPrice: stock.high24h || 0,
+        lowPrice: stock.low24h || 0,
+        openPrice: stock.open24h || 0,
+        previousClose: stock.price - stock.change24h,
+        timestamp: Date.now()
+      })) || [];
+      
+      setStockQuotes(quotes);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Failed to fetch stock quotes:', error);

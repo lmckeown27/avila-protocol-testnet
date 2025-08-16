@@ -44,7 +44,6 @@ interface AssetDetailModalProps {
 const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModalProps) => {
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historicalDataError, setHistoricalDataError] = useState<string | null>(null);
 
   // Fetch historical data when modal opens
   useEffect(() => {
@@ -54,45 +53,38 @@ const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModa
           setIsLoading(true);
           
           // Try to get real historical data from backend
-          let data: HistoricalDataPoint[] = [];
-          
-          if (asset.category === 'stock' || asset.category === 'etf') {
+          if (assetType === 'stock' || assetType === 'etf') {
             // For stocks and ETFs, try to get real data from backend
             try {
               // This would be a real API call to get historical data
               // For now, we'll show a message that real historical data is not yet implemented
               console.log('📊 Real historical data not yet implemented for stocks/ETFs');
               setHistoricalData([]);
-              setHistoricalDataError('Real historical data is not yet available for this asset type.');
             } catch (error) {
               console.warn('Failed to fetch real historical data:', error);
-              setHistoricalDataError('Unable to fetch real historical data at this time.');
             }
-          } else if (asset.category === 'crypto') {
-            // For crypto, try to get real data from backend
+          } else if (assetType === 'crypto' || assetType === 'defi') {
+            // For crypto and DeFi, try to get real data from backend
             try {
               // This would be a real API call to get historical data
               // For now, we'll show a message that real historical data is not yet implemented
-              console.log('🪙 Real historical data not yet implemented for crypto');
+              console.log('🪙 Real historical data not yet implemented for crypto/DeFi');
               setHistoricalData([]);
-              setHistoricalDataError('Real historical data is not yet available for this asset type.');
             } catch (error) {
               console.warn('Failed to fetch real historical data:', error);
-              setHistoricalDataError('Unable to fetch real historical data at this time.');
             }
           }
           
           setIsLoading(false);
         } catch (error) {
           console.error('Error fetching historical data:', error);
-          setHistoricalDataError('Failed to load historical data. Please try again later.');
           setIsLoading(false);
         }
       };
 
       fetchHistoricalData();
     }
-  }, [isOpen, asset]);
+  }, [isOpen, asset, assetType]);
 
   const formatCurrency = (value: number) => {
     if (value === 0) return '$0.00';
