@@ -24,6 +24,7 @@ const enhancedMarketDataService_1 = require("./enhancedMarketDataService");
 const paginatedMarketDataService_1 = require("./paginatedMarketDataService");
 const enhancedRateLimitMonitor_1 = require("./enhancedRateLimitMonitor");
 const companyDiscoveryService_1 = require("./companyDiscoveryService");
+const hybridCacheService_1 = require("./hybridCacheService");
 const app = (0, express_1.default)();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
@@ -56,12 +57,16 @@ app.get('/', (_req, res) => {
             stocks: '/api/stocks',
             etfs: '/api/etfs',
             crypto: '/api/crypto',
+            digitalAssets: '/api/digital-assets',
+            defiProtocols: '/api/defi-protocols',
             search: '/api/search',
             companies: '/api/companies',
             rateLimits: '/api/rate-limits/status',
-            progressiveLoading: '/api/progressive-loading/status'
+            loading: '/api/loading/status',
+            cache: '/api/cache/stats',
+            hybrid: '/api/hybrid'
         },
-        documentation: 'This is the Avila Markets Backend API for market data, company discovery, and progressive asset loading.',
+        documentation: 'This is the Avila Markets Backend API for real-time asset scanning, company discovery, and market data services.',
         environment: process.env.NODE_ENV || 'development'
     });
 });
@@ -89,60 +94,93 @@ app.get('/env-check', (_req, res) => {
         timestamp: new Date().toISOString()
     });
 });
-app.get('/api/market-data', async (_req, res) => {
+app.get('/api/market-data/total', async (_req, res) => {
     try {
-        console.log('📊 Fetching all market data...');
-        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getAllMarketData();
+        const totalMarketData = await enhancedMarketDataService_1.enhancedMarketDataService.getAllMarketData();
         res.json({
             success: true,
-            data,
+            data: totalMarketData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching market data:', error);
+        console.error('❌ Total market data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch market data',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch total market data',
+            timestamp: new Date().toISOString()
         });
     }
 });
-app.get('/api/market-data/stocks', async (_req, res) => {
+app.get('/api/market-data/stock-market', async (_req, res) => {
     try {
-        console.log('📈 Fetching Stock Market data...');
-        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
+        const stockMarketData = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
         res.json({
             success: true,
-            data,
+            data: stockMarketData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching Stock Market data:', error);
+        console.error('❌ Stock market data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch Stock Market data',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch stock market data',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/market-data/etf-market', async (_req, res) => {
+    try {
+        const etfMarketData = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
+        res.json({
+            success: true,
+            data: etfMarketData,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ ETF market data fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch ETF market data',
+            timestamp: new Date().toISOString()
         });
     }
 });
 app.get('/api/market-data/digital-assets', async (_req, res) => {
     try {
-        console.log('🌐 Fetching Digital Assets data...');
-        const data = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
+        const digitalAssetsData = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
         res.json({
             success: true,
-            data,
+            data: digitalAssetsData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching Digital Assets data:', error);
+        console.error('❌ Digital assets data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch Digital Assets data',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch digital assets data',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/market-data/defi-protocols', async (_req, res) => {
+    try {
+        const defiProtocolsData = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
+        res.json({
+            success: true,
+            data: defiProtocolsData,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ DeFi protocols data fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch DeFi protocols data',
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -150,31 +188,23 @@ app.get('/api/stocks', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
-        const sortBy = req.query.sortBy || 'symbol';
-        const sortOrder = req.query.sortOrder || 'asc';
         const search = req.query.search;
-        const category = req.query.category;
-        console.log(`📈 Fetching stocks page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
-        const data = await paginatedMarketDataService_1.paginatedMarketDataService.getStocks({
-            page,
-            limit,
-            sortBy,
-            sortOrder,
-            search,
-            category
-        });
+        const options = { page, limit };
+        if (search)
+            options.search = search;
+        const stocksData = await paginatedMarketDataService_1.paginatedMarketDataService.getStocks(options);
         res.json({
             success: true,
-            data,
+            data: stocksData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching paginated stocks:', error);
+        console.error('❌ Stocks data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch stocks',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch stocks data',
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -182,31 +212,23 @@ app.get('/api/etfs', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
-        const sortBy = req.query.sortBy || 'symbol';
-        const sortOrder = req.query.sortOrder || 'asc';
         const search = req.query.search;
-        const category = req.query.category;
-        console.log(`📊 Fetching ETFs page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
-        const data = await paginatedMarketDataService_1.paginatedMarketDataService.getETFs({
-            page,
-            limit,
-            sortBy,
-            sortOrder,
-            search,
-            category
-        });
+        const options = { page, limit };
+        if (search)
+            options.search = search;
+        const etfsData = await paginatedMarketDataService_1.paginatedMarketDataService.getETFs(options);
         res.json({
             success: true,
-            data,
+            data: etfsData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching paginated ETFs:', error);
+        console.error('❌ ETFs data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch ETFs',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch ETFs data',
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -214,47 +236,128 @@ app.get('/api/crypto', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
-        const sortBy = req.query.sortBy || 'marketCap';
-        const sortOrder = req.query.sortOrder || 'desc';
         const search = req.query.search;
-        const category = req.query.category;
-        console.log(`🌐 Fetching crypto page ${page}, limit ${limit}, search: ${search || 'none'}, category: ${category || 'all'}`);
-        const data = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto({
-            page,
-            limit,
-            sortBy,
-            sortOrder,
-            search,
-            category
-        });
+        const options = { page, limit };
+        if (search)
+            options.search = search;
+        const cryptoData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
         res.json({
             success: true,
-            data,
+            data: cryptoData,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching paginated crypto:', error);
+        console.error('❌ Crypto data fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch crypto',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch crypto data',
+            timestamp: new Date().toISOString()
         });
     }
 });
-app.get('/api/search', async (req, res) => {
+app.get('/api/digital-assets', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const search = req.query.search;
+        const options = { page, limit };
+        if (search)
+            options.search = search;
+        const digitalAssetsData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
+        res.json({
+            success: true,
+            data: digitalAssetsData,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Digital assets data fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch digital assets data',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/defi-protocols', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const search = req.query.search;
+        const options = { page, limit };
+        if (search)
+            options.search = search;
+        const defiProtocolsData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
+        res.json({
+            success: true,
+            data: defiProtocolsData,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ DeFi protocols data fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch DeFi protocols data',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/companies', async (_req, res) => {
+    try {
+        const companies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies();
+        res.json({
+            success: true,
+            data: companies,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Companies fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch companies',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/companies/stats', async (_req, res) => {
+    try {
+        const stats = companyDiscoveryService_1.companyDiscoveryService.getDiscoveryStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Company stats fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch company stats',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/companies/search', async (req, res) => {
     try {
         const query = req.query.q;
-        const category = req.query.category;
+        const categoryParam = req.query.category;
+        let category = undefined;
+        if (categoryParam && typeof categoryParam === 'string') {
+            if (['stock', 'etf', 'crypto'].includes(categoryParam)) {
+                category = categoryParam;
+            }
+        }
         if (!query) {
             return res.status(400).json({
                 success: false,
                 error: 'Search query is required',
-                message: 'Please provide a search query using the "q" parameter'
+                timestamp: new Date().toISOString()
             });
         }
-        console.log(`🔍 Searching for "${query}" in category: ${category || 'all'}`);
-        const results = await paginatedMarketDataService_1.paginatedMarketDataService.searchAssets(query, category);
+        const results = await companyDiscoveryService_1.companyDiscoveryService.searchCompanies(query, category);
         return res.json({
             success: true,
             data: results,
@@ -262,118 +365,56 @@ app.get('/api/search', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('Error searching assets:', error);
+        console.error('❌ Company search failed:', error);
         return res.status(500).json({
             success: false,
-            error: 'Failed to search assets',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to search companies',
+            timestamp: new Date().toISOString()
         });
     }
 });
-app.get('/api/categories', async (_req, res) => {
+app.get('/api/companies/sector/:sector', async (req, res) => {
     try {
-        const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies();
-        const categories = {
-            stocks: groupCompaniesBySector(discoveredCompanies.stocks || []),
-            etfs: groupCompaniesBySector(discoveredCompanies.etfs || []),
-            crypto: groupCompaniesBySector(discoveredCompanies.crypto || [])
-        };
+        const sector = req.params.sector;
+        const category = req.query.category;
+        const results = await companyDiscoveryService_1.companyDiscoveryService.getCompaniesBySector(sector, category);
         res.json({
             success: true,
-            data: categories,
+            data: results,
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('❌ Companies by sector fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch categories',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch companies by sector',
+            timestamp: new Date().toISOString()
         });
     }
 });
-function groupCompaniesBySector(companies) {
-    const grouped = {};
-    companies.forEach(company => {
-        const sector = company.sector || 'Other';
-        if (!grouped[sector]) {
-            grouped[sector] = [];
-        }
-        grouped[sector].push(company.symbol);
-    });
-    return grouped;
-}
-app.get('/api/market-data/enhanced/:symbol', async (req, res) => {
+app.post('/api/companies/refresh', async (_req, res) => {
     try {
-        const { symbol } = req.params;
-        console.log(`🔍 Fetching enhanced data for ${symbol}`);
-        let marketData;
-        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT', 'JNJ', 'PG', 'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC'].includes(symbol.toUpperCase())) {
-            marketData = await enhancedMarketDataService_1.enhancedMarketDataService.getEnhancedStockData(symbol.toUpperCase());
-        }
-        else {
-            marketData = { message: 'Enhanced data not available for this asset type' };
-        }
+        const companies = await companyDiscoveryService_1.companyDiscoveryService.refreshCompanies();
         res.json({
             success: true,
-            data: marketData,
+            data: companies,
+            message: 'Company discovery refreshed successfully',
             timestamp: new Date().toISOString()
         });
     }
     catch (error) {
-        console.error(`Error fetching enhanced data for ${req.params.symbol}:`, error);
+        console.error('❌ Company refresh failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch enhanced data',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.get('/api/market-data/cache/stats', (_req, res) => {
-    try {
-        const cacheStats = enhancedMarketDataService_1.enhancedMarketDataService.getCacheStats();
-        const rateLimitStatus = enhancedMarketDataService_1.enhancedMarketDataService.getRateLimitStatus();
-        res.json({
-            success: true,
-            data: {
-                cache: cacheStats,
-                rateLimits: rateLimitStatus,
-                timestamp: new Date().toISOString()
-            }
-        });
-    }
-    catch (error) {
-        console.error('Error fetching cache stats:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch cache statistics',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.post('/api/market-data/cache/clear', (_req, res) => {
-    try {
-        enhancedMarketDataService_1.enhancedMarketDataService.clearCache();
-        paginatedMarketDataService_1.paginatedMarketDataService.clearCache();
-        res.json({
-            success: true,
-            message: 'Cache cleared successfully',
+            error: 'Failed to refresh companies',
             timestamp: new Date().toISOString()
         });
     }
-    catch (error) {
-        console.error('Error clearing cache:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to clear cache',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
 });
-app.get('/api/rate-limits/status', (_req, res) => {
+app.get('/api/loading/status', async (_req, res) => {
     try {
-        const status = enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.getAllAPILimitStatus();
+        const status = companyDiscoveryService_1.companyDiscoveryService.getLoadingStatus();
         res.json({
             success: true,
             data: status,
@@ -381,11 +422,171 @@ app.get('/api/rate-limits/status', (_req, res) => {
         });
     }
     catch (error) {
-        console.error('Error getting rate limit status:', error);
+        console.error('❌ Loading status fetch failed:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get rate limit status',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to fetch loading status',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/cache/stats', async (_req, res) => {
+    try {
+        const stats = companyDiscoveryService_1.companyDiscoveryService.getCacheStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Cache stats fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch cache stats',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/hybrid/stats', async (_req, res) => {
+    try {
+        const stats = hybridCacheService_1.hybridCacheService.getCacheStats();
+        res.json({
+            success: true,
+            data: stats,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Hybrid cache stats fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch hybrid cache stats',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/hybrid/top/:category', async (req, res) => {
+    try {
+        const category = req.params.category;
+        const limit = parseInt(req.query.limit) || 50;
+        const assets = hybridCacheService_1.hybridCacheService.getTopAssets(category, limit);
+        res.json({
+            success: true,
+            data: assets,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Top assets fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch top assets',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/hybrid/:symbol', async (req, res) => {
+    try {
+        const symbol = req.params.symbol;
+        const category = req.query.category;
+        if (!category) {
+            return res.status(400).json({
+                success: false,
+                error: 'Category parameter is required',
+                timestamp: new Date().toISOString()
+            });
+        }
+        const assetData = hybridCacheService_1.hybridCacheService.getHybridAssetData(symbol, category);
+        if (!assetData) {
+            return res.status(404).json({
+                success: false,
+                error: 'Asset not found in hybrid cache',
+                message: `Symbol ${symbol} not found in ${category} cache`,
+                timestamp: new Date().toISOString()
+            });
+        }
+        return res.json({
+            success: true,
+            data: assetData,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Hybrid asset data fetch failed:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch hybrid asset data',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.post('/api/hybrid/clear', async (_req, res) => {
+    try {
+        hybridCacheService_1.hybridCacheService.clearCache();
+        res.json({
+            success: true,
+            message: 'Hybrid cache cleared successfully',
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Hybrid cache clear failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear hybrid cache',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/search', async (req, res) => {
+    try {
+        const query = req.query.q;
+        const categoryParam = req.query.category;
+        let category = undefined;
+        if (categoryParam && typeof categoryParam === 'string') {
+            if (['stock', 'etf', 'crypto'].includes(categoryParam)) {
+                category = categoryParam;
+            }
+        }
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Search query is required',
+                timestamp: new Date().toISOString()
+            });
+        }
+        const searchResults = await paginatedMarketDataService_1.paginatedMarketDataService.searchAssets(query, category);
+        return res.json({
+            success: true,
+            data: searchResults,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Asset search failed:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to search assets',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+app.get('/api/rate-limits/status', async (_req, res) => {
+    try {
+        const rateLimitStatus = enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.getRateLimitStatus();
+        res.json({
+            success: true,
+            data: rateLimitStatus,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ Rate limit status fetch failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch rate limit status',
+            timestamp: new Date().toISOString()
         });
     }
 });
@@ -471,169 +672,6 @@ app.get('/api/health/apis', (_req, res) => {
         });
     }
 });
-app.get('/api/companies', async (_req, res) => {
-    try {
-        console.log('🔍 Fetching discovered companies...');
-        const companies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies();
-        res.json({
-            success: true,
-            data: companies,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error fetching discovered companies:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch discovered companies',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.get('/api/companies/stats', async (_req, res) => {
-    try {
-        console.log('📊 Fetching company discovery statistics...');
-        const stats = companyDiscoveryService_1.companyDiscoveryService.getDiscoveryStats();
-        res.json({
-            success: true,
-            data: stats,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error fetching company discovery stats:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch company discovery stats',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.get('/api/companies/search', async (req, res) => {
-    try {
-        const query = req.query.q;
-        const category = req.query.category;
-        if (!query) {
-            return res.status(400).json({
-                success: false,
-                error: 'Search query is required',
-                message: 'Please provide a search query using the "q" parameter'
-            });
-        }
-        console.log(`🔍 Searching companies for "${query}" in category: ${category || 'all'}`);
-        const results = await companyDiscoveryService_1.companyDiscoveryService.searchCompanies(query, category);
-        return res.json({
-            success: true,
-            data: results,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error searching companies:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Failed to search companies',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.get('/api/companies/sector/:sector', async (req, res) => {
-    try {
-        const { sector } = req.params;
-        const category = req.query.category;
-        console.log(`🏷️  Fetching companies in sector "${sector}" for category: ${category || 'all'}`);
-        const results = await companyDiscoveryService_1.companyDiscoveryService.getCompaniesBySector(sector, category);
-        res.json({
-            success: true,
-            data: results,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error(`Error fetching companies in sector ${req.params.sector}:`, error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch companies by sector',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.post('/api/companies/refresh', async (_req, res) => {
-    try {
-        console.log('🔄 Forcing company discovery refresh...');
-        const companies = await companyDiscoveryService_1.companyDiscoveryService.refreshCompanies();
-        res.json({
-            success: true,
-            data: companies,
-            message: 'Company discovery refreshed successfully',
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error refreshing company discovery:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to refresh company discovery',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.get('/api/progressive-loading/status', async (_req, res) => {
-    try {
-        const status = companyDiscoveryService_1.companyDiscoveryService.getProgressiveLoadingStatus();
-        res.json({
-            success: true,
-            data: status,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error getting progressive loading status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get progressive loading status',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-app.post('/api/progressive-loading/expand', async (req, res) => {
-    try {
-        const { assetType, targetAmount } = req.body;
-        if (!assetType || !targetAmount) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required parameters',
-                message: 'assetType and targetAmount are required'
-            });
-        }
-        if (!['stocks', 'etfs', 'crypto'].includes(assetType)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid asset type',
-                message: 'assetType must be one of: stocks, etfs, crypto'
-            });
-        }
-        const newAmount = await companyDiscoveryService_1.companyDiscoveryService.expandAssetDiscovery(assetType, targetAmount);
-        return res.json({
-            success: true,
-            data: {
-                assetType,
-                previousAmount: newAmount - (targetAmount - newAmount),
-                newAmount,
-                targetAmount
-            },
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('Error expanding asset discovery:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Failed to expand asset discovery',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
 app.use('*', (_req, res) => {
     res.status(404).json({
         success: false,
@@ -650,28 +688,24 @@ app.use((error, _req, res, _next) => {
     });
 });
 app.listen(PORT, HOST, () => {
-    console.log('🚀 Enhanced Market Data Service with Pagination Started');
-    console.log(`📍 Server: http://${HOST}:${PORT}`);
-    console.log(`🔍 Health check: http://${HOST}:${PORT}/api/health`);
-    console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
-    console.log(`📈 Stock Market data: http://${HOST}:${PORT}/api/market-data/stocks`);
-    console.log(`🌐 Digital Assets data: http://${HOST}:${PORT}/api/market-data/digital-assets`);
-    console.log(`📈 Paginated Stocks: http://${HOST}:${PORT}/api/stocks?page=1&limit=25`);
-    console.log(`📊 Paginated ETFs: http://${HOST}:${PORT}/api/etfs?page=1&limit=25`);
-    console.log(`🌐 Paginated Crypto: http://${HOST}:${PORT}/api/crypto?page=1&limit=25`);
-    console.log(`🔍 Search: http://${HOST}:${PORT}/api/search?q=AAPL`);
-    console.log(`🏷️  Categories: http://${HOST}:${PORT}/api/categories`);
-    console.log(`🔍 Companies: http://${HOST}:${PORT}/api/companies`);
-    console.log(`📊 Company Stats: http://${HOST}:${PORT}/api/companies/stats`);
-    console.log(`🔍 Company Search: http://${HOST}:${PORT}/api/companies/search?q=AAPL`);
-    console.log(`🏷️  Companies by Sector: http://${HOST}:${PORT}/api/companies/sector/Technology`);
-    console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
-    console.log(`📊 Cache stats: http://${HOST}:${PORT}/api/market-data/cache/stats`);
-    console.log(`⚡ Rate limit status: http://${HOST}:${PORT}/api/rate-limits/status`);
-    console.log(`🏥 API health: http://${HOST}:${PORT}/api/health/apis`);
+    console.log('🚀 Avila Markets Backend API Server Started');
+    console.log(`📍 Server running at http://${HOST}:${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Binding to: ${HOST}:${PORT}`);
-    console.log('✨ Ready to serve paginated market data with intelligent rate limiting and caching!');
+    console.log('');
+    console.log('📊 Available Endpoints:');
+    console.log(`🏥 Health: http://${HOST}:${PORT}/api/health`);
+    console.log(`📈 Market Data: http://${HOST}:${PORT}/api/market-data`);
+    console.log(`📊 Stocks: http://${HOST}:${PORT}/api/stocks`);
+    console.log(`📊 ETFs: http://${HOST}:${PORT}/api/etfs`);
+    console.log(`🪙 Crypto: http://${HOST}:${PORT}/api/crypto`);
+    console.log(`💎 Digital Assets: http://${HOST}:${PORT}/api/digital-assets`);
+    console.log(`🔗 DeFi Protocols: http://${HOST}:${PORT}/api/defi-protocols`);
+    console.log(`🔍 Search: http://${HOST}:${PORT}/api/search`);
+    console.log(`🔍 Companies: http://${HOST}:${PORT}/api/companies`);
+    console.log(`⏱️ Rate Limits: http://${HOST}:${PORT}/api/rate-limits/status`);
+    console.log(`📊 Loading Status: http://${HOST}:${PORT}/api/loading/status`);
+    console.log(`📦 Cache Stats: http://${HOST}:${PORT}/api/cache/stats`);
+    console.log(`📦 Hybrid Cache: http://${HOST}:${PORT}/api/hybrid/stats`);
 });
 process.on('SIGTERM', () => {
     console.log('🛑 SIGTERM received, shutting down gracefully...');

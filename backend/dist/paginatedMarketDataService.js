@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.paginatedMarketDataService = exports.PaginatedMarketDataService = void 0;
 const enhancedRateLimitMonitor_1 = require("./enhancedRateLimitMonitor");
 const companyDiscoveryService_1 = require("./companyDiscoveryService");
+const hybridCacheService_1 = require("./hybridCacheService");
 const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -142,30 +143,68 @@ class PaginatedMarketDataService {
     }
     async fetchSingleStockData(symbol) {
         try {
-            const finnhubData = await this.fetchStockDataFromFinnhub(symbol);
-            if (finnhubData)
-                return finnhubData;
+            const hybridData = await hybridCacheService_1.hybridCacheService.getHybridAssetData(symbol, 'stock');
+            if (hybridData && hybridData.cacheStatus === 'fresh') {
+                console.log(`📋 Using hybrid cache for ${symbol} (${hybridData.cacheStatus})`);
+                return {
+                    price: hybridData.liveData.price,
+                    change24h: hybridData.liveData.change24h,
+                    volume24h: hybridData.liveData.volume24h,
+                    marketCap: hybridData.liveData.marketCap,
+                    source: hybridData.liveData.source,
+                    pe: hybridData.liveData.pe,
+                    dividendYield: hybridData.liveData.dividendYield,
+                    high24h: hybridData.liveData.high24h,
+                    low24h: hybridData.liveData.low24h,
+                    open24h: hybridData.liveData.open24h
+                };
+            }
+            console.log(`🌐 Fetching fresh data for ${symbol} from external APIs...`);
+            try {
+                const finnhubData = await this.fetchStockDataFromFinnhub(symbol);
+                if (finnhubData)
+                    return finnhubData;
+            }
+            catch (error) {
+                console.warn(`Finnhub failed for ${symbol}, trying Alpha Vantage...`);
+            }
+            try {
+                const alphaVantageData = await this.fetchStockDataFromAlphaVantage(symbol);
+                if (alphaVantageData)
+                    return alphaVantageData;
+            }
+            catch (error) {
+                console.warn(`Alpha Vantage failed for ${symbol}, trying Twelve Data...`);
+            }
+            try {
+                const twelveDataData = await this.fetchStockDataFromTwelveData(symbol);
+                if (twelveDataData)
+                    return twelveDataData;
+            }
+            catch (error) {
+                console.warn(`Twelve Data failed for ${symbol}`);
+            }
+            if (hybridData && hybridData.cacheStatus === 'stale') {
+                console.log(`📋 Using stale cache data for ${symbol} as fallback`);
+                return {
+                    price: hybridData.liveData.price,
+                    change24h: hybridData.liveData.change24h,
+                    volume24h: hybridData.liveData.volume24h,
+                    marketCap: hybridData.liveData.marketCap,
+                    source: `${hybridData.liveData.source} (Stale)`,
+                    pe: hybridData.liveData.pe,
+                    dividendYield: hybridData.liveData.dividendYield,
+                    high24h: hybridData.liveData.high24h,
+                    low24h: hybridData.liveData.low24h,
+                    open24h: hybridData.liveData.open24h
+                };
+            }
+            return null;
         }
         catch (error) {
-            console.warn(`Finnhub failed for ${symbol}, trying Alpha Vantage...`);
+            console.error(`Error fetching data for ${symbol}:`, error);
+            return null;
         }
-        try {
-            const alphaVantageData = await this.fetchStockDataFromAlphaVantage(symbol);
-            if (alphaVantageData)
-                return alphaVantageData;
-        }
-        catch (error) {
-            console.warn(`Alpha Vantage failed for ${symbol}, trying Twelve Data...`);
-        }
-        try {
-            const twelveDataData = await this.fetchStockDataFromTwelveData(symbol);
-            if (twelveDataData)
-                return twelveDataData;
-        }
-        catch (error) {
-            console.warn(`Twelve Data failed for ${symbol}`);
-        }
-        return null;
     }
     async fetchStockDataFromFinnhub(symbol) {
         try {
@@ -444,50 +483,113 @@ class PaginatedMarketDataService {
     }
     async fetchCryptoFromCoinGecko(cryptoList) {
         try {
-            const cryptoIds = cryptoList.map(crypto => crypto.symbol.toLowerCase()).join(',');
-            if (!cryptoIds) {
-                return [];
+            const cachedAssets = [];
+            const uncachedSymbols = [];
+            for (const crypto of cryptoList) {
+                const hybridData = await hybridCacheService_1.hybridCacheService.getHybridAssetData(crypto.symbol, 'crypto');
+                if (hybridData && hybridData.cacheStatus === 'fresh') {
+                    console.log(`📋 Using hybrid cache for ${crypto.symbol} (${hybridData.cacheStatus})`);
+                    cachedAssets.push({
+                        id: crypto.symbol.toLowerCase(),
+                        symbol: hybridData.metadata.symbol,
+                        name: hybridData.metadata.name,
+                        price: hybridData.liveData.price,
+                        change24h: hybridData.liveData.change24h,
+                        volume24h: hybridData.liveData.volume24h,
+                        marketCap: hybridData.liveData.marketCap,
+                        source: hybridData.liveData.source,
+                        lastUpdated: hybridData.liveData.lastUpdated,
+                        category: 'crypto',
+                        high24h: hybridData.liveData.high24h,
+                        low24h: hybridData.liveData.low24h,
+                        open24h: hybridData.liveData.open24h,
+                        circulatingSupply: undefined,
+                        maxSupply: undefined,
+                        rank: undefined
+                    });
+                }
+                else {
+                    uncachedSymbols.push(crypto);
+                }
             }
-            const data = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('coinGecko', async () => {
-                const response = await axios_1.default.get('https://api.coingecko.com/api/v3/coins/markets', {
-                    params: {
-                        vs_currency: 'usd',
-                        ids: cryptoIds,
-                        order: 'market_cap_desc',
-                        per_page: 250,
-                        page: 1,
-                        sparkline: false
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'high');
-            if (!Array.isArray(data)) {
-                console.warn('CoinGecko returned non-array data:', data);
-                return [];
+            if (cachedAssets.length === cryptoList.length) {
+                console.log(`📋 All ${cachedAssets.length} crypto assets served from hybrid cache`);
+                return cachedAssets;
             }
-            return data.map((coin) => ({
-                id: coin.id,
-                symbol: coin.symbol.toUpperCase(),
-                name: coin.name,
-                price: coin.current_price,
-                change24h: coin.price_change_percentage_24h,
-                volume24h: coin.total_volume,
-                marketCap: coin.market_cap,
-                source: 'CoinGecko',
-                lastUpdated: Date.now(),
-                category: 'crypto',
-                high24h: coin.high_24h,
-                low24h: coin.low_24h,
-                open24h: undefined,
-                circulatingSupply: coin.circulating_supply,
-                maxSupply: coin.max_supply,
-                rank: coin.market_cap_rank
-            }));
+            if (uncachedSymbols.length > 0) {
+                console.log(`🌐 Fetching ${uncachedSymbols.length} uncached crypto assets from CoinGecko...`);
+                const cryptoIds = uncachedSymbols.map(crypto => crypto.symbol.toLowerCase()).join(',');
+                if (!cryptoIds) {
+                    return cachedAssets;
+                }
+                const data = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('coinGecko', async () => {
+                    const response = await axios_1.default.get('https://api.coingecko.com/api/v3/coins/markets', {
+                        params: {
+                            vs_currency: 'usd',
+                            ids: cryptoIds,
+                            order: 'market_cap_desc',
+                            per_page: 250,
+                            page: 1,
+                            sparkline: false
+                        },
+                        timeout: 10000
+                    });
+                    return response.data;
+                }, 'high');
+                if (!Array.isArray(data)) {
+                    console.warn('CoinGecko returned non-array data:', data);
+                    return cachedAssets;
+                }
+                const apiAssets = data.map((coin) => ({
+                    id: coin.id,
+                    symbol: coin.symbol.toUpperCase(),
+                    name: coin.name,
+                    price: coin.current_price,
+                    change24h: coin.price_change_percentage_24h,
+                    volume24h: coin.total_volume,
+                    marketCap: coin.market_cap,
+                    source: 'CoinGecko',
+                    lastUpdated: Date.now(),
+                    category: 'crypto',
+                    high24h: coin.high_24h,
+                    low24h: coin.low_24h,
+                    open24h: undefined,
+                    circulatingSupply: coin.circulating_supply,
+                    maxSupply: coin.max_supply,
+                    rank: coin.market_cap_rank
+                }));
+                return [...cachedAssets, ...apiAssets];
+            }
+            return cachedAssets;
         }
         catch (error) {
             console.error('Failed to fetch from CoinGecko:', error);
-            return [];
+            const fallbackAssets = [];
+            for (const crypto of cryptoList) {
+                const hybridData = await hybridCacheService_1.hybridCacheService.getHybridAssetData(crypto.symbol, 'crypto');
+                if (hybridData && hybridData.cacheStatus === 'stale') {
+                    console.log(`📋 Using stale cache data for ${crypto.symbol} as fallback`);
+                    fallbackAssets.push({
+                        id: crypto.symbol.toLowerCase(),
+                        symbol: hybridData.metadata.symbol,
+                        name: hybridData.metadata.name,
+                        price: hybridData.liveData.price,
+                        change24h: hybridData.liveData.change24h,
+                        volume24h: hybridData.liveData.volume24h,
+                        marketCap: hybridData.liveData.marketCap,
+                        source: `${hybridData.liveData.source} (Stale)`,
+                        lastUpdated: hybridData.liveData.lastUpdated,
+                        category: 'crypto',
+                        high24h: hybridData.liveData.high24h,
+                        low24h: hybridData.liveData.low24h,
+                        open24h: hybridData.liveData.open24h,
+                        circulatingSupply: undefined,
+                        maxSupply: undefined,
+                        rank: undefined
+                    });
+                }
+            }
+            return fallbackAssets;
         }
     }
     async fetchCryptoFromCoinMarketCap(cryptoList) {

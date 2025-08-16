@@ -1,461 +1,498 @@
-import { MarketMetrics } from './types';
+/**
+ * Frontend API Service
+ * Provides real-time market data fetching from backend APIs
+ * No mock data fallbacks - only real market data
+ */
 
-// API configuration
-const API_CONFIG = {
-  financialModelingPrep: {
-    baseUrl: 'https://financialmodelingprep.com/api/v3',
-    apiKey: process.env.NEXT_PUBLIC_FMP_API_KEY || 'demo'
-  },
-  alphaVantage: {
-    baseUrl: 'https://www.alphavantage.co/query',
-    apiKey: process.env.NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY || 'demo'
-  },
-  exchangeRate: {
-    baseUrl: 'https://api.exchangerate.host'
-  },
-  deFiLlama: {
-    baseUrl: 'https://api.llama.fi'
-  },
-  coinGecko: {
-    baseUrl: 'https://api.coingecko.com/api/v3'
-  },
-  fearGreed: {
-    baseUrl: 'https://api.alternative.me/fng'
-  },
-  finnhub: {
-    baseUrl: 'https://finnhub.io/api/v1',
-    apiKey: process.env.NEXT_PUBLIC_FINNHUB_API_KEY || 'demo'
-  }
+import { MarketMetrics, TradFiAsset, DeFiAsset } from './types';
+
+// ============================================================================
+// API CONFIGURATION
+// ============================================================================
+
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+
+// ============================================================================
+// API ENDPOINTS
+// ============================================================================
+
+const ENDPOINTS = {
+  // Market Data
+  totalMarket: `${BACKEND_BASE_URL}/api/market-data/total`,
+  stockMarket: `${BACKEND_BASE_URL}/api/market-data/stock-market`,
+  etfMarket: `${BACKEND_BASE_URL}/api/market-data/etf-market`,
+  digitalAssets: `${BACKEND_BASE_URL}/api/market-data/digital-assets`,
+  defiProtocols: `${BACKEND_BASE_URL}/api/market-data/defi-protocols`,
+  
+  // Asset Data
+  stocks: `${BACKEND_BASE_URL}/api/stocks`,
+  etfs: `${BACKEND_BASE_URL}/api/etfs`,
+  crypto: `${BACKEND_BASE_URL}/api/crypto`,
+  digitalAssetsData: `${BACKEND_BASE_URL}/api/digital-assets`,
+  defiProtocolsData: `${BACKEND_BASE_URL}/api/defi-protocols`,
+  
+  // Company Discovery
+  companies: `${BACKEND_BASE_URL}/api/companies`,
+  companiesStats: `${BACKEND_BASE_URL}/api/companies/stats`,
+  
+  // Hybrid Cache
+  hybridStats: `${BACKEND_BASE_URL}/api/hybrid/stats`,
+  hybridAsset: `${BACKEND_BASE_URL}/api/hybrid`,
+  hybridTopAssets: `${BACKEND_BASE_URL}/api/hybrid/top`,
+  
+  // Search
+  search: `${BACKEND_BASE_URL}/api/search`,
+  
+  // Health
+  health: `${BACKEND_BASE_URL}/api/health`,
+  rateLimits: `${BACKEND_BASE_URL}/api/rate-limits/status`
 };
 
-// Top stocks to track
-const TOP_STOCKS = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'BRK.A', 'JPM', 'JNJ',
-  'V', 'PG', 'UNH', 'HD', 'MA', 'BAC', 'PFE', 'ABBV', 'KO', 'PEP'
-];
+// ============================================================================
+// API SERVICE CLASS
+// ============================================================================
 
-// HTTP client with error handling
-class HttpClient {
-  private async request<T>(url: string, options?: RequestInit): Promise<T> {
+export class APIService {
+  private static instance: APIService;
+  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  private constructor() {}
+
+  static getInstance(): APIService {
+    if (!APIService.instance) {
+      APIService.instance = new APIService();
+    }
+    return APIService.instance;
+  }
+
+  // ============================================================================
+  // MARKET DATA METHODS
+  // ============================================================================
+
+  async getTotalMarketData(): Promise<MarketMetrics> {
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers
-        }
-      });
-
+      console.log('📊 Fetching real total market data...');
+      
+      const response = await fetch(ENDPOINTS.totalMarket);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-
-      return await response.json();
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real total market data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
     } catch (error) {
-      console.error(`API request failed for ${url}:`, error);
-      throw error;
+      console.error('❌ Failed to fetch real total market data:', error);
+      throw new Error('Unable to fetch real market data. Please check your connection and try again.');
     }
   }
 
-  async get<T>(url: string): Promise<T> {
-    return this.request<T>(url);
+  async getStockMarketData(): Promise<MarketMetrics> {
+    try {
+      console.log('📈 Fetching real stock market data...');
+      
+      const response = await fetch(ENDPOINTS.stockMarket);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real stock market data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real stock market data:', error);
+      throw new Error('Unable to fetch real stock market data. Please check your connection and try again.');
+    }
   }
 
-  async post<T>(url: string, data: any): Promise<T> {
-    return this.request<T>(url, {
-      method: 'POST',
-      body: JSON.stringify(data)
+  async getETFMarketData(): Promise<MarketMetrics> {
+    try {
+      console.log('📊 Fetching real ETF market data...');
+      
+      const response = await fetch(ENDPOINTS.etfMarket);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real ETF market data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real ETF market data:', error);
+      throw new Error('Unable to fetch real ETF market data. Please check your connection and try again.');
+    }
+  }
+
+  async getDigitalAssetsData(): Promise<MarketMetrics> {
+    try {
+      console.log('💎 Fetching real digital assets data...');
+      
+      const response = await fetch(ENDPOINTS.digitalAssets);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real digital assets data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real digital assets data:', error);
+      throw new Error('Unable to fetch real digital assets data. Please check your connection and try again.');
+    }
+  }
+
+  async getDeFiProtocolsData(): Promise<MarketMetrics> {
+    try {
+      console.log('🔗 Fetching real DeFi protocols data...');
+      
+      const response = await fetch(ENDPOINTS.defiProtocols);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real DeFi protocols data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real DeFi protocols data:', error);
+      throw new Error('Unable to fetch real DeFi protocols data. Please check your connection and try again.');
+    }
+  }
+
+  // ============================================================================
+  // ASSET DATA METHODS
+  // ============================================================================
+
+  async getStocks(page: number = 1, limit: number = 25, search?: string): Promise<any> {
+    try {
+      console.log(`📊 Fetching real stock data (page ${page}, limit ${limit})...`);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
+      const response = await fetch(`${ENDPOINTS.stocks}?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real stock data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real stock data:', error);
+      throw new Error('Unable to fetch real stock data. Please check your connection and try again.');
+    }
+  }
+
+  async getETFs(page: number = 1, limit: number = 25, search?: string): Promise<any> {
+    try {
+      console.log(`📊 Fetching real ETF data (page ${page}, limit ${limit})...`);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
+      const response = await fetch(`${ENDPOINTS.etfs}?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real ETF data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real ETF data:', error);
+      throw new Error('Unable to fetch real ETF data. Please check your connection and try again.');
+    }
+  }
+
+  async getCrypto(page: number = 1, limit: number = 25, search?: string): Promise<any> {
+    try {
+      console.log(`🪙 Fetching real crypto data (page ${page}, limit ${limit})...`);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
+      const response = await fetch(`${ENDPOINTS.crypto}?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Real crypto data fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real crypto data:', error);
+      throw new Error('Unable to fetch real crypto data. Please check your connection and try again.');
+    }
+  }
+
+  // ============================================================================
+  // COMPANY DISCOVERY METHODS
+  // ============================================================================
+
+  async getDiscoveredCompanies(): Promise<any> {
+    try {
+      console.log('🔍 Fetching discovered companies...');
+      
+      const response = await fetch(ENDPOINTS.companies);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Discovered companies fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch discovered companies:', error);
+      throw new Error('Unable to fetch discovered companies. Please check your connection and try again.');
+    }
+  }
+
+  async getCompanyStats(): Promise<any> {
+    try {
+      console.log('📊 Fetching company discovery stats...');
+      
+      const response = await fetch(ENDPOINTS.companiesStats);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Company stats fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch company stats:', error);
+      throw new Error('Unable to fetch company stats. Please check your connection and try again.');
+    }
+  }
+
+  // ============================================================================
+  // HYBRID CACHE METHODS
+  // ============================================================================
+
+  async getHybridCacheStats(): Promise<any> {
+    try {
+      console.log('📦 Fetching hybrid cache stats...');
+      
+      const response = await fetch(ENDPOINTS.hybridStats);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Hybrid cache stats fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch hybrid cache stats:', error);
+      throw new Error('Unable to fetch hybrid cache stats. Please check your connection and try again.');
+    }
+  }
+
+  async getTopAssets(category: 'stocks' | 'etfs' | 'crypto', limit: number = 50): Promise<any> {
+    try {
+      console.log(`📊 Fetching top ${category} from hybrid cache...`);
+      
+      const response = await fetch(`${ENDPOINTS.hybridTopAssets}/${category}?limit=${limit}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log(`✅ Top ${category} fetched successfully`);
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error(`❌ Failed to fetch top ${category}:`, error);
+      throw new Error(`Unable to fetch top ${category}. Please check your connection and try again.`);
+    }
+  }
+
+  // ============================================================================
+  // SEARCH METHODS
+  // ============================================================================
+
+  async searchAssets(query: string, category?: string): Promise<any> {
+    try {
+      console.log(`🔍 Searching for assets: "${query}"...`);
+      
+      const params = new URLSearchParams({ q: query });
+      if (category) {
+        params.append('category', category);
+      }
+      
+      const response = await fetch(`${ENDPOINTS.search}?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Asset search completed successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Asset search failed:', error);
+      throw new Error('Asset search failed. Please check your connection and try again.');
+    }
+  }
+
+  // ============================================================================
+  // HEALTH & STATUS METHODS
+  // ============================================================================
+
+  async getBackendHealth(): Promise<any> {
+    try {
+      console.log('🏥 Checking backend health...');
+      
+      const response = await fetch(ENDPOINTS.health);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        console.log('✅ Backend is healthy');
+        return data;
+      } else {
+        throw new Error('Backend health check failed');
+      }
+    } catch (error) {
+      console.error('❌ Backend health check failed:', error);
+      throw new Error('Backend is not responding. Please check your connection and try again.');
+    }
+  }
+
+  async getRateLimitStatus(): Promise<any> {
+    try {
+      console.log('⏱️ Checking rate limit status...');
+      
+      const response = await fetch(ENDPOINTS.rateLimits);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        console.log('✅ Rate limit status fetched successfully');
+        return data.data;
+      } else {
+        throw new Error('Invalid response format from backend');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch rate limit status:', error);
+      throw new Error('Unable to fetch rate limit status. Please check your connection and try again.');
+    }
+  }
+
+  // ============================================================================
+  // CACHE MANAGEMENT
+  // ============================================================================
+
+  private getCachedData<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
     });
   }
-}
 
-const httpClient = new HttpClient();
-
-// Finnhub API integration
-export class FinnhubAPI {
-  // Get real-time quote for a single stock
-  static async getStockQuote(symbol: string): Promise<any> {
-    try {
-      const url = `${API_CONFIG.finnhub.baseUrl}/quote?symbol=${symbol}&token=${API_CONFIG.finnhub.apiKey}`;
-      const response = await httpClient.get<any>(url);
-      
-      if (response.error) {
-        throw new Error(`Finnhub API error: ${response.error}`);
+  private clearExpiredCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > value.ttl) {
+        this.cache.delete(key);
       }
-      
-      return {
-        symbol,
-        currentPrice: response.c,
-        change: response.d,
-        changePercent: response.dp,
-        highPrice: response.h,
-        lowPrice: response.l,
-        openPrice: response.o,
-        previousClose: response.pc,
-        timestamp: Date.now()
-      };
-    } catch (error) {
-      console.error(`Failed to fetch quote for ${symbol}:`, error);
-      throw error;
     }
   }
 
-  // Get real-time quotes for multiple stocks
-  static async getMultipleStockQuotes(symbols: string[]): Promise<any[]> {
-    try {
-      const quotePromises = symbols.map(symbol => this.getStockQuote(symbol));
-      const quotes = await Promise.allSettled(quotePromises);
-      
-      return quotes
-        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-        .map(result => result.value);
-    } catch (error) {
-      console.error('Failed to fetch multiple stock quotes:', error);
-      return [];
-    }
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  getBackendURL(): string {
+    return BACKEND_BASE_URL;
   }
 
-  // Get top stocks quotes
-  static async getTopStocksQuotes(): Promise<any[]> {
-    return this.getMultipleStockQuotes(TOP_STOCKS);
-  }
-
-  // Get company profile
-  static async getCompanyProfile(symbol: string): Promise<any> {
-    try {
-      const url = `${API_CONFIG.finnhub.baseUrl}/stock/profile2?symbol=${symbol}&token=${API_CONFIG.finnhub.apiKey}`;
-      const response = await httpClient.get<any>(url);
-      
-      if (response.error) {
-        throw new Error(`Finnhub API error: ${response.error}`);
-      }
-      
-      return response;
-    } catch (error) {
-      console.error(`Failed to fetch company profile for ${symbol}:`, error);
-      throw error;
-    }
-  }
-
-  // Get market news
-  static async getMarketNews(category: string = 'general'): Promise<any[]> {
-    try {
-      const url = `${API_CONFIG.finnhub.baseUrl}/news?category=${category}&token=${API_CONFIG.finnhub.apiKey}`;
-      const response = await httpClient.get<any[]>(url);
-      
-      if (Array.isArray(response) && response.length > 0 && response[0].error) {
-        throw new Error(`Finnhub API error: ${response[0].error}`);
-      }
-      
-      return response.slice(0, 10); // Return top 10 news items
-    } catch (error) {
-      console.error('Failed to fetch market news:', error);
-      return [];
-    }
+  isBackendAvailable(): boolean {
+    return BACKEND_BASE_URL !== '';
   }
 }
 
-// Market data API functions
-export class MarketDataAPI {
-  // Total Market Overview with Finnhub integration
-  static async getTotalMarketOverview(): Promise<MarketMetrics> {
-    try {
-      // Get top stocks quotes from Finnhub
-      const topStocksQuotes = await FinnhubAPI.getTopStocksQuotes();
-      
-      if (topStocksQuotes.length > 0) {
-        // Calculate market metrics from real stock data
-        const totalMarketCap = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 1000000), 0); // Approximate
-        const avgChange = topStocksQuotes.reduce((sum, stock) => sum + (stock.changePercent || 0), 0) / topStocksQuotes.length;
-        const totalVolume = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 100000), 0); // Approximate
-        
-        // Get market sentiment
-        const sentimentData = await this.getMarketSentiment();
-        
-        return {
-          marketCap: totalMarketCap,
-          marketCapChange: avgChange,
-          volume: totalVolume,
-          volumeChange: 0, // Would need historical data
-          sentiment: sentimentData.classification,
-          sentimentValue: sentimentData.value,
-          activeMarkets: topStocksQuotes.length,
-          totalMarkets: TOP_STOCKS.length,
-          priceChange: avgChange,
-          volatility: Math.abs(avgChange) * 2 // Rough volatility estimate
-        };
-      }
-      
-      // Fallback to Financial Modeling Prep if Finnhub fails
-      const sp500Url = `${API_CONFIG.financialModelingPrep.baseUrl}/quote/^GSPC?apikey=${API_CONFIG.financialModelingPrep.apiKey}`;
-      const sp500Data = await httpClient.get<any[]>(sp500Url);
-      
-      // Get market sentiment
-      const sentimentData = await this.getMarketSentiment();
-      
-      // Get total market cap (approximate)
-      const totalMarketCap = await this.getTotalMarketCap();
-      
-      return {
-        marketCap: totalMarketCap,
-        marketCapChange: sp500Data[0]?.changesPercentage || 0,
-        volume: sp500Data[0]?.volume || 0,
-        volumeChange: 0, // Would need historical data
-        sentiment: sentimentData.classification,
-        sentimentValue: sentimentData.value,
-        activeMarkets: 500, // S&P 500
-        totalMarkets: 500,
-        priceChange: sp500Data[0]?.changesPercentage || 0,
-        volatility: 0 // Would need VIX data
-      };
-    } catch (error) {
-      console.error('Failed to fetch total market overview:', error);
-      return this.getMockTotalMarketData();
-    }
-  }
-
-  // TradFi Market Overview with enhanced stock data
-  static async getTradFiMarketOverview(): Promise<MarketMetrics> {
-    try {
-      // Get top stocks quotes from Finnhub
-      const topStocksQuotes = await FinnhubAPI.getTopStocksQuotes();
-      
-      if (topStocksQuotes.length > 0) {
-        // Calculate metrics from real stock data
-        const totalMarketCap = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 1000000), 0);
-        const avgChange = topStocksQuotes.reduce((sum, stock) => sum + (stock.changePercent || 0), 0) / topStocksQuotes.length;
-        const totalVolume = topStocksQuotes.reduce((sum, stock) => sum + (stock.currentPrice * 100000), 0);
-        
-        // Get additional market data
-        const indices = ['^GSPC', '^IXIC', '^DJI']; // S&P 500, NASDAQ, Dow Jones
-        await Promise.allSettled(
-          indices.map(index => 
-            httpClient.get<any[]>(`${API_CONFIG.financialModelingPrep.baseUrl}/quote/${index}?apikey=${API_CONFIG.financialModelingPrep.apiKey}`)
-          )
-        );
-
-        // Get commodity data
-        const commodities = await this.getCommodityData();
-        
-        // Get bond data
-        const bonds = await this.getBondData();
-
-        const totalMarkets = topStocksQuotes.length + indices.length + commodities.length + bonds.length;
-
-        return {
-          marketCap: totalMarketCap,
-          marketCapChange: avgChange,
-          volume: totalVolume,
-          volumeChange: 0,
-          sentiment: this.calculateSentiment(avgChange),
-          sentimentValue: this.sentimentToValue(this.calculateSentiment(avgChange)),
-          activeMarkets: totalMarkets,
-          totalMarkets: totalMarkets,
-          priceChange: avgChange,
-          volatility: Math.abs(avgChange) * 2 // Rough volatility estimate
-        };
-      }
-      
-      // Fallback to original method
-      const indices = ['^GSPC', '^IXIC', '^DJI']; // S&P 500, NASDAQ, Dow Jones
-      const indicesData = await Promise.all(
-        indices.map(index => 
-          httpClient.get<any[]>(`${API_CONFIG.financialModelingPrep.baseUrl}/quote/${index}?apikey=${API_CONFIG.financialModelingPrep.apiKey}`)
-        )
-      );
-
-      // Get commodity data
-      const commodities = await this.getCommodityData();
-      
-      // Get bond data
-      const bonds = await this.getBondData();
-
-      const totalMarketCap = indicesData.reduce((sum, data) => sum + (data[0]?.marketCap || 0), 0);
-      const avgChange = indicesData.reduce((sum, data) => sum + (data[0]?.changesPercentage || 0), 0) / indicesData.length;
-
-      return {
-        marketCap: totalMarketCap,
-        marketCapChange: avgChange,
-        volume: indicesData.reduce((sum, data) => sum + (data[0]?.volume || 0), 0),
-        volumeChange: 0,
-        sentiment: this.calculateSentiment(avgChange),
-        sentimentValue: this.sentimentToValue(this.calculateSentiment(avgChange)),
-        activeMarkets: indices.length + commodities.length + bonds.length,
-        totalMarkets: 1000, // Approximate
-        priceChange: avgChange,
-        volatility: Math.abs(avgChange) * 2 // Rough volatility estimate
-      };
-    } catch (error) {
-      console.error('Failed to fetch TradFi market overview:', error);
-      return this.getMockTradFiMarketData();
-    }
-  }
-
-  // DeFi Market Overview
-  static async getDeFiMarketOverview(): Promise<MarketMetrics> {
-    try {
-      // Get DeFi token data from CoinGecko
-      const defiTokens = await this.getDeFiTokens();
-      
-      // Get DeFi protocol TVL from DeFi Llama (stored but not used in current implementation)
-      await this.getDeFiProtocolTVL();
-      
-      // Get DeFi sentiment (based on price performance)
-      const avgPriceChange = defiTokens.reduce((sum, token) => sum + (token.price_change_percentage_24h || 0), 0) / defiTokens.length;
-      
-      const totalMarketCap = defiTokens.reduce((sum, token) => sum + (token.market_cap || 0), 0);
-      const totalVolume = defiTokens.reduce((sum, token) => sum + (token.total_volume || 0), 0);
-
-      return {
-        marketCap: totalMarketCap,
-        marketCapChange: avgPriceChange,
-        volume: totalVolume,
-        volumeChange: 0,
-        sentiment: this.calculateSentiment(avgPriceChange),
-        sentimentValue: this.sentimentToValue(this.calculateSentiment(avgPriceChange)),
-        activeMarkets: defiTokens.length,
-        totalMarkets: defiTokens.length,
-        priceChange: avgPriceChange,
-        volatility: Math.abs(avgPriceChange) * 3 // DeFi tends to be more volatile
-      };
-    } catch (error) {
-      console.error('Failed to fetch DeFi market overview:', error);
-      return this.getMockDeFiMarketData();
-    }
-  }
-
-  // Helper methods
-  private static async getMarketSentiment(): Promise<{ value: number; classification: string }> {
-    try {
-      const response = await httpClient.get<any>(`${API_CONFIG.fearGreed.baseUrl}/?format=json`);
-      return {
-        value: parseInt(response.data[0].value),
-        classification: response.data[0].classification
-      };
-    } catch (error) {
-      console.error('Failed to fetch market sentiment:', error);
-      return { value: 50, classification: 'Neutral' };
-    }
-  }
-
-  private static async getTotalMarketCap(): Promise<number> {
-    // This would require a more comprehensive API
-    // For now, return an approximate value
-    return 100 * 1e12; // $100 trillion
-  }
-
-  private static async getCommodityData(): Promise<any[]> {
-    try {
-      const commodities = ['GCUSD', 'CLUSD', 'SIUSD']; // Gold, Oil, Silver
-      const data = await Promise.all(
-        commodities.map(commodity =>
-          httpClient.get<any[]>(`${API_CONFIG.financialModelingPrep.baseUrl}/quote/${commodity}?apikey=${API_CONFIG.financialModelingPrep.apiKey}`)
-        )
-      );
-      return data.flat();
-    } catch (error) {
-      console.error('Failed to fetch commodity data:', error);
-      return [];
-    }
-  }
-
-  private static async getBondData(): Promise<any[]> {
-    try {
-      const bonds = ['^TNX', '^TYX', '^IRX']; // 10Y, 30Y, 13W Treasury
-      const data = await Promise.all(
-        bonds.map(bond =>
-          httpClient.get<any[]>(`${API_CONFIG.financialModelingPrep.baseUrl}/quote/${bond}?apikey=${API_CONFIG.financialModelingPrep.apiKey}`)
-        )
-      );
-      return data.flat();
-    } catch (error) {
-      console.error('Failed to fetch bond data:', error);
-      return [];
-    }
-  }
-
-  private static async getDeFiTokens(): Promise<any[]> {
-    try {
-      const response = await httpClient.get<any>(`${API_CONFIG.coinGecko.baseUrl}/coins/markets?vs_currency=usd&category=decentralized-finance-defi&order=market_cap_desc&per_page=20&page=1&sparkline=false`);
-      return response;
-    } catch (error) {
-      console.error('Failed to fetch DeFi tokens:', error);
-      return [];
-    }
-  }
-
-  private static async getDeFiProtocolTVL(): Promise<any[]> {
-    try {
-      const response = await httpClient.get<any>(`${API_CONFIG.deFiLlama.baseUrl}/protocols`);
-      return response.slice(0, 20); // Top 20 protocols
-    } catch (error) {
-      console.error('Failed to fetch DeFi protocol TVL:', error);
-      return [];
-    }
-  }
-
-  private static calculateSentiment(change: number): string {
-    if (change >= 2) return 'Extreme Greed';
-    if (change >= 1) return 'Greed';
-    if (change >= 0) return 'Neutral';
-    if (change >= -1) return 'Fear';
-    return 'Extreme Fear';
-  }
-
-  private static sentimentToValue(sentiment: string): number {
-    const sentimentMap: { [key: string]: number } = {
-      'Extreme Greed': 90,
-      'Greed': 70,
-      'Neutral': 50,
-      'Fear': 30,
-      'Extreme Fear': 10
-    };
-    return sentimentMap[sentiment] || 50;
-  }
-
-  // Mock data fallbacks
-  private static getMockTotalMarketData(): MarketMetrics {
-    return {
-      marketCap: 100 * 1e12,
-      marketCapChange: 0.85,
-      volume: 150 * 1e9,
-      volumeChange: 2.3,
-      sentiment: 'Greed',
-      sentimentValue: 70,
-      activeMarkets: 500,
-      totalMarkets: 500,
-      priceChange: 0.85,
-      volatility: 15.2
-    };
-  }
-
-  private static getMockTradFiMarketData(): MarketMetrics {
-    return {
-      marketCap: 85 * 1e12,
-      marketCapChange: 1.2,
-      volume: 120 * 1e9,
-      volumeChange: 1.8,
-      sentiment: 'Neutral',
-      sentimentValue: 55,
-      activeMarkets: 750,
-      totalMarkets: 1000,
-      priceChange: 1.2,
-      volatility: 18.5
-    };
-  }
-
-  private static getMockDeFiMarketData(): MarketMetrics {
-    return {
-      marketCap: 15 * 1e12,
-      marketCapChange: -2.1,
-      volume: 30 * 1e9,
-      volumeChange: -5.2,
-      sentiment: 'Fear',
-      sentimentValue: 35,
-      activeMarkets: 200,
-      totalMarkets: 200,
-      priceChange: -2.1,
-      volatility: 45.8
-    };
-  }
-} 
+// Export singleton instance
+export const apiService = APIService.getInstance(); 

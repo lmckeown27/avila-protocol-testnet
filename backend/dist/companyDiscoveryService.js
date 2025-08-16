@@ -4,8 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.companyDiscoveryService = exports.CompanyDiscoveryService = void 0;
-const enhancedRateLimitMonitor_1 = require("./enhancedRateLimitMonitor");
-const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const API_KEYS = {
@@ -14,6 +12,80 @@ const API_KEYS = {
     twelveData: process.env.TWELVE_DATA_API_KEY || 'demo',
     coinMarketCap: process.env.COINMARKETCAP_API_KEY || 'demo'
 };
+class EnhancedCache {
+    constructor(maxSize = 1000, ttl = 24 * 60 * 60 * 1000, cleanupInterval = 60 * 60 * 1000) {
+        this.cache = new Map();
+        this.maxSize = maxSize;
+        this.ttl = ttl;
+        this.cleanupInterval = cleanupInterval;
+        setInterval(() => this.cleanup(), this.cleanupInterval);
+    }
+    set(key, data, source) {
+        if (this.cache.size >= this.maxSize) {
+            this.evictOldest();
+        }
+        this.cache.set(key, {
+            data,
+            timestamp: Date.now(),
+            lastAccessed: Date.now(),
+            accessCount: 1,
+            source
+        });
+    }
+    get(key) {
+        const entry = this.cache.get(key);
+        if (!entry)
+            return null;
+        if (Date.now() - entry.timestamp > this.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+        entry.lastAccessed = Date.now();
+        entry.accessCount++;
+        return entry.data;
+    }
+    has(key) {
+        return this.cache.has(key) && !this.isExpired(key);
+    }
+    isExpired(key) {
+        const entry = this.cache.get(key);
+        if (!entry)
+            return true;
+        return Date.now() - entry.timestamp > this.ttl;
+    }
+    evictOldest() {
+        let oldestKey = null;
+        let oldestTime = Date.now();
+        for (const [key, entry] of this.cache) {
+            if (entry.lastAccessed < oldestTime) {
+                oldestTime = entry.lastAccessed;
+                oldestKey = key;
+            }
+        }
+        if (oldestKey) {
+            this.cache.delete(oldestKey);
+        }
+    }
+    cleanup() {
+        const now = Date.now();
+        for (const [key, entry] of this.cache) {
+            if (now - entry.timestamp > this.ttl) {
+                this.cache.delete(key);
+            }
+        }
+    }
+    getStats() {
+        return {
+            size: this.cache.size,
+            maxSize: this.maxSize,
+            hitRate: 0,
+            sources: new Set([...this.cache.values()].map(entry => entry.source))
+        };
+    }
+    clear() {
+        this.cache.clear();
+    }
+}
 class CompanyDiscoveryService {
     constructor() {
         this.discoveredCompanies = {
@@ -21,377 +93,349 @@ class CompanyDiscoveryService {
             etfs: [],
             crypto: [],
             timestamp: Date.now(),
-            dataSource: 'Progressive Discovery System'
+            dataSource: 'Enhanced Discovery System'
         };
-        this.discoveryCache = new Map();
-        this.CACHE_DURATION = 24 * 60 * 60 * 1000;
-        this.progressiveLoadingState = {
-            stocks: { currentBatch: 0, totalDiscovered: 0, maxAssets: 1200, batchSize: 100 },
-            etfs: { currentBatch: 0, totalDiscovered: 0, maxAssets: 1000, batchSize: 100 },
-            crypto: { currentBatch: 0, totalDiscovered: 0, maxAssets: 2000, batchSize: 100 }
+        this.companyCache = new EnhancedCache(1000, 24 * 60 * 60 * 1000);
+        this.discoveryCache = new EnhancedCache(500, 6 * 60 * 60 * 1000);
+        this.apiResponseCache = new EnhancedCache(2000, 30 * 60 * 1000);
+        this.loadingState = {
+            stocks: { discovered: 0, target: 500, lastUpdate: 0 },
+            etfs: { discovered: 0, target: 300, lastUpdate: 0 },
+            crypto: { discovered: 0, target: 800, lastUpdate: 0 }
         };
-        setInterval(() => this.refreshDiscovery(), 60 * 60 * 1000);
+        this.apiUsageTracker = new Map();
+        setInterval(() => this.refreshDiscovery(), 2 * 60 * 60 * 1000);
+        setInterval(() => this.cleanupCaches(), 30 * 60 * 1000);
     }
     generateCacheKey(options) {
-        return JSON.stringify(options);
+        const key = JSON.stringify(options);
+        return `discovery_${Buffer.from(key).toString('base64').substring(0, 16)}`;
     }
-    async refreshDiscovery() {
-        console.log('🔄 Refreshing company discovery data...');
-        try {
-            await this.discoverCompaniesProgressive({});
-            console.log('✅ Company discovery refresh completed');
+    generateAPICacheKey(api, endpoint, params) {
+        const paramString = JSON.stringify(params);
+        return `api_${api}_${endpoint}_${Buffer.from(paramString).toString('base64').substring(0, 16)}`;
+    }
+    isAPIAvailable(api) {
+        const tracker = this.apiUsageTracker.get(api);
+        if (!tracker)
+            return true;
+        const now = Date.now();
+        if (now > tracker.resetTime) {
+            this.apiUsageTracker.delete(api);
+            return true;
         }
-        catch (error) {
-            console.error('❌ Company discovery refresh failed:', error);
+        const limits = {
+            finnhub: 60,
+            alphaVantage: 5,
+            twelveData: 800,
+            coinMarketCap: 10000
+        };
+        const limit = limits[api] || 100;
+        return tracker.requests < limit;
+    }
+    trackAPIUsage(api) {
+        const now = Date.now();
+        const tracker = this.apiUsageTracker.get(api) || { requests: 0, resetTime: now + 60000 };
+        tracker.requests++;
+        if (api === 'twelveData') {
+            tracker.resetTime = now + 24 * 60 * 60 * 1000;
         }
+        else if (api === 'coinMarketCap') {
+            tracker.resetTime = now + 30 * 24 * 60 * 60 * 1000;
+        }
+        else {
+            tracker.resetTime = now + 60 * 1000;
+        }
+        this.apiUsageTracker.set(api, tracker);
     }
     async getDiscoveredCompanies(options = {}) {
         const cacheKey = this.generateCacheKey(options);
         if (this.discoveryCache.has(cacheKey)) {
-            const cached = this.discoveryCache.get(cacheKey);
-            if (Date.now() - cached.timestamp < this.CACHE_DURATION) {
-                console.log('📋 Using cached company discovery data');
-                return cached.data;
-            }
+            console.log('📋 Using cached discovery data');
+            return this.discoveryCache.get(cacheKey);
         }
-        console.log('🚀 Starting progressive company discovery...');
-        const result = await this.discoverCompaniesProgressive(options);
-        this.discoveryCache.set(cacheKey, {
-            data: result,
-            timestamp: Date.now()
-        });
+        const cachedStocks = this.companyCache.get('stocks') || [];
+        const cachedETFs = this.companyCache.get('etfs') || [];
+        const cachedCrypto = this.companyCache.get('crypto') || [];
+        if (cachedStocks.length >= 200 && cachedETFs.length >= 100 && cachedCrypto.length >= 300) {
+            console.log('📋 Using cached company data');
+            const result = {
+                stocks: cachedStocks,
+                etfs: cachedETFs,
+                crypto: cachedCrypto,
+                timestamp: Date.now(),
+                dataSource: 'Enhanced Cache System'
+            };
+            this.discoveryCache.set(cacheKey, result, 'Enhanced Cache System');
+            return result;
+        }
+        console.log('🚀 Starting enhanced company discovery...');
+        const result = await this.discoverCompaniesEnhanced(options);
+        this.discoveryCache.set(cacheKey, result, 'Enhanced Discovery System');
         return result;
     }
-    async discoverCompaniesProgressive(options) {
+    async discoverCompaniesEnhanced(options) {
         const result = {
             stocks: [],
             etfs: [],
             crypto: [],
             timestamp: Date.now(),
-            dataSource: 'Progressive Discovery System'
+            dataSource: 'Enhanced Discovery System'
         };
-        console.log('📊 Phase 1: Initial discovery with manageable batches...');
-        result.stocks = await this.discoverStocksProgressive(options);
-        result.etfs = await this.discoverETFsProgressive(options);
-        result.crypto = await this.discoverCryptoProgressive(options);
-        console.log(`✅ Progressive discovery completed: ${result.stocks.length} stocks, ${result.etfs.length} ETFs, ${result.crypto.length} crypto`);
+        result.stocks = await this.discoverStocksEnhanced(options);
+        result.etfs = await this.discoverETFsEnhanced(options);
+        result.crypto = await this.discoverCryptoEnhanced(options);
+        console.log(`✅ Enhanced discovery completed: ${result.stocks.length} stocks, ${result.etfs.length} ETFs, ${result.crypto.length} crypto`);
         return result;
     }
-    async discoverStocksProgressive(options = {}) {
-        const state = this.progressiveLoadingState.stocks;
-        console.log(`📈 Progressive stock discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
-        if (state.totalDiscovered < state.maxAssets) {
-            const newStocks = await this.discoverStocksOptimized({
-                ...this.getProgressiveOptions('stocks'),
-                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
-            });
-            const allStocks = [...this.discoveredCompanies.stocks, ...newStocks];
-            const uniqueStocks = this.removeDuplicates(allStocks);
-            this.discoveredCompanies.stocks = uniqueStocks.slice(0, state.maxAssets);
-            state.totalDiscovered = this.discoveredCompanies.stocks.length;
-            state.currentBatch++;
-            console.log(`📈 Stocks expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
+    async discoverStocksEnhanced(options = {}) {
+        const cacheKey = 'stocks';
+        const cached = this.companyCache.get(cacheKey);
+        if (cached && cached.length >= 200) {
+            console.log(`📋 Using cached stocks data: ${cached.length} stocks`);
+            return cached;
         }
-        return this.discoveredCompanies.stocks;
-    }
-    async discoverETFsProgressive(options = {}) {
-        const state = this.progressiveLoadingState.etfs;
-        console.log(`📊 Progressive ETF discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
-        if (state.totalDiscovered < state.maxAssets) {
-            const newETFs = await this.discoverETFsOptimized({
-                ...this.getProgressiveOptions('etfs'),
-                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
-            });
-            const allETFs = [...this.discoveredCompanies.etfs, ...newETFs];
-            const uniqueETFs = this.removeDuplicates(allETFs);
-            this.discoveredCompanies.etfs = uniqueETFs.slice(0, state.maxAssets);
-            state.totalDiscovered = this.discoveredCompanies.etfs.length;
-            state.currentBatch++;
-            console.log(`📊 ETFs expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
-        }
-        return this.discoveredCompanies.etfs;
-    }
-    async discoverCryptoProgressive(options = {}) {
-        const state = this.progressiveLoadingState.crypto;
-        console.log(`🪙 Progressive crypto discovery: Batch ${state.currentBatch + 1}, Current: ${state.totalDiscovered}/${state.maxAssets}`);
-        if (state.totalDiscovered < state.maxAssets) {
-            const newCrypto = await this.discoverCryptoOptimized({
-                ...this.getProgressiveOptions('crypto'),
-                maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered)
-            });
-            const allCrypto = [...this.discoveredCompanies.crypto, ...newCrypto];
-            const uniqueCrypto = this.removeDuplicates(allCrypto);
-            this.discoveredCompanies.crypto = uniqueCrypto.slice(0, state.maxAssets);
-            state.totalDiscovered = this.discoveredCompanies.crypto.length;
-            state.currentBatch++;
-            console.log(`🪙 Crypto expanded to ${state.totalDiscovered}/${state.maxAssets} (Batch ${state.currentBatch})`);
-        }
-        return this.discoveredCompanies.crypto;
-    }
-    getProgressiveOptions(assetType) {
-        const state = this.progressiveLoadingState[assetType];
-        return {
-            maxAssets: Math.min(state.batchSize, state.maxAssets - state.totalDiscovered),
-            priority: 'medium',
-            useCache: true,
-            progressive: true,
-            batchNumber: state.currentBatch
-        };
-    }
-    getProgressiveLoadingStatus() {
-        return {
-            stocks: { ...this.progressiveLoadingState.stocks, discovered: this.discoveredCompanies.stocks.length },
-            etfs: { ...this.progressiveLoadingState.etfs, discovered: this.discoveredCompanies.etfs.length },
-            crypto: { ...this.progressiveLoadingState.crypto, discovered: this.discoveredCompanies.crypto.length }
-        };
-    }
-    async expandAssetDiscovery(assetType, targetAmount) {
-        const state = this.progressiveLoadingState[assetType];
-        const currentAmount = this.discoveredCompanies[assetType].length;
-        if (targetAmount > currentAmount) {
-            console.log(`🚀 Manually expanding ${assetType} from ${currentAmount} to ${targetAmount}`);
-            switch (assetType) {
-                case 'stocks':
-                    await this.discoverStocksProgressive();
-                    break;
-                case 'etfs':
-                    await this.discoverETFsProgressive();
-                    break;
-                case 'crypto':
-                    await this.discoverCryptoProgressive();
-                    break;
+        console.log('📈 Discovering stocks with enhanced caching...');
+        const stocks = [];
+        if (this.isAPIAvailable('finnhub')) {
+            try {
+                const finnhubStocks = await this.discoverStocksFromFinnhubCached();
+                stocks.push(...finnhubStocks);
+                console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
+            }
+            catch (error) {
+                console.warn('⚠️ Finnhub stock discovery failed:', error);
             }
         }
-        return this.discoveredCompanies[assetType].length;
-    }
-    async discoverStocksOptimized(options = {}) {
-        console.log('📈 Discovering stocks with optimized strategy...');
-        const stocks = [];
-        try {
-            const finnhubStocks = await this.discoverStocksFromFinnhubOptimized();
-            stocks.push(...finnhubStocks);
-            console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Finnhub stock discovery failed:', errorMessage);
-        }
-        if (stocks.length < 200) {
+        if (stocks.length < 150 && this.isAPIAvailable('twelveData')) {
             try {
-                const twelveDataStocks = await this.discoverStocksFromTwelveDataOptimized();
+                const twelveDataStocks = await this.discoverStocksFromTwelveDataCached();
                 stocks.push(...twelveDataStocks);
                 console.log(`✅ Twelve Data: ${twelveDataStocks.length} stocks discovered`);
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ Twelve Data stock discovery failed:', errorMessage);
+                console.warn('⚠️ Twelve Data stock discovery failed:', error);
             }
         }
         const uniqueStocks = this.removeDuplicates(stocks);
-        const maxAssets = options.maxAssets || 300;
-        return uniqueStocks.slice(0, maxAssets);
+        const maxAssets = options.maxAssets || 500;
+        const finalStocks = uniqueStocks.slice(0, maxAssets);
+        this.companyCache.set(cacheKey, finalStocks, 'Enhanced Discovery');
+        this.loadingState.stocks.discovered = finalStocks.length;
+        this.loadingState.stocks.lastUpdate = Date.now();
+        return finalStocks;
     }
-    async discoverStocksFromFinnhubOptimized() {
+    async discoverStocksFromFinnhubCached() {
+        const cacheKey = this.generateAPICacheKey('finnhub', 'stocks', { exchange: 'US' });
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached Finnhub stocks data');
+            return cached;
+        }
         const stocks = [];
-        const endpoints = [
-            '/api/v1/stock/symbol?exchange=US',
-            '/api/v1/stock/symbol?exchange=NASDAQ',
-            '/api/v1/stock/symbol?exchange=NYSE',
-            '/api/v1/stock/symbol?exchange=AMEX'
-        ];
-        for (const endpoint of endpoints) {
+        const exchanges = ['US', 'NASDAQ', 'NYSE', 'AMEX'];
+        for (const exchange of exchanges) {
+            if (!this.isAPIAvailable('finnhub'))
+                break;
             try {
-                const response = await fetch(`https://finnhub.io${endpoint}&token=${process.env.FINNHUB_API_KEY}`);
+                const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=${exchange}&token=${process.env.FINNHUB_API_KEY}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data)) {
-                        const batch = data.slice(0, 300).map((stock) => ({
+                        const batch = data.slice(0, 150).map((stock) => ({
                             symbol: stock.symbol,
                             name: stock.description || stock.symbol,
                             sector: stock.primarySic || 'Unknown',
                             industry: stock.primarySic || 'Unknown',
-                            exchange: stock.primaryExchange || 'Unknown'
+                            exchange: stock.primaryExchange || exchange
                         }));
                         stocks.push(...batch);
                     }
                 }
+                this.trackAPIUsage('finnhub');
                 await new Promise(resolve => setTimeout(resolve, 1200));
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn(`⚠️ Finnhub endpoint ${endpoint} failed:`, errorMessage);
+                console.warn(`⚠️ Finnhub exchange ${exchange} failed:`, error);
             }
         }
+        this.apiResponseCache.set(cacheKey, stocks, 'Finnhub');
         return stocks;
     }
-    async discoverStocksFromTwelveDataOptimized() {
-        const stocks = [];
+    async discoverStocksFromTwelveDataCached() {
+        const cacheKey = this.generateAPICacheKey('twelveData', 'stocks', { country: 'US' });
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached Twelve Data stocks data');
+            return cached;
+        }
         try {
             const response = await fetch(`https://api.twelvedata.com/stocks?country=US&apikey=${process.env.TWELVE_DATA_API_KEY}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'ok' && Array.isArray(data.data)) {
-                    const batch = data.data.slice(0, 600).map((stock) => ({
+                    const stocks = data.data.slice(0, 300).map((stock) => ({
                         symbol: stock.symbol,
                         name: stock.name || stock.symbol,
                         sector: stock.sector || 'Unknown',
                         industry: stock.industry || 'Unknown',
                         exchange: stock.exchange || 'Unknown'
                     }));
-                    stocks.push(...batch);
+                    this.apiResponseCache.set(cacheKey, stocks, 'Twelve Data');
+                    this.trackAPIUsage('twelveData');
+                    return stocks;
                 }
             }
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Twelve Data discovery failed:', errorMessage);
+            console.warn('⚠️ Twelve Data discovery failed:', error);
         }
-        return stocks;
+        return [];
     }
-    async discoverStocksFromAlphaVantageOptimized() {
-        const stocks = [];
-        const topStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'META', 'NVDA', 'AMZN', 'BRK.A', 'JNJ', 'JPM'];
-        for (const symbol of topStocks) {
+    async discoverETFsEnhanced(options = {}) {
+        const cacheKey = 'etfs';
+        const cached = this.companyCache.get(cacheKey);
+        if (cached && cached.length >= 100) {
+            console.log(`📋 Using cached ETFs data: ${cached.length} ETFs`);
+            return cached;
+        }
+        console.log('📊 Discovering ETFs with enhanced caching...');
+        const etfs = [];
+        if (this.isAPIAvailable('twelveData')) {
             try {
-                const response = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.Symbol) {
-                        stocks.push({
-                            symbol: data.Symbol,
-                            name: data.Name || data.Symbol,
-                            sector: data.Sector || 'Unknown',
-                            industry: data.Industry || 'Unknown',
-                            exchange: data.Exchange || 'Unknown'
-                        });
-                    }
-                }
-                await new Promise(resolve => setTimeout(resolve, 13000));
+                const twelveDataETFs = await this.discoverETFsFromTwelveDataCached();
+                etfs.push(...twelveDataETFs);
+                console.log(`✅ Twelve Data: ${twelveDataETFs.length} ETFs discovered`);
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn(`⚠️ Alpha Vantage discovery for ${symbol} failed:`, errorMessage);
+                console.warn('⚠️ Twelve Data ETF discovery failed:', error);
             }
         }
-        return stocks;
-    }
-    async discoverETFsOptimized(options = {}) {
-        console.log('📊 Discovering ETFs with optimized strategy...');
-        const etfs = [];
-        try {
-            const twelveDataETFs = await this.discoverETFsFromTwelveDataOptimized();
-            etfs.push(...twelveDataETFs);
-            console.log(`✅ Twelve Data: ${twelveDataETFs.length} ETFs discovered`);
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Twelve Data ETF discovery failed:', errorMessage);
-        }
-        if (etfs.length < 200) {
+        if (etfs.length < 100 && this.isAPIAvailable('finnhub')) {
             try {
-                const finnhubETFs = await this.discoverETFsFromFinnhubOptimized();
+                const finnhubETFs = await this.discoverETFsFromFinnhubCached();
                 etfs.push(...finnhubETFs);
                 console.log(`✅ Finnhub: ${finnhubETFs.length} ETFs discovered`);
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ Finnhub ETF discovery failed:', errorMessage);
+                console.warn('⚠️ Finnhub ETF discovery failed:', error);
             }
         }
         const uniqueETFs = this.removeDuplicates(etfs);
-        const maxAssets = options.maxAssets || 400;
-        return uniqueETFs.slice(0, maxAssets);
+        const maxAssets = options.maxAssets || 300;
+        const finalETFs = uniqueETFs.slice(0, maxAssets);
+        this.companyCache.set(cacheKey, finalETFs, 'Enhanced Discovery');
+        this.loadingState.etfs.discovered = finalETFs.length;
+        this.loadingState.etfs.lastUpdate = Date.now();
+        return finalETFs;
     }
-    async discoverETFsFromTwelveDataOptimized() {
-        const etfs = [];
+    async discoverETFsFromTwelveDataCached() {
+        const cacheKey = this.generateAPICacheKey('twelveData', 'etfs', { country: 'US' });
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached Twelve Data ETFs data');
+            return cached;
+        }
         try {
             const response = await fetch(`https://api.twelvedata.com/etfs?country=US&apikey=${process.env.TWELVE_DATA_API_KEY}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'ok' && Array.isArray(data.data)) {
-                    const batch = data.data.slice(0, 700).map((etf) => ({
+                    const etfs = data.data.slice(0, 200).map((etf) => ({
                         symbol: etf.symbol,
                         name: etf.name || etf.symbol,
                         sector: 'ETF',
                         industry: etf.category || 'Exchange Traded Fund',
                         exchange: etf.exchange || 'ETF'
                     }));
-                    etfs.push(...batch);
+                    this.apiResponseCache.set(cacheKey, etfs, 'Twelve Data');
+                    this.trackAPIUsage('twelveData');
+                    return etfs;
                 }
             }
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Twelve Data ETF discovery failed:', errorMessage);
+            console.warn('⚠️ Twelve Data ETF discovery failed:', error);
         }
-        return etfs;
+        return [];
     }
-    async discoverETFsFromFinnhubOptimized() {
-        const etfs = [];
+    async discoverETFsFromFinnhubCached() {
+        const cacheKey = this.generateAPICacheKey('finnhub', 'etfs', {});
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached Finnhub ETFs data');
+            return cached;
+        }
         try {
             const response = await fetch(`https://finnhub.io/api/v1/etf/list?token=${process.env.FINNHUB_API_KEY}`);
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    const batch = data.slice(0, 400).map((etf) => ({
+                    const etfs = data.slice(0, 150).map((etf) => ({
                         symbol: etf.symbol,
                         name: etf.name || etf.symbol,
                         sector: 'ETF',
                         industry: etf.category || 'Exchange Traded Fund',
                         exchange: etf.exchange || 'ETF'
                     }));
-                    etfs.push(...batch);
+                    this.apiResponseCache.set(cacheKey, etfs, 'Finnhub');
+                    this.trackAPIUsage('finnhub');
+                    return etfs;
                 }
             }
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ Finnhub ETF discovery failed:', errorMessage);
+            console.warn('⚠️ Finnhub ETF discovery failed:', error);
         }
-        return etfs;
+        return [];
     }
-    async discoverCryptoOptimized(options = {}) {
-        console.log('🪙 Discovering crypto with optimized strategy...');
+    async discoverCryptoEnhanced(options = {}) {
+        const cacheKey = 'crypto';
+        const cached = this.companyCache.get(cacheKey);
+        if (cached && cached.length >= 300) {
+            console.log(`📋 Using cached crypto data: ${cached.length} crypto`);
+            return cached;
+        }
+        console.log('🪙 Discovering crypto with enhanced caching...');
         const crypto = [];
-        try {
-            const coinGeckoCrypto = await this.discoverCryptoFromCoinGeckoOptimized();
-            crypto.push(...coinGeckoCrypto);
-            console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ CoinGecko discovery failed:', errorMessage);
-        }
-        if (crypto.length < 500) {
+        if (this.isAPIAvailable('coinGecko')) {
             try {
-                const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCapOptimized();
-                crypto.push(...coinMarketCapCrypto);
-                console.log(`✅ CoinMarketCap: ${coinMarketCapCrypto.length} crypto discovered`);
+                const coinGeckoCrypto = await this.discoverCryptoFromCoinGeckoCached();
+                crypto.push(...coinGeckoCrypto);
+                console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ CoinMarketCap discovery failed:', errorMessage);
+                console.warn('⚠️ CoinGecko discovery failed:', error);
             }
         }
-        if (crypto.length < 800) {
+        if (crypto.length < 400) {
             try {
-                const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaOptimized();
+                const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaCached();
                 crypto.push(...defiLlamaCrypto);
                 console.log(`✅ DeFi Llama: ${defiLlamaCrypto.length} crypto discovered`);
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn('⚠️ DeFi Llama discovery failed:', errorMessage);
+                console.warn('⚠️ DeFi Llama discovery failed:', error);
             }
         }
         const uniqueCrypto = this.removeDuplicates(crypto);
         const maxAssets = options.maxAssets || 800;
-        return uniqueCrypto.slice(0, maxAssets);
+        const finalCrypto = uniqueCrypto.slice(0, maxAssets);
+        this.companyCache.set(cacheKey, finalCrypto, 'Enhanced Discovery');
+        this.loadingState.crypto.discovered = finalCrypto.length;
+        this.loadingState.crypto.lastUpdate = Date.now();
+        return finalCrypto;
     }
-    async discoverCryptoFromCoinGeckoOptimized() {
+    async discoverCryptoFromCoinGeckoCached() {
+        const cacheKey = this.generateAPICacheKey('coinGecko', 'crypto', { page: 1 });
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached CoinGecko crypto data');
+            return cached;
+        }
         const crypto = [];
         try {
-            for (let page = 1; page <= 4; page++) {
+            for (let page = 1; page <= 2; page++) {
                 const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`);
                 if (response.ok) {
                     const data = await response.json();
@@ -409,57 +453,32 @@ class CompanyDiscoveryService {
                         crypto.push(...batch);
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 1500));
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ CoinGecko discovery failed:', errorMessage);
-        }
-        return crypto;
-    }
-    async discoverCryptoFromCoinMarketCapOptimized() {
-        const crypto = [];
-        try {
-            for (let start = 1; start <= 1500; start += 500) {
-                const response = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=${start}&limit=500&convert=USD`, {
-                    headers: {
-                        'X-CMC_PRO_API_KEY': process.env.COINMARKETCAP_API_KEY || ''
-                    }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.data && Array.isArray(data.data)) {
-                        const batch = data.data.map((coin) => {
-                            var _a, _b;
-                            return ({
-                                symbol: coin.symbol || ((_a = coin.name) === null || _a === void 0 ? void 0 : _a.toUpperCase()),
-                                name: coin.name || ((_b = coin.symbol) === null || _b === void 0 ? void 0 : _b.toUpperCase()),
-                                sector: 'Cryptocurrency',
-                                industry: coin.category || 'Digital Asset',
-                                exchange: 'Crypto Exchange'
-                            });
-                        });
-                        crypto.push(...batch);
-                    }
+                if (page < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
             }
+            this.apiResponseCache.set(cacheKey, crypto, 'CoinGecko');
+            return crypto;
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ CoinMarketCap discovery failed:', errorMessage);
+            console.warn('⚠️ CoinGecko discovery failed:', error);
         }
-        return crypto;
+        return [];
     }
-    async discoverCryptoFromDeFiLlamaOptimized() {
+    async discoverCryptoFromDeFiLlamaCached() {
+        const cacheKey = this.generateAPICacheKey('defiLlama', 'crypto', {});
+        const cached = this.apiResponseCache.get(cacheKey);
+        if (cached) {
+            console.log('📋 Using cached DeFi Llama crypto data');
+            return cached;
+        }
         const crypto = [];
         try {
-            const response = await fetch('https://api.llama.fi/protocols');
-            if (response.ok) {
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    const batch = data.slice(0, 500).map((protocol) => {
+            const protocolsResponse = await fetch('https://api.llama.fi/protocols');
+            if (protocolsResponse.ok) {
+                const protocolsData = await protocolsResponse.json();
+                if (Array.isArray(protocolsData)) {
+                    const batch = protocolsData.slice(0, 300).map((protocol) => {
                         var _a, _b, _c;
                         return ({
                             symbol: ((_a = protocol.symbol) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || ((_b = protocol.name) === null || _b === void 0 ? void 0 : _b.substring(0, 5).toUpperCase()),
@@ -476,7 +495,7 @@ class CompanyDiscoveryService {
             if (chainsResponse.ok) {
                 const chainsData = await chainsResponse.json();
                 if (Array.isArray(chainsData)) {
-                    const batch = chainsData.slice(0, 200).map((chain) => {
+                    const batch = chainsData.slice(0, 100).map((chain) => {
                         var _a, _b, _c;
                         return ({
                             symbol: ((_a = chain.tokenSymbol) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || ((_b = chain.name) === null || _b === void 0 ? void 0 : _b.substring(0, 5).toUpperCase()),
@@ -489,12 +508,13 @@ class CompanyDiscoveryService {
                     crypto.push(...batch);
                 }
             }
+            this.apiResponseCache.set(cacheKey, crypto, 'DeFi Llama');
+            return crypto;
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('⚠️ DeFi Llama discovery failed:', errorMessage);
+            console.warn('⚠️ DeFi Llama discovery failed:', error);
         }
-        return crypto;
+        return [];
     }
     removeDuplicates(companies) {
         const seen = new Set();
@@ -507,362 +527,42 @@ class CompanyDiscoveryService {
             return true;
         });
     }
-    async discoverStocks(options) {
-        const companies = [];
+    cleanupCaches() {
+        console.log('🧹 Cleaning up caches...');
+    }
+    async refreshDiscovery() {
+        console.log('🔄 Refreshing company discovery data...');
         try {
-            const finnhubCompanies = await this.discoverStocksFromFinnhub(options);
-            companies.push(...finnhubCompanies);
-            if (companies.length === 0) {
-                const alphaVantageCompanies = await this.discoverStocksFromAlphaVantage(options);
-                companies.push(...alphaVantageCompanies);
-            }
-            if (companies.length === 0) {
-                const twelveDataCompanies = await this.discoverStocksFromTwelveData(options);
-                companies.push(...twelveDataCompanies);
-            }
+            this.discoveryCache.clear();
+            await this.discoverCompaniesEnhanced({});
+            console.log('✅ Company discovery refresh completed');
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('Stock discovery failed:', errorMessage);
-        }
-        return this.removeDuplicateCompanies(companies)
-            .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
-            .slice(0, options.maxResults || 500);
-    }
-    async discoverStocksFromFinnhub(options) {
-        try {
-            const sp500Response = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('finnhub', async () => {
-                const response = await axios_1.default.get('https://finnhub.io/api/v1/index/constituents', {
-                    params: {
-                        symbol: '^GSPC',
-                        token: API_KEYS.finnhub
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'high');
-            if (sp500Response && sp500Response.constituents) {
-                const companies = [];
-                for (const symbol of sp500Response.constituents.slice(0, options.maxResults || 500)) {
-                    try {
-                        const profileResponse = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('finnhub', async () => {
-                            const response = await axios_1.default.get('https://finnhub.io/api/v1/company/profile2', {
-                                params: {
-                                    symbol,
-                                    token: API_KEYS.finnhub
-                                },
-                                timeout: 5000
-                            });
-                            return response.data;
-                        }, 'medium');
-                        if (profileResponse && profileResponse.profile) {
-                            const profile = profileResponse.profile;
-                            companies.push({
-                                symbol: profile.ticker || symbol,
-                                name: profile.name || symbol,
-                                sector: profile.finnhubIndustry || 'Unknown',
-                                industry: profile.finnhubIndustry || 'Unknown',
-                                marketCap: profile.marketCapitalization ? parseFloat(profile.marketCapitalization) : undefined,
-                                exchange: profile.exchange || 'Unknown',
-                                country: profile.country || 'Unknown',
-                                website: profile.weburl || undefined,
-                                description: profile.description || undefined
-                            });
-                        }
-                        else {
-                            companies.push({
-                                symbol,
-                                name: symbol,
-                                sector: 'Unknown',
-                                industry: 'Unknown'
-                            });
-                        }
-                    }
-                    catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                        console.warn(`Failed to get profile for ${symbol}:`, errorMessage);
-                        companies.push({
-                            symbol,
-                            name: symbol,
-                            sector: 'Unknown',
-                            industry: 'Unknown'
-                        });
-                    }
-                }
-                return companies;
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('Finnhub S&P 500 discovery failed:', errorMessage);
-        }
-        return [];
-    }
-    async discoverStocksFromAlphaVantage(options) {
-        try {
-            const topMoversResponse = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('alphaVantage', async () => {
-                const response = await axios_1.default.get('https://www.alphavantage.co/query', {
-                    params: {
-                        function: 'TOP_GAINERS_LOSERS',
-                        apikey: API_KEYS.alphaVantage
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'medium');
-            if (topMoversResponse && (topMoversResponse.top_gainers || topMoversResponse.top_losers)) {
-                const companies = [];
-                if (topMoversResponse.top_gainers) {
-                    for (const stock of topMoversResponse.top_gainers) {
-                        companies.push({
-                            symbol: stock.ticker,
-                            name: stock.price,
-                            sector: 'Unknown',
-                            industry: 'Unknown',
-                            marketCap: undefined
-                        });
-                    }
-                }
-                if (topMoversResponse.top_losers) {
-                    for (const stock of topMoversResponse.top_losers) {
-                        companies.push({
-                            symbol: stock.ticker,
-                            name: stock.price,
-                            sector: 'Unknown',
-                            industry: 'Unknown',
-                            marketCap: undefined
-                        });
-                    }
-                }
-                return companies;
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('Alpha Vantage discovery failed:', errorMessage);
-        }
-        return [];
-    }
-    async discoverStocksFromTwelveData(options) {
-        try {
-            const stocksResponse = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('twelveData', async () => {
-                const response = await axios_1.default.get('https://api.twelvedata.com/stocks', {
-                    params: {
-                        country: 'US',
-                        apikey: API_KEYS.twelveData
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'medium');
-            if (stocksResponse && stocksResponse.data) {
-                return stocksResponse.data.slice(0, options.maxResults || 200).map((stock) => ({
-                    symbol: stock.symbol,
-                    name: stock.name,
-                    sector: stock.sector || 'Unknown',
-                    industry: stock.industry || 'Unknown',
-                    marketCap: undefined,
-                    exchange: stock.exchange || 'Unknown',
-                    country: stock.country || 'Unknown'
-                }));
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('Twelve Data discovery failed:', errorMessage);
-        }
-        return [];
-    }
-    async discoverETFs(options) {
-        try {
-            const stockCompanies = await this.discoverStocks({ ...options, maxResults: 1000 });
-            const etfSymbols = new Set([
-                'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', 'TLT', 'AGG',
-                'XLK', 'XLF', 'XLV', 'XLE', 'XLI', 'XLP', 'XLY', 'XLU', 'XLB', 'XLC',
-                'EFA', 'EEM', 'FXI', 'EWJ', 'EWG', 'EWU', 'EWC', 'EWA', 'EWZ', 'EWY',
-                'USO', 'UNG', 'DBA', 'DBC', 'DJP', 'GSG', 'PPLT', 'PALL'
-            ]);
-            return stockCompanies
-                .filter(company => etfSymbols.has(company.symbol))
-                .map(company => ({
-                ...company,
-                sector: this.getETFCategory(company.symbol),
-                industry: 'ETF'
-            }));
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('ETF discovery failed:', errorMessage);
-            return [];
+            console.error('❌ Company discovery refresh failed:', error);
         }
     }
-    getETFCategory(symbol) {
-        const etfCategories = {
-            'SPY': 'Broad Market',
-            'QQQ': 'Technology',
-            'IWM': 'Small Cap',
-            'VTI': 'Broad Market',
-            'VEA': 'International',
-            'VWO': 'Emerging Markets',
-            'BND': 'Bonds',
-            'GLD': 'Commodity',
-            'TLT': 'Bonds',
-            'AGG': 'Bonds'
+    getLoadingStatus() {
+        return {
+            stocks: { ...this.loadingState.stocks, target: this.loadingState.stocks.target },
+            etfs: { ...this.loadingState.etfs, target: this.loadingState.etfs.target },
+            crypto: { ...this.loadingState.crypto, target: this.loadingState.crypto.target }
         };
-        return etfCategories[symbol] || 'Other';
     }
-    async discoverCrypto(options) {
-        try {
-            const coinGeckoCrypto = await this.discoverCryptoFromCoinGecko(options);
-            if (coinGeckoCrypto.length > 0) {
-                return coinGeckoCrypto;
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('CoinGecko crypto discovery failed:', errorMessage);
-        }
-        try {
-            const coinMarketCapCrypto = await this.discoverCryptoFromCoinMarketCap(options);
-            if (coinMarketCapCrypto.length > 0) {
-                return coinMarketCapCrypto;
-            }
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('CoinMarketCap crypto discovery failed:', errorMessage);
-        }
-        return [];
-    }
-    async discoverCryptoFromCoinGecko(options) {
-        try {
-            const response = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('coinGecko', async () => {
-                const response = await axios_1.default.get('https://api.coingecko.com/api/v3/coins/markets', {
-                    params: {
-                        vs_currency: 'usd',
-                        order: 'market_cap_desc',
-                        per_page: options.maxResults || 200,
-                        page: 1,
-                        sparkline: false
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'high');
-            return response.map((coin) => {
-                var _a, _b, _c;
-                return ({
-                    symbol: coin.symbol.toUpperCase(),
-                    name: coin.name,
-                    sector: this.getCryptoCategory(coin.id),
-                    industry: 'Cryptocurrency',
-                    marketCap: coin.market_cap,
-                    exchange: 'Crypto Exchange',
-                    country: 'Global',
-                    website: ((_b = (_a = coin.links) === null || _a === void 0 ? void 0 : _a.homepage) === null || _b === void 0 ? void 0 : _b[0]) || undefined,
-                    description: ((_c = coin.description) === null || _c === void 0 ? void 0 : _c.en) ? coin.description.en.substring(0, 200) + '...' : undefined
-                });
-            });
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error('Failed to discover crypto from CoinGecko:', errorMessage);
-            return [];
-        }
-    }
-    async discoverCryptoFromCoinMarketCap(options) {
-        try {
-            const response = await enhancedRateLimitMonitor_1.enhancedRateLimitMonitor.scheduleRequest('coinMarketCap', async () => {
-                const response = await axios_1.default.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest', {
-                    params: {
-                        start: 1,
-                        limit: options.maxResults || 200,
-                        convert: 'USD'
-                    },
-                    headers: {
-                        'X-CMC_PRO_API_KEY': API_KEYS.coinMarketCap
-                    },
-                    timeout: 10000
-                });
-                return response.data;
-            }, 'medium');
-            return response.data.map((coin) => ({
-                symbol: coin.symbol,
-                name: coin.name,
-                sector: this.getCryptoCategory(coin.slug),
-                industry: 'Cryptocurrency',
-                marketCap: coin.quote.USD.market_cap,
-                exchange: 'Crypto Exchange',
-                country: 'Global'
-            }));
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error('Failed to discover crypto from CoinMarketCap:', errorMessage);
-            return [];
-        }
-    }
-    getCryptoCategory(coinId) {
-        const categories = {
-            'bitcoin': 'Layer 1',
-            'ethereum': 'Layer 1',
-            'cardano': 'Layer 1',
-            'solana': 'Layer 1',
-            'polkadot': 'Layer 1',
-            'avalanche-2': 'Layer 1',
-            'cosmos': 'Layer 1',
-            'near': 'Layer 1',
-            'algorand': 'Layer 1',
-            'tezos': 'Layer 1',
-            'chainlink': 'DeFi',
-            'uniswap': 'DeFi',
-            'aave': 'DeFi',
-            'compound': 'DeFi',
-            'sushi': 'DeFi',
-            'curve-dao-token': 'DeFi',
-            'yearn-finance': 'DeFi',
-            'synthetix-network-token': 'DeFi',
-            '1inch': 'DeFi',
-            'balancer': 'DeFi',
-            'axie-infinity': 'Gaming',
-            'the-sandbox': 'Gaming',
-            'decentraland': 'Gaming',
-            'enjin-coin': 'Gaming',
-            'gala': 'Gaming',
-            'illuvium': 'Gaming',
-            'star-atlas': 'Gaming',
-            'alien-worlds': 'Gaming',
-            'splinterlands': 'Gaming',
-            'crypto-blades': 'Gaming',
-            'dogecoin': 'Meme',
-            'shiba-inu': 'Meme',
-            'pepe': 'Meme',
-            'bonk': 'Meme',
-            'floki': 'Meme',
-            'baby-doge-coin': 'Meme',
-            'safe-moon': 'Meme',
-            'elon': 'Meme',
-            'doge-killer': 'Meme',
-            'baby-shiba-inu': 'Meme'
+    getCacheStats() {
+        return {
+            companyCache: this.companyCache.getStats(),
+            discoveryCache: this.discoveryCache.getStats(),
+            apiResponseCache: this.apiResponseCache.getStats(),
+            apiUsage: Object.fromEntries(this.apiUsageTracker.entries())
         };
-        return categories[coinId] || 'Other';
-    }
-    removeDuplicateCompanies(companies) {
-        const seen = new Set();
-        return companies.filter(company => {
-            const key = company.symbol.toUpperCase();
-            if (seen.has(key)) {
-                return false;
-            }
-            seen.add(key);
-            return true;
-        });
     }
     async refreshCompanies() {
+        this.companyCache.clear();
         this.discoveryCache.clear();
-        this.progressiveLoadingState.stocks.totalDiscovered = 0;
-        this.progressiveLoadingState.etfs.totalDiscovered = 0;
-        this.progressiveLoadingState.crypto.totalDiscovered = 0;
+        this.apiResponseCache.clear();
+        this.loadingState.stocks.discovered = 0;
+        this.loadingState.etfs.discovered = 0;
+        this.loadingState.crypto.discovered = 0;
         return await this.getDiscoveredCompanies();
     }
     async searchCompanies(query, category) {
@@ -917,7 +617,8 @@ class CompanyDiscoveryService {
             uniqueIndustries: industries.size,
             lastDiscovery: new Date(companies.timestamp || Date.now()).toISOString(),
             cacheStatus: 'active',
-            progressiveLoading: this.getProgressiveLoadingStatus()
+            loadingStatus: this.getLoadingStatus(),
+            cacheStats: this.getCacheStats()
         };
     }
 }

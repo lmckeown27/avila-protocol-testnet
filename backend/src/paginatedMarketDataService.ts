@@ -6,6 +6,7 @@
 
 import { enhancedRateLimitMonitor, PaginationOptions, PaginatedResponse, APIHealthStatus } from './enhancedRateLimitMonitor';
 import { companyDiscoveryService, CompanyInfo } from './companyDiscoveryService';
+import { hybridCacheService, HybridAssetData } from './hybridCacheService';
 import axios from 'axios';
 
 // Load environment variables
@@ -242,30 +243,73 @@ export class PaginatedMarketDataService {
 
   private async fetchSingleStockData(symbol: string): Promise<any> {
     try {
-      // Try Finnhub first
-      const finnhubData = await this.fetchStockDataFromFinnhub(symbol);
-      if (finnhubData) return finnhubData;
-    } catch (error) {
-      console.warn(`Finnhub failed for ${symbol}, trying Alpha Vantage...`);
-    }
+      // First, try to get data from hybrid cache
+      const hybridData = await hybridCacheService.getHybridAssetData(symbol, 'stock');
+      if (hybridData && hybridData.cacheStatus === 'fresh') {
+        console.log(`📋 Using hybrid cache for ${symbol} (${hybridData.cacheStatus})`);
+        return {
+          price: hybridData.liveData.price,
+          change24h: hybridData.liveData.change24h,
+          volume24h: hybridData.liveData.volume24h,
+          marketCap: hybridData.liveData.marketCap,
+          source: hybridData.liveData.source,
+          pe: hybridData.liveData.pe,
+          dividendYield: hybridData.liveData.dividendYield,
+          high24h: hybridData.liveData.high24h,
+          low24h: hybridData.liveData.low24h,
+          open24h: hybridData.liveData.open24h
+        };
+      }
+      
+      // If cache miss or stale, try external APIs
+      console.log(`🌐 Fetching fresh data for ${symbol} from external APIs...`);
+      
+      try {
+        // Try Finnhub first
+        const finnhubData = await this.fetchStockDataFromFinnhub(symbol);
+        if (finnhubData) return finnhubData;
+      } catch (error) {
+        console.warn(`Finnhub failed for ${symbol}, trying Alpha Vantage...`);
+      }
 
-    try {
-      // Fallback to Alpha Vantage
-      const alphaVantageData = await this.fetchStockDataFromAlphaVantage(symbol);
-      if (alphaVantageData) return alphaVantageData;
-    } catch (error) {
-      console.warn(`Alpha Vantage failed for ${symbol}, trying Twelve Data...`);
-    }
+      try {
+        // Fallback to Alpha Vantage
+        const alphaVantageData = await this.fetchStockDataFromAlphaVantage(symbol);
+        if (alphaVantageData) return alphaVantageData;
+      } catch (error) {
+        console.warn(`Alpha Vantage failed for ${symbol}, trying Twelve Data...`);
+      }
 
-    try {
-      // Final fallback to Twelve Data
-      const twelveDataData = await this.fetchStockDataFromTwelveData(symbol);
-      if (twelveDataData) return twelveDataData;
-    } catch (error) {
-      console.warn(`Twelve Data failed for ${symbol}`);
-    }
+      try {
+        // Final fallback to Twelve Data
+        const twelveDataData = await this.fetchStockDataFromTwelveData(symbol);
+        if (twelveDataData) return twelveDataData;
+      } catch (error) {
+        console.warn(`Twelve Data failed for ${symbol}`);
+      }
 
-    return null;
+      // If all APIs fail, return stale cache data if available
+      if (hybridData && hybridData.cacheStatus === 'stale') {
+        console.log(`📋 Using stale cache data for ${symbol} as fallback`);
+        return {
+          price: hybridData.liveData.price,
+          change24h: hybridData.liveData.change24h,
+          volume24h: hybridData.liveData.volume24h,
+          marketCap: hybridData.liveData.marketCap,
+          source: `${hybridData.liveData.source} (Stale)`,
+          pe: hybridData.liveData.pe,
+          dividendYield: hybridData.liveData.dividendYield,
+          high24h: hybridData.liveData.high24h,
+          low24h: hybridData.liveData.low24h,
+          open24h: hybridData.liveData.open24h
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error fetching data for ${symbol}:`, error);
+      return null;
+    }
   }
 
   private async fetchStockDataFromFinnhub(symbol: string): Promise<any> {
@@ -602,55 +646,128 @@ export class PaginatedMarketDataService {
 
   private async fetchCryptoFromCoinGecko(cryptoList: CompanyInfo[]): Promise<CryptoAsset[]> {
     try {
-      // Get all crypto IDs from the list
-      const cryptoIds = cryptoList.map(crypto => crypto.symbol.toLowerCase()).join(',');
+      // First, try to get data from hybrid cache
+      const cachedAssets: CryptoAsset[] = [];
+      const uncachedSymbols: CompanyInfo[] = [];
       
-      // If no crypto IDs, return empty array
-      if (!cryptoIds) {
-        return [];
+      for (const crypto of cryptoList) {
+        const hybridData = await hybridCacheService.getHybridAssetData(crypto.symbol, 'crypto');
+        if (hybridData && hybridData.cacheStatus === 'fresh') {
+          console.log(`📋 Using hybrid cache for ${crypto.symbol} (${hybridData.cacheStatus})`);
+          cachedAssets.push({
+            id: crypto.symbol.toLowerCase(),
+            symbol: hybridData.metadata.symbol,
+            name: hybridData.metadata.name,
+            price: hybridData.liveData.price,
+            change24h: hybridData.liveData.change24h,
+            volume24h: hybridData.liveData.volume24h,
+            marketCap: hybridData.liveData.marketCap,
+            source: hybridData.liveData.source,
+            lastUpdated: hybridData.liveData.lastUpdated,
+            category: 'crypto' as const,
+            high24h: hybridData.liveData.high24h,
+            low24h: hybridData.liveData.low24h,
+            open24h: hybridData.liveData.open24h,
+            circulatingSupply: undefined,
+            maxSupply: undefined,
+            rank: undefined
+          });
+        } else {
+          uncachedSymbols.push(crypto);
+        }
       }
       
-      const data = await enhancedRateLimitMonitor.scheduleRequest('coinGecko', async () => {
-        const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
-          params: {
-            vs_currency: 'usd',
-            ids: cryptoIds,
-            order: 'market_cap_desc',
-            per_page: 250,
-            page: 1,
-            sparkline: false
-          },
-          timeout: 10000
-        });
-        return response.data;
-      }, 'high');
-
-      if (!Array.isArray(data)) {
-        console.warn('CoinGecko returned non-array data:', data);
-        return [];
+      // If we have all data from cache, return it
+      if (cachedAssets.length === cryptoList.length) {
+        console.log(`📋 All ${cachedAssets.length} crypto assets served from hybrid cache`);
+        return cachedAssets;
       }
+      
+      // For uncached symbols, fetch from API
+      if (uncachedSymbols.length > 0) {
+        console.log(`🌐 Fetching ${uncachedSymbols.length} uncached crypto assets from CoinGecko...`);
+        
+        const cryptoIds = uncachedSymbols.map(crypto => crypto.symbol.toLowerCase()).join(',');
+        
+        if (!cryptoIds) {
+          return cachedAssets;
+        }
+        
+        const data = await enhancedRateLimitMonitor.scheduleRequest('coinGecko', async () => {
+          const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
+            params: {
+              vs_currency: 'usd',
+              ids: cryptoIds,
+              order: 'market_cap_desc',
+              per_page: 250,
+              page: 1,
+              sparkline: false
+            },
+            timeout: 10000
+          });
+          return response.data;
+        }, 'high');
 
-      return data.map((coin: any) => ({
-        id: coin.id,
-        symbol: coin.symbol.toUpperCase(),
-        name: coin.name,
-        price: coin.current_price,
-        change24h: coin.price_change_percentage_24h,
-        volume24h: coin.total_volume,
-        marketCap: coin.market_cap,
-        source: 'CoinGecko',
-        lastUpdated: Date.now(),
-        category: 'crypto' as const,
-        high24h: coin.high_24h,
-        low24h: coin.low_24h,
-        open24h: undefined,
-        circulatingSupply: coin.circulating_supply,
-        maxSupply: coin.max_supply,
-        rank: coin.market_cap_rank
-      }));
+        if (!Array.isArray(data)) {
+          console.warn('CoinGecko returned non-array data:', data);
+          return cachedAssets;
+        }
+
+        const apiAssets = data.map((coin: any) => ({
+          id: coin.id,
+          symbol: coin.symbol.toUpperCase(),
+          name: coin.name,
+          price: coin.current_price,
+          change24h: coin.price_change_percentage_24h,
+          volume24h: coin.total_volume,
+          marketCap: coin.market_cap,
+          source: 'CoinGecko',
+          lastUpdated: Date.now(),
+          category: 'crypto' as const,
+          high24h: coin.high_24h,
+          low24h: coin.low_24h,
+          open24h: undefined,
+          circulatingSupply: coin.circulating_supply,
+          maxSupply: coin.max_supply,
+          rank: coin.market_cap_rank
+        }));
+        
+        // Combine cached and API data
+        return [...cachedAssets, ...apiAssets];
+      }
+      
+      return cachedAssets;
     } catch (error) {
       console.error('Failed to fetch from CoinGecko:', error);
-      return [];
+      
+      // Try to return cached data as fallback
+      const fallbackAssets: CryptoAsset[] = [];
+      for (const crypto of cryptoList) {
+        const hybridData = await hybridCacheService.getHybridAssetData(crypto.symbol, 'crypto');
+        if (hybridData && hybridData.cacheStatus === 'stale') {
+          console.log(`📋 Using stale cache data for ${crypto.symbol} as fallback`);
+          fallbackAssets.push({
+            id: crypto.symbol.toLowerCase(),
+            symbol: hybridData.metadata.symbol,
+            name: hybridData.metadata.name,
+            price: hybridData.liveData.price,
+            change24h: hybridData.liveData.change24h,
+            volume24h: hybridData.liveData.volume24h,
+            marketCap: hybridData.liveData.marketCap,
+            source: `${hybridData.liveData.source} (Stale)`,
+            lastUpdated: hybridData.liveData.lastUpdated,
+            category: 'crypto' as const,
+            high24h: hybridData.liveData.high24h,
+            low24h: hybridData.liveData.low24h,
+            open24h: hybridData.liveData.open24h,
+            circulatingSupply: undefined,
+            maxSupply: undefined,
+            rank: undefined
+          });
+        }
+      }
+      
+      return fallbackAssets;
     }
   }
 

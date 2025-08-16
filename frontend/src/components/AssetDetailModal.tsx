@@ -31,70 +31,68 @@ interface Asset {
   // Enhanced data fields
   pe?: number | null;
   tvl?: number | null;
+  category?: string; // Added for filtering historical data
 }
 
 interface AssetDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   asset: Asset | null;
-  assetType: 'tradfi' | 'defi' | null;
+  assetType: 'stock' | 'etf' | 'crypto' | 'defi' | null;
 }
 
 const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModalProps) => {
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [historicalDataError, setHistoricalDataError] = useState<string | null>(null);
 
+  // Fetch historical data when modal opens
   useEffect(() => {
     if (isOpen && asset) {
+      const fetchHistoricalData = async () => {
+        try {
+          setIsLoading(true);
+          
+          // Try to get real historical data from backend
+          let data: HistoricalDataPoint[] = [];
+          
+          if (asset.category === 'stock' || asset.category === 'etf') {
+            // For stocks and ETFs, try to get real data from backend
+            try {
+              // This would be a real API call to get historical data
+              // For now, we'll show a message that real historical data is not yet implemented
+              console.log('📊 Real historical data not yet implemented for stocks/ETFs');
+              setHistoricalData([]);
+              setHistoricalDataError('Real historical data is not yet available for this asset type.');
+            } catch (error) {
+              console.warn('Failed to fetch real historical data:', error);
+              setHistoricalDataError('Unable to fetch real historical data at this time.');
+            }
+          } else if (asset.category === 'crypto') {
+            // For crypto, try to get real data from backend
+            try {
+              // This would be a real API call to get historical data
+              // For now, we'll show a message that real historical data is not yet implemented
+              console.log('🪙 Real historical data not yet implemented for crypto');
+              setHistoricalData([]);
+              setHistoricalDataError('Real historical data is not yet available for this asset type.');
+            } catch (error) {
+              console.warn('Failed to fetch real historical data:', error);
+              setHistoricalDataError('Unable to fetch real historical data at this time.');
+            }
+          }
+          
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error fetching historical data:', error);
+          setHistoricalDataError('Failed to load historical data. Please try again later.');
+          setIsLoading(false);
+        }
+      };
+
       fetchHistoricalData();
     }
   }, [isOpen, asset]);
-
-  const fetchHistoricalData = async () => {
-    if (!asset) return;
-    
-    setIsLoading(true);
-    try {
-      let data: HistoricalDataPoint[] = [];
-      
-      if (assetType === 'tradfi') {
-        // For TradFi, we'll use mock data for now
-        // In a real implementation, you'd call tradFiDataService.getHistoricalData()
-        data = generateMockHistoricalData(asset.price || 0, 7);
-      } else {
-        // For DeFi, use the existing marketData service
-        // This would typically call marketDataService.getHistoricalData()
-        data = generateMockHistoricalData(asset.spot_price || asset.price || 0, 7);
-      }
-      
-      setHistoricalData(data);
-    } catch (error) {
-      console.error('Failed to fetch historical data:', error);
-      // Fallback to mock data
-      setHistoricalData(generateMockHistoricalData(asset.price || asset.spot_price || 0, 7));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const generateMockHistoricalData = (basePrice: number, days: number): HistoricalDataPoint[] => {
-    const data: HistoricalDataPoint[] = [];
-    const now = Date.now();
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const timestamp = now - (i * 24 * 60 * 60 * 1000);
-      const priceVariation = (Math.random() - 0.5) * 0.1; // ±5% variation
-      const price = basePrice * (1 + priceVariation);
-      
-      data.push({
-        date: new Date(timestamp).toLocaleDateString(),
-        price: price,
-        volume: Math.random() * 10000000 + 1000000
-      });
-    }
-    
-    return data;
-  };
 
   const formatCurrency = (value: number) => {
     if (value === 0) return '$0.00';
@@ -333,7 +331,10 @@ const AssetDetailModal = ({ isOpen, onClose, asset, assetType }: AssetDetailModa
               <div>
                 <span className="text-gray-600 dark:text-gray-400">Type:</span>
                 <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  {assetType === 'tradfi' ? 'Traditional Finance' : 'Decentralized Finance'}
+                  {assetType === 'stock' ? 'Traditional Finance' : 
+                   assetType === 'etf' ? 'Traditional Finance' :
+                   assetType === 'crypto' ? 'Cryptocurrency' :
+                   assetType === 'defi' ? 'Decentralized Finance' : 'Asset'}
                 </span>
               </div>
               <div>

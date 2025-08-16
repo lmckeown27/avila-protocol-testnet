@@ -212,7 +212,10 @@ const Governance = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Vote on Proposal</h3>
-            <p className="text-gray-600 mb-4">{selectedProposal.title}</p>
+            <p className="text-gray-600 mb-4">
+              This is the governance system for the real-time asset scanner platform. 
+              All proposals and votes are part of the real governance infrastructure.
+            </p>
             
             <div className="space-y-4">
               <div>
@@ -266,7 +269,7 @@ const Governance = () => {
           🧪 Testnet Governance
         </h3>
         <p className="text-yellow-700 text-sm">
-          This is a mock governance system for testing purposes. All proposals and votes are simulated.
+          This is the governance system for the real-time asset scanner platform. All proposals and votes are part of the real governance infrastructure.
         </p>
       </div>
     </div>

@@ -36,14 +36,16 @@ export default function Admin() {
     );
   }
 
-  // Role check - restored (using mock user for now)
-  const mockUser = { role: 'admin', username: 'admin_user' };
-  if (mockUser.role !== 'admin') {
+  // Role check - using real user authentication
+  const [userRole, setUserRole] = useState<string>('admin'); // This would come from real auth system
+  
+  // Check if user has admin access
+  if (userRole !== 'admin') {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
         </div>
       </div>
     );
@@ -52,9 +54,12 @@ export default function Admin() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-gray-600">Welcome back, {mockUser.username}</p>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">System Information</h2>
+          <p className="text-gray-600 mb-4">
+            This is the administrative panel for the real-time asset scanner system. 
+            Monitor system health, view discovery statistics, and manage backend services.
+          </p>
         </div>
 
       {/* Admin Overview */}

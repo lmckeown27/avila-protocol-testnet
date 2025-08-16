@@ -3,9 +3,9 @@ import { Search, TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } fro
 import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
 import AssetDetailModal from '../components/AssetDetailModal';
 
-const TradFiMarkets = () => {
-  // State for TradFi data
-  const [tradFiData, setTradFiData] = useState<NormalizedAsset[]>([]);
+const StockMarket = () => {
+  // State for Stock Market data
+  const [stockData, setStockData] = useState<NormalizedAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,14 +17,14 @@ const TradFiMarkets = () => {
   const [selectedAsset, setSelectedAsset] = useState<NormalizedAsset | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch TradFi data from backend
+  // Fetch Stock Market data from backend
   useEffect(() => {
-    const fetchTradFiData = async () => {
+    const fetchStockData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // First get basic TradFi data
+        // First get basic Stock Market data
         const basicData = await backendMarketDataService.getStockData();
         
         // Then enhance each asset with P/E data
@@ -43,23 +43,23 @@ const TradFiMarkets = () => {
           })
         );
         
-        setTradFiData(enhancedData);
+        setStockData(enhancedData);
       } catch (error) {
-        console.error('Failed to fetch TradFi data from backend:', error);
-        setError('Failed to load traditional market data from backend');
+        console.error('Failed to fetch Stock Market data from backend:', error);
+        setError('Failed to load stock market data from backend');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTradFiData();
-    const interval = setInterval(fetchTradFiData, 300000); // Refresh every 5 minutes (enhanced data is slower)
+    fetchStockData();
+    const interval = setInterval(fetchStockData, 300000); // Refresh every 5 minutes (enhanced data is slower)
     return () => clearInterval(interval);
   }, []);
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
-    let filtered = tradFiData.filter(asset =>
+    let filtered = stockData.filter(asset =>
       asset.symbol.toLowerCase().includes(search.toLowerCase()) ||
       asset.asset.toLowerCase().includes(search.toLowerCase())
     );
@@ -87,7 +87,7 @@ const TradFiMarkets = () => {
     }
 
     return filtered;
-  }, [tradFiData, search, sortConfig]);
+  }, [stockData, search, sortConfig]);
 
   // Handle sorting
   const handleSort = (key: keyof NormalizedAsset) => {
@@ -117,147 +117,50 @@ const TradFiMarkets = () => {
     return `$${(value / 1000000000).toFixed(2)}B`;
   };
 
+  // Format percentage
+  const formatPercentage = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  };
 
-
-  // Get change color and icon
-  const getChangeDisplay = (change: number, changePercent: number) => {
-    if (!change && !changePercent) return { color: 'text-gray-500', icon: null };
-    
-    const isPositive = (change || 0) >= 0;
+  // Get change display properties
+  const getChangeDisplay = (change: number) => {
+    const isPositive = change >= 0;
     return {
       color: isPositive ? 'text-green-600' : 'text-red-600',
       icon: isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />
     };
   };
 
-  // Render sort indicator
-  const renderSortIndicator = (key: keyof NormalizedAsset) => {
-    if (sortConfig.key !== key) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    return sortConfig.direction === 'asc' ? 
-      <ArrowUp className="w-4 h-4 text-blue-600" /> : 
-      <ArrowDown className="w-4 h-4 text-blue-600" />;
-  };
-
-  // Render table header
-  const renderTableHeader = (key: keyof NormalizedAsset, label: string) => (
-    <th
-      key={key}
-      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-      onClick={() => handleSort(key)}
-    >
-      <div className="flex items-center space-x-1">
-        <span>{label}</span>
-        {renderSortIndicator(key)}
-      </div>
-    </th>
-  );
-
-  // Render table row
-  const renderTableRow = (asset: NormalizedAsset) => {
-    const changeDisplay = getChangeDisplay(asset.change24h, asset.change24h);
-
+  if (loading && stockData.length === 0) {
     return (
-      <tr
-        key={asset.symbol}
-        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-        onClick={() => handleAssetClick(asset)}
-      >
-        <td className="px-4 py-4 whitespace-nowrap">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400">
-              {asset.symbol.charAt(0)}
-            </div>
-            <div className="ml-3">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {asset.symbol}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {asset.asset}
-              </div>
-            </div>
-          </div>
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-          {formatCurrency(asset.price)}
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap">
-                      <div className={`flex items-center space-x-1 ${changeDisplay.color}`}>
-              {changeDisplay.icon}
-              <div className="text-right">
-                <div className="font-medium">
-                  {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
-                </div>
-              </div>
-            </div>
-        </td>
-
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.marketCap)}
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {asset.pe ? asset.pe.toFixed(2) : 'N/A'}
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.high24h)}
-        </td>
-        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          {formatCurrency(asset.low24h)}
-        </td>
-      </tr>
-    );
-  };
-
-  // Render mobile card view
-  const renderMobileCard = (asset: NormalizedAsset) => {
-    const changeDisplay = getChangeDisplay(asset.change24h, asset.change24h);
-
-    return (
-      <div
-        key={asset.symbol}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-shadow"
-        onClick={() => handleAssetClick(asset)}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400">
-              {asset.symbol.charAt(0)}
-            </div>
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {asset.symbol}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {asset.asset}
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
-              {formatCurrency(asset.price)}
-            </div>
-            <div className={`flex items-center justify-end space-x-1 ${changeDisplay.color}`}>
-              {changeDisplay.icon}
-              <div className="text-right">
-                <div className="text-sm">
-                  {asset.change24h >= 0 ? '+' : ''}{asset.change24h.toFixed(2)}%
-                </div>
-
-              </div>
-            </div>
-          </div>
+      <div className="space-y-8 p-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Stock Market
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Monitor traditional stock market data with real-time pricing and performance metrics
+          </p>
         </div>
-        
-        <div className="grid grid-cols-1 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Market Cap:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">{formatCurrency(asset.marketCap)}</span>
-          </div>
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
         </div>
       </div>
     );
-  };
+  }
 
-
+  if (error) {
+    return (
+      <div className="space-y-8 p-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Stock Market
+          </h1>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-6">
@@ -267,94 +170,124 @@ const TradFiMarkets = () => {
           Stock Market
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Monitor stock market data with real-time pricing, P/E ratios, and market analytics
+          Monitor traditional stock market data with real-time pricing and performance metrics
         </p>
       </div>
 
-
-
-      {/* Markets Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Market Data (Free Tier)
-          </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Displaying real-time price, market cap, P/E ratios, and daily ranges. Enhanced data for comprehensive market insights.
-        </p>
-          
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search stocks and ETFs by symbol or name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+      {/* Search and Sort Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search stocks..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
         </div>
-
-        <div className="overflow-x-auto">
-          {/* Desktop Table View */}
-          <div className="hidden md:block max-h-96 overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
-                <tr>
-                  {renderTableHeader('symbol', 'Asset')}
-                  {renderTableHeader('price', 'Price')}
-                  {renderTableHeader('change24h', '24h Change')}
-                  {renderTableHeader('marketCap', 'Market Cap')}
-                  {renderTableHeader('pe', 'P/E Ratio')}
-                  {renderTableHeader('high24h', 'Day High')}
-                  {renderTableHeader('low24h', 'Day Low')}
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <div className="mt-2">Loading traditional market data...</div>
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-red-500">
-                      {error}
-                    </td>
-                  </tr>
-                ) : filteredAndSortedData.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                      No assets found matching your search.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAndSortedData.map(asset => renderTableRow(asset))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="md:hidden max-h-96 overflow-y-auto p-4 space-y-4">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <div className="mt-2 text-gray-500 dark:text-gray-400">Loading...</div>
-              </div>
-            ) : error ? (
-              <div className="text-center py-8 text-red-500">{error}</div>
-            ) : filteredAndSortedData.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No assets found matching your search.
-              </div>
-            ) : (
-              filteredAndSortedData.map(asset => renderMobileCard(asset))
+        
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleSort('symbol')}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            Symbol
+            {sortConfig.key === 'symbol' && (
+              sortConfig.direction === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
             )}
-          </div>
+          </button>
+          <button
+            onClick={() => handleSort('price')}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            Price
+            {sortConfig.key === 'price' && (
+              sortConfig.direction === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
+            )}
+          </button>
+          <button
+            onClick={() => handleSort('change24h')}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            Change
+            {sortConfig.key === 'change24h' && (
+              sortConfig.direction === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Stock Market Data Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Stock
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Price
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  24h Change
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Volume
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Market Cap
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  P/E Ratio
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredAndSortedData.map((asset) => {
+                const changeDisplay = getChangeDisplay(asset.change24h);
+                return (
+                  <tr 
+                    key={asset.symbol}
+                    onClick={() => handleAssetClick(asset)}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {asset.symbol}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {asset.asset}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {formatCurrency(asset.price)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className={`flex items-center gap-1 ${changeDisplay.color}`}>
+                        {changeDisplay.icon}
+                        <span className="text-sm font-medium">
+                          {formatPercentage(asset.change24h)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {formatCurrency(asset.volume24h)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {formatCurrency(asset.marketCap)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {asset.pe ? asset.pe.toFixed(2) : 'N/A'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -363,10 +296,10 @@ const TradFiMarkets = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         asset={selectedAsset}
-        assetType="tradfi"
+        assetType="stock"
       />
     </div>
   );
 };
 
-export default TradFiMarkets; 
+export default StockMarket; 

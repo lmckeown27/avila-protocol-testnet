@@ -60,7 +60,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/markets" element={<Markets />} />
-                    <Route path="/stock-market" element={<StockMarket />} />
+            <Route path="/stock-market" element={<StockMarket />} />
         <Route path="/digital-assets" element={<DigitalAssets />} />
         <Route path="/etf-market" element={<ETFMarket />} />
                     <Route path="/defi-protocols" element={<DeFiProtocols />} />
