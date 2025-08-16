@@ -40,12 +40,16 @@ app.use(cors({
   origin: [
     'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
     'https://avila-protocol-testnet.vercel.app',
+    'https://avila-protocol-testnet-git-main-lmckeown27.vercel.app',
+    'https://avila-protocol-testnet-lmckeown27.vercel.app',
     'http://localhost:5173',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://localhost:8080'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 

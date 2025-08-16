@@ -56,13 +56,7 @@ export const config = {
   // Testnet Configuration
   testnet: {
     isTestnet: true,
-    mockAssets: [
-      { ticker: 'AAPL', name: 'Apple Inc.', decimals: 8, initialPrice: 150.50 },
-      { ticker: 'GOOGL', name: 'Alphabet Inc.', decimals: 8, initialPrice: 2750.00 },
-      { ticker: 'TSLA', name: 'Tesla Inc.', decimals: 8, initialPrice: 850.25 },
-      { ticker: 'MSFT', name: 'Microsoft Corporation', decimals: 8, initialPrice: 320.75 },
-      { ticker: 'AMZN', name: 'Amazon.com Inc.', decimals: 8, initialPrice: 135.50 },
-    ],
+    // Mock assets removed - system now uses real-time data only
   },
 };
 

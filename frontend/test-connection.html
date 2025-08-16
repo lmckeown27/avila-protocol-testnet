@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend-Backend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Frontend-Backend Connection Test</h1>
+    <p>Testing connection to: <strong id="backend-url">Loading...</strong></p>
+    
+    <div id="tests"></div>
+    
+    <script type="module">
+        // Simulate Vite environment variables
+        window.import = { meta: { env: {} } };
+        
+        // Set environment variables
+        const env = {
+            VITE_BACKEND_URL: 'https://avila-protocol-testnet.onrender.com',
+            VITE_APP_ENVIRONMENT: 'production'
+        };
+        
+        // Mock import.meta.env
+        Object.defineProperty(window.import.meta, 'env', {
+            get: () => env
+        });
+        
+        const tests = document.getElementById('tests');
+        const backendUrl = document.getElementById('backend-url');
+        
+        backendUrl.textContent = env.VITE_BACKEND_URL;
+        
+        async function runTest(name, url, expectedSuccess = true) {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test loading';
+            testDiv.innerHTML = `<strong>${name}</strong>: Testing...`;
+            tests.appendChild(testDiv);
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok && data.success === expectedSuccess) {
+                    testDiv.className = 'test success';
+                    testDiv.innerHTML = `<strong>${name}</strong>: ✅ SUCCESS - ${response.status} ${response.statusText}`;
+                    console.log(`${name} response:`, data);
+                } else {
+                    testDiv.className = 'test error';
+                    testDiv.innerHTML = `<strong>${name}</strong>: ❌ FAILED - ${response.status} ${response.statusText}`;
+                    console.error(`${name} failed:`, data);
+                }
+            } catch (error) {
+                testDiv.className = 'test error';
+                testDiv.innerHTML = `<strong>${name}</strong>: ❌ ERROR - ${error.message}`;
+                console.error(`${name} error:`, error);
+            }
+        }
+        
+        async function runAllTests() {
+            console.log('🚀 Starting connection tests...');
+            
+            // Test basic connectivity
+            await runTest('Health Check', `${env.VITE_BACKEND_URL}/api/health`);
+            
+            // Test market data endpoints
+            await runTest('Stock Market Data', `${env.VITE_BACKEND_URL}/api/market-data/stock-market`);
+            await runTest('ETF Market Data', `${env.VITE_BACKEND_URL}/api/market-data/etf-market`);
+            await runTest('Digital Assets Data', `${env.VITE_BACKEND_URL}/api/market-data/digital-assets`);
+            
+            // Test asset endpoints
+            await runTest('Stocks List', `${env.VITE_BACKEND_URL}/api/stocks?page=1&limit=3`);
+            await runTest('ETFs List', `${env.VITE_BACKEND_URL}/api/etfs?page=1&limit=3`);
+            await runTest('Crypto List', `${env.VITE_BACKEND_URL}/api/crypto?page=1&limit=3`);
+            
+            // Test hybrid cache
+            await runTest('Hybrid Cache Stats', `${env.VITE_BACKEND_URL}/api/hybrid/stats`);
+            
+            console.log('🎉 All tests completed!');
+        }
+        
+        // Run tests when page loads
+        runAllTests();
+    </script>
+</body>
+</html> 

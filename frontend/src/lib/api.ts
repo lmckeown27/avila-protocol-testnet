@@ -7,12 +7,7 @@
 import { 
   MarketMetrics
 } from './types';
-
-// ============================================================================
-// API CONFIGURATION
-// ============================================================================
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+import { config } from '../config/environment';
 
 // ============================================================================
 // API ENDPOINTS
@@ -20,34 +15,34 @@ const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3
 
 const ENDPOINTS = {
   // Market Data
-  totalMarket: `${BACKEND_BASE_URL}/api/market-data/total`,
-  stockMarket: `${BACKEND_BASE_URL}/api/market-data/stock-market`,
-  etfMarket: `${BACKEND_BASE_URL}/api/market-data/etf-market`,
-  digitalAssets: `${BACKEND_BASE_URL}/api/market-data/digital-assets`,
-  defiProtocols: `${BACKEND_BASE_URL}/api/market-data/defi-protocols`,
+  totalMarket: `${config.backend.baseUrl}/api/market-data/total`,
+  stockMarket: `${config.backend.baseUrl}/api/market-data/stock-market`,
+  etfMarket: `${config.backend.baseUrl}/api/market-data/etf-market`,
+  digitalAssets: `${config.backend.baseUrl}/api/market-data/digital-assets`,
+  defiProtocols: `${config.backend.baseUrl}/api/market-data/defi-protocols`,
   
   // Asset Data
-  stocks: `${BACKEND_BASE_URL}/api/stocks`,
-  etfs: `${BACKEND_BASE_URL}/api/etfs`,
-  crypto: `${BACKEND_BASE_URL}/api/crypto`,
-  digitalAssetsData: `${BACKEND_BASE_URL}/api/digital-assets`,
-  defiProtocolsData: `${BACKEND_BASE_URL}/api/defi-protocols`,
+  stocks: `${config.backend.baseUrl}/api/stocks`,
+  etfs: `${config.backend.baseUrl}/api/etfs`,
+  crypto: `${config.backend.baseUrl}/api/crypto`,
+  digitalAssetsData: `${config.backend.baseUrl}/api/digital-assets`,
+  defiProtocolsData: `${config.backend.baseUrl}/api/defi-protocols`,
   
   // Company Discovery
-  companies: `${BACKEND_BASE_URL}/api/companies`,
-  companiesStats: `${BACKEND_BASE_URL}/api/companies/stats`,
+  companies: `${config.backend.baseUrl}/api/companies`,
+  companiesStats: `${config.backend.baseUrl}/api/companies/stats`,
   
   // Hybrid Cache
-  hybridStats: `${BACKEND_BASE_URL}/api/hybrid/stats`,
-  hybridAsset: `${BACKEND_BASE_URL}/api/hybrid`,
-  hybridTopAssets: `${BACKEND_BASE_URL}/api/hybrid/top`,
+  hybridStats: `${config.backend.baseUrl}/api/hybrid/stats`,
+  hybridAsset: `${config.backend.baseUrl}/api/hybrid`,
+  hybridTopAssets: `${config.backend.baseUrl}/api/hybrid/top`,
   
   // Search
-  search: `${BACKEND_BASE_URL}/api/search`,
+  search: `${config.backend.baseUrl}/api/search`,
   
   // Health
-  health: `${BACKEND_BASE_URL}/api/health`,
-  rateLimits: `${BACKEND_BASE_URL}/api/rate-limits/status`
+  health: `${config.backend.baseUrl}/api/health`,
+  rateLimits: `${config.backend.baseUrl}/api/rate-limits/status`
 };
 
 // ============================================================================

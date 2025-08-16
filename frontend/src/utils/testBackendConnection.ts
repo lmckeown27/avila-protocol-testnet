@@ -86,6 +86,41 @@ export async function testDeFiEndpoint() {
   }
 }
 
+// Browser-friendly test function for debugging
+export async function testBackendFromBrowser() {
+  console.log('🧪 Testing backend connection from browser...');
+  console.log('📍 Backend URL:', config.backend.baseUrl);
+  
+  try {
+    // Test health endpoint
+    const healthResponse = await fetch(`${config.backend.baseUrl}/api/health`);
+    console.log('🏥 Health check status:', healthResponse.status, healthResponse.statusText);
+    
+    if (healthResponse.ok) {
+      const healthData = await healthResponse.json();
+      console.log('✅ Health check successful:', healthData);
+    } else {
+      console.error('❌ Health check failed:', healthResponse.status);
+    }
+    
+    // Test stock market endpoint
+    const stockResponse = await fetch(`${config.backend.baseUrl}/api/market-data/stock-market`);
+    console.log('📈 Stock market status:', stockResponse.status, stockResponse.statusText);
+    
+    if (stockResponse.ok) {
+      const stockData = await stockResponse.json();
+      console.log('✅ Stock market data received:', stockData);
+    } else {
+      console.error('❌ Stock market failed:', stockResponse.status);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('💥 Browser test failed:', error);
+    return false;
+  }
+}
+
 // Comprehensive test function
 export async function runAllBackendTests() {
   console.log("🚀 Starting backend connectivity tests...");

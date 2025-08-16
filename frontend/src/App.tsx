@@ -14,7 +14,7 @@ import Governance from './pages/Governance';
 import Admin from './pages/Admin';
 import { useAppStore } from './stores/appStore';
 import { aptosService } from './services/aptos';
-import { runAllBackendTests } from './utils/testBackendConnection';
+import { runAllBackendTests, testBackendFromBrowser } from './utils/testBackendConnection';
 
 function App() {
   const { setLoading, setError } = useAppStore();
@@ -41,6 +41,10 @@ function App() {
       try {
         console.log('🧪 Testing backend connectivity...');
         await runAllBackendTests();
+        
+        // Also run browser-specific test
+        console.log('🌐 Running browser-specific backend test...');
+        await testBackendFromBrowser();
       } catch (error) {
         console.error('❌ Backend connectivity test failed:', error);
       }
@@ -48,6 +52,10 @@ function App() {
 
     initializeApp();
     testBackend();
+    
+    // Add global test function for manual testing
+    (window as any).testBackendConnection = testBackendFromBrowser;
+    console.log('🔧 Manual test function available: testBackendConnection()');
   }, [setLoading, setError]);
 
   return (
