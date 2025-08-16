@@ -32,7 +32,7 @@ import { companyDiscoveryService } from './companyDiscoveryService';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : (process.env.HOST || 'localhost');
 
 // Middleware
 app.use(cors());
@@ -636,25 +636,26 @@ app.use((error: any, _req: Request, res: Response, _next: any) => {
 
 app.listen(PORT, HOST, () => {
   console.log('🚀 Enhanced Market Data Service with Pagination Started');
-  console.log('📍 Server: http://localhost:3000');
-  console.log('🔍 Health check: http://localhost:3000/api/health');
-  console.log('📊 Market data: http://localhost:3000/api/market-data');
-  console.log('📈 Stock Market data: http://localhost:3000/api/market-data/stocks');
-  console.log('🌐 Digital Assets data: http://localhost:3000/api/market-data/digital-assets');
-  console.log('📈 Paginated Stocks: http://localhost:3000/api/stocks?page=1&limit=25');
-  console.log('📊 Paginated ETFs: http://localhost:3000/api/etfs?page=1&limit=25');
-  console.log('🌐 Paginated Crypto: http://localhost:3000/api/crypto?page=1&limit=25');
-  console.log('🔍 Search: http://localhost:3000/api/search?q=AAPL');
-  console.log('🏷️  Categories: http://localhost:3000/api/categories');
-  console.log('🔍 Companies: http://localhost:3000/api/companies');
-  console.log('📊 Company Stats: http://localhost:3000/api/companies/stats');
-  console.log('🔍 Company Search: http://localhost:3000/api/companies/search?q=AAPL');
-  console.log('🏷️  Companies by Sector: http://localhost:3000/api/companies/sector/Technology');
-  console.log('🔧 Enhanced market data: http://localhost:3000/api/market-data/enhanced/:symbol');
-  console.log('📊 Cache stats: http://localhost:3000/api/market-data/cache/stats');
-  console.log('⚡ Rate limit status: http://localhost:3000/api/rate-limits/status');
-  console.log('🏥 API health: http://localhost:3000/api/health/apis');
-  console.log('🌍 Environment: development');
+  console.log(`📍 Server: http://${HOST}:${PORT}`);
+  console.log(`🔍 Health check: http://${HOST}:${PORT}/api/health`);
+  console.log(`📊 Market data: http://${HOST}:${PORT}/api/market-data`);
+  console.log(`📈 Stock Market data: http://${HOST}:${PORT}/api/market-data/stocks`);
+  console.log(`🌐 Digital Assets data: http://${HOST}:${PORT}/api/market-data/digital-assets`);
+  console.log(`📈 Paginated Stocks: http://${HOST}:${PORT}/api/stocks?page=1&limit=25`);
+  console.log(`📊 Paginated ETFs: http://${HOST}:${PORT}/api/etfs?page=1&limit=25`);
+  console.log(`🌐 Paginated Crypto: http://${HOST}:${PORT}/api/crypto?page=1&limit=25`);
+  console.log(`🔍 Search: http://${HOST}:${PORT}/api/search?q=AAPL`);
+  console.log(`🏷️  Categories: http://${HOST}:${PORT}/api/categories`);
+  console.log(`🔍 Companies: http://${HOST}:${PORT}/api/companies`);
+  console.log(`📊 Company Stats: http://${HOST}:${PORT}/api/companies/stats`);
+  console.log(`🔍 Company Search: http://${HOST}:${PORT}/api/companies/search?q=AAPL`);
+  console.log(`🏷️  Companies by Sector: http://${HOST}:${PORT}/api/companies/sector/Technology`);
+  console.log(`🔧 Enhanced market data: http://${HOST}:${PORT}/api/market-data/enhanced/:symbol`);
+  console.log(`📊 Cache stats: http://${HOST}:${PORT}/api/market-data/cache/stats`);
+  console.log(`⚡ Rate limit status: http://${HOST}:${PORT}/api/rate-limits/status`);
+  console.log(`🏥 API health: http://${HOST}:${PORT}/api/health/apis`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Binding to: ${HOST}:${PORT}`);
   console.log('✨ Ready to serve paginated market data with intelligent rate limiting and caching!');
 });
 
