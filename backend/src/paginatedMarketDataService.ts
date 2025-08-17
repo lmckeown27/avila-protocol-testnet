@@ -509,16 +509,60 @@ export class PaginatedMarketDataService {
   }
 
   private async fetchETFMarketData(etfs: CompanyInfo[]): Promise<ETFAsset[]> {
-    // ETFs are essentially stocks, so we can reuse the stock fetching logic
-    const etfAssets = await this.fetchStockMarketData(etfs);
+    // ETFs now use dedicated scraper service instead of API calls
+    console.log(`🔍 Routing ${etfs.length} ETF requests to scraper service...`);
     
-    return etfAssets.map(stock => ({
-      ...stock,
-      category: 'etf' as const,
-      sector: stock.sector,
-      expenseRatio: undefined, // Would need additional API calls
-      holdings: undefined // Would need additional API calls
-    }));
+    try {
+      // Import ETF scraper service
+      const { etfScraperService } = await import('./etfScraperService');
+      
+      // Get ETF symbols
+      const etfSymbols = etfs.map(etf => etf.symbol);
+      
+      // Fetch ETF data from scraper
+      const etfData = await etfScraperService.getMultipleETFData(etfSymbols);
+      
+      // Transform to ETFAsset format
+      return etfData.map(etf => ({
+        id: etf.symbol, // Use symbol as ID
+        asset: etf.symbol,
+        symbol: etf.symbol,
+        name: etf.name,
+        price: 0, // Price not available from scraper
+        change24h: 0, // Change not available from scraper
+        volume24h: etf.volume || 0,
+        marketCap: etf.aum || 0, // Use AUM as market cap
+        sector: 'ETF',
+        industry: 'Exchange Traded Fund',
+        source: etf.source === 'scraper' ? 'ETF Scraper' : 'ETF Fallback',
+        lastUpdated: etf.lastUpdated,
+        category: 'etf' as const,
+        expenseRatio: etf.expenseRatio || undefined,
+        holdings: undefined // Would need additional API calls
+      }));
+      
+    } catch (error) {
+      console.error('❌ ETF scraper service failed:', error);
+      
+      // Fallback to basic ETF data
+      return etfs.map(etf => ({
+        id: etf.symbol, // Use symbol as ID
+        asset: etf.symbol,
+        symbol: etf.symbol,
+        name: etf.name,
+        price: 0,
+        change24h: 0,
+        volume24h: 0,
+        marketCap: 0,
+        sector: 'ETF',
+        industry: 'Exchange Traded Fund',
+        source: 'ETF Fallback',
+        lastUpdated: Date.now(),
+        category: 'etf' as const,
+        expenseRatio: undefined,
+        holdings: undefined
+      }));
+    }
   }
 
   // ============================================================================

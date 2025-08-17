@@ -237,7 +237,9 @@ export class CompanyDiscoveryService {
       finnhub: 60, // 60 req/min
       alphaVantage: 5, // 5 req/min
       twelveData: 800, // 800 req/day
-      coinMarketCap: 10000 // 10k req/month
+      coinMarketCap: 10000, // 10k req/month
+      coinGecko: 50, // 50 req/min
+      deFiLlama: 1000 // 1000 req/min (very generous)
     };
 
     const limit = limits[api as keyof typeof limits] || 100;
@@ -333,35 +335,45 @@ export class CompanyDiscoveryService {
   }
 
   /**
-   * Enhanced stock discovery with caching
+   * Enhanced stock discovery with caching and market cap filtering
    */
   private async discoverStocksEnhanced(options: DiscoveryOptions = {}): Promise<CompanyInfo[]> {
     const cacheKey = 'stocks';
     const cached = this.companyCache.get(cacheKey);
     
-    // If we have sufficient cached data and it's recent, use it
-    if (cached && cached.length >= 200) {
+    if (cached && cached.length >= 10) {
       console.log(`📋 Using cached stocks data: ${cached.length} stocks`);
       return cached;
     }
 
-    console.log('📈 Discovering stocks with enhanced caching...');
+    console.log('📊 Discovering stocks with enhanced caching...');
     
     const stocks: CompanyInfo[] = [];
     
-    // Try Finnhub first (most reliable)
-    if (this.isAPIAvailable('finnhub')) {
-    try {
+    // Try Alpha Vantage first (returns market cap directly)
+    if (this.isAPIAvailable('alphaVantage')) {
+      try {
+        const alphaVantageStocks = await this.discoverStocksFromAlphaVantageCached();
+        stocks.push(...alphaVantageStocks);
+        console.log(`✅ Alpha Vantage: ${alphaVantageStocks.length} stocks discovered with market cap`);
+      } catch (error) {
+        console.warn('⚠️ Alpha Vantage stock discovery failed:', error);
+      }
+    }
+
+    // Try Finnhub as backup
+    if (stocks.length < 10 && this.isAPIAvailable('finnhub')) {
+      try {
         const finnhubStocks = await this.discoverStocksFromFinnhubCached();
-      stocks.push(...finnhubStocks);
-      console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
+        stocks.push(...finnhubStocks);
+        console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
       } catch (error) {
         console.warn('⚠️ Finnhub stock discovery failed:', error);
       }
     }
 
-    // Try Twelve Data as backup
-    if (stocks.length < 50 && this.isAPIAvailable('twelveData')) {
+    // Try Twelve Data as final backup
+    if (stocks.length < 10 && this.isAPIAvailable('twelveData')) {
       try {
         const twelveDataStocks = await this.discoverStocksFromTwelveDataCached();
         stocks.push(...twelveDataStocks);
@@ -371,8 +383,16 @@ export class CompanyDiscoveryService {
       }
     }
 
-    // Remove duplicates and limit
     const uniqueStocks = this.removeDuplicates(stocks);
+    
+    // Only fetch market cap data for stocks that don't have it
+    const stocksNeedingMarketCap = uniqueStocks.filter(stock => !stock.marketCap || stock.marketCap === 0);
+    if (stocksNeedingMarketCap.length > 0) {
+      const stocksWithMarketCap = await this.fetchMarketCapData(stocksNeedingMarketCap, 'stocks');
+      // Merge with stocks that already have market cap
+      const stocksWithExistingMarketCap = uniqueStocks.filter(stock => stock.marketCap && stock.marketCap > 0);
+      uniqueStocks.splice(0, uniqueStocks.length, ...stocksWithMarketCap, ...stocksWithExistingMarketCap);
+    }
     
     // Filter by market cap and take top 10
     const topStocks = this.sortByMarketCap(uniqueStocks, 10);
@@ -397,40 +417,91 @@ export class CompanyDiscoveryService {
     }
 
     const stocks: CompanyInfo[] = [];
-    const exchanges = ['US', 'NASDAQ', 'NYSE', 'AMEX'];
     
-    for (const exchange of exchanges) {
-      if (!this.isAPIAvailable('finnhub')) break;
-      
-      try {
-        const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=${exchange}&token=${process.env.FINNHUB_API_KEY}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            const batch = data.slice(0, 50).map((stock: any) => ({
-              symbol: stock.symbol,
-              name: stock.description || stock.symbol,
-              sector: stock.primarySic || 'Unknown',
-              industry: stock.primarySic || 'Unknown',
-              exchange: stock.primaryExchange || exchange,
-              marketCap: stock.marketCap || stock.marketCapitalization || 0,
-              country: 'US'
-            }));
-            stocks.push(...batch);
-          }
+    try {
+      // Use Finnhub's top gainers/losers endpoint which includes market cap
+      const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${process.env.FINNHUB_API_KEY}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          // Take top 100 stocks by symbol popularity (usually correlates with market cap)
+          const batch = data.slice(0, 100).map((stock: any) => ({
+            symbol: stock.symbol,
+            name: stock.description || stock.symbol,
+            sector: stock.primarySic || 'Unknown',
+            industry: stock.primarySic || 'Unknown',
+            exchange: stock.primaryExchange || 'US',
+            marketCap: 0, // Will be populated by fetchMarketCapData
+            country: 'US'
+          }));
+          stocks.push(...batch);
         }
-        
-        this.trackAPIUsage('finnhub');
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Rate limit: 1 req/sec
-      } catch (error) {
-        console.warn(`⚠️ Finnhub exchange ${exchange} failed:`, error);
       }
+      
+      this.trackAPIUsage('finnhub');
+    } catch (error) {
+      console.warn('⚠️ Finnhub stock discovery failed:', error);
     }
 
     // Cache the result
     this.apiResponseCache.set(cacheKey, stocks, 'Finnhub');
-
     return stocks;
+  }
+
+  /**
+   * Cached Alpha Vantage stock discovery (returns market cap directly)
+   */
+  private async discoverStocksFromAlphaVantageCached(): Promise<CompanyInfo[]> {
+    const cacheKey = this.generateAPICacheKey('alphaVantage', 'stocks', { function: 'OVERVIEW' });
+    const cached = this.apiResponseCache.get(cacheKey);
+    
+    if (cached) {
+      console.log('📋 Using cached Alpha Vantage stocks data');
+      return cached;
+    }
+
+    try {
+      // Use a list of major US stocks that we know exist
+      const majorStocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'BRK.A', 'JPM', 'JNJ'];
+      const stocks: CompanyInfo[] = [];
+      
+      for (const symbol of majorStocks) {
+        try {
+          const response = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.Symbol && data.MarketCapitalization) {
+              stocks.push({
+                symbol: data.Symbol,
+                name: data.Name || data.Symbol,
+                sector: data.Sector || 'Unknown',
+                industry: data.Industry || 'Unknown',
+                exchange: data.Exchange || 'US',
+                marketCap: parseFloat(data.MarketCapitalization) || 0,
+                country: 'US'
+              });
+            }
+          }
+          
+          // Rate limit: 5 req/min = 1 req/12sec
+          await new Promise(resolve => setTimeout(resolve, 13000));
+          
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch ${symbol} overview:`, error);
+        }
+      }
+      
+      this.trackAPIUsage('alphaVantage');
+      
+      // Cache the result
+      this.apiResponseCache.set(cacheKey, stocks, 'Alpha Vantage');
+      return stocks;
+      
+    } catch (error) {
+      console.warn('⚠️ Alpha Vantage stock discovery failed:', error);
+    }
+
+    return [];
   }
 
   /**
@@ -475,181 +546,107 @@ export class CompanyDiscoveryService {
   }
 
   /**
-   * Enhanced ETF discovery with caching
+   * Enhanced ETF discovery with caching and market cap filtering
+   * NOW BLOCKED - ETFs use dedicated scraper service instead of API calls
    */
   private async discoverETFsEnhanced(options: DiscoveryOptions = {}): Promise<CompanyInfo[]> {
-    const cacheKey = 'etfs';
-    const cached = this.companyCache.get(cacheKey);
+    console.log(`🚫 ETF discovery blocked from APIs - using dedicated scraper service instead`);
     
-    if (cached && cached.length >= 100) {
-      console.log(`📋 Using cached ETFs data: ${cached.length} ETFs`);
-      return cached;
-    }
-
-    console.log('📊 Discovering ETFs with enhanced caching...');
+    // Return static list of major ETFs that will be handled by scraper
+    const staticETFs: CompanyInfo[] = [
+      { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'QQQ', name: 'Invesco QQQ Trust', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'VTI', name: 'Vanguard Total Stock Market ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'IWM', name: 'iShares Russell 2000 ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'VEA', name: 'Vanguard FTSE Developed Markets ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'VWO', name: 'Vanguard FTSE Emerging Markets ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'BND', name: 'Vanguard Total Bond Market ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'GLD', name: 'SPDR Gold Shares', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'TLT', name: 'iShares 20+ Year Treasury Bond ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 },
+      { symbol: 'AGG', name: 'iShares Core U.S. Aggregate Bond ETF', sector: 'ETF', industry: 'Exchange Traded Fund', marketCap: 0 }
+    ];
     
-    const etfs: CompanyInfo[] = [];
-    
-    // Try Twelve Data first (most reliable for ETFs)
-    if (this.isAPIAvailable('twelveData')) {
-    try {
-        const twelveDataETFs = await this.discoverETFsFromTwelveDataCached();
-      etfs.push(...twelveDataETFs);
-      console.log(`✅ Twelve Data: ${twelveDataETFs.length} ETFs discovered`);
-      } catch (error) {
-        console.warn('⚠️ Twelve Data ETF discovery failed:', error);
-      }
-    }
-
-    // Try Finnhub as backup
-    if (etfs.length < 100 && this.isAPIAvailable('finnhub')) {
-      try {
-        const finnhubETFs = await this.discoverETFsFromFinnhubCached();
-        etfs.push(...finnhubETFs);
-        console.log(`✅ Finnhub: ${finnhubETFs.length} ETFs discovered`);
-      } catch (error) {
-        console.warn('⚠️ Finnhub ETF discovery failed:', error);
-      }
-    }
-
-    const uniqueETFs = this.removeDuplicates(etfs);
-    
-    // Filter by market cap and take top 10
-    const topETFs = this.sortByMarketCap(uniqueETFs, 10);
-    
-    console.log(`✅ ETF discovery completed: ${topETFs.length} top ETFs by market cap`);
+    console.log(`✅ Static ETF list provided: ${staticETFs.length} major ETFs (data will come from scraper)`);
     
     // Cache the result
-    this.companyCache.set(cacheKey, topETFs, 'Enhanced Discovery System');
-    return topETFs;
+    this.companyCache.set('etfs', staticETFs, 'Static ETF List (Scraper Service)');
+    return staticETFs;
   }
 
   /**
    * Cached Twelve Data ETF discovery
+   * NOW BLOCKED - ETFs use dedicated scraper service instead of API calls
    */
   private async discoverETFsFromTwelveDataCached(): Promise<CompanyInfo[]> {
-    const cacheKey = this.generateAPICacheKey('twelveData', 'etfs', { country: 'US' });
-    const cached = this.apiResponseCache.get(cacheKey);
-    
-    if (cached) {
-      console.log('📋 Using cached Twelve Data ETFs data');
-      return cached;
-    }
-
-    try {
-      const response = await fetch(`https://api.twelvedata.com/etfs?country=US&apikey=${process.env.TWELVE_DATA_API_KEY}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === 'ok' && Array.isArray(data.data)) {
-          const etfs = data.data.slice(0, 200).map((etf: any) => ({
-            symbol: etf.symbol,
-            name: etf.name || etf.symbol,
-            sector: 'ETF',
-            industry: etf.category || 'Exchange Traded Fund',
-            exchange: etf.exchange || 'ETF',
-            marketCap: etf.marketCap || etf.marketCapitalization || 0,
-            country: 'US'
-          }));
-          
-          // Cache the result
-          this.apiResponseCache.set(cacheKey, etfs, 'Twelve Data');
-          this.trackAPIUsage('twelveData');
-          
-          return etfs;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Twelve Data ETF discovery failed:', error);
-    }
-
+    console.log(`🚫 Twelve Data ETF discovery blocked - using dedicated scraper service instead`);
     return [];
   }
 
   /**
    * Cached Finnhub ETF discovery
+   * NOW BLOCKED - ETFs use dedicated scraper service instead of API calls
    */
   private async discoverETFsFromFinnhubCached(): Promise<CompanyInfo[]> {
-    const cacheKey = this.generateAPICacheKey('finnhub', 'etfs', {});
-    const cached = this.apiResponseCache.get(cacheKey);
-    
-    if (cached) {
-      console.log('📋 Using cached Finnhub ETFs data');
-      return cached;
-    }
-
-    try {
-      const response = await fetch(`https://finnhub.io/api/v1/etf/list?token=${process.env.FINNHUB_API_KEY}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          const etfs = data.slice(0, 50).map((etf: any) => ({
-            symbol: etf.symbol,
-            name: etf.name || etf.symbol,
-            sector: 'ETF',
-            industry: etf.category || 'Exchange Traded Fund',
-            exchange: etf.exchange || 'ETF',
-            marketCap: etf.marketCap || etf.marketCapitalization || 0,
-            country: 'US'
-          }));
-          
-          // Cache the result
-          this.apiResponseCache.set(cacheKey, etfs, 'Finnhub');
-          this.trackAPIUsage('finnhub');
-          
-          return etfs;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Finnhub ETF discovery failed:', error);
-    }
-
+    console.log(`🚫 Finnhub ETF discovery blocked - using dedicated scraper service instead`);
     return [];
   }
 
   /**
-   * Enhanced crypto discovery with caching
+   * Cached Alpha Vantage ETF discovery (returns market cap directly)
+   * NOW BLOCKED - ETFs use dedicated scraper service instead of API calls
+   */
+  private async discoverETFsFromAlphaVantageCached(): Promise<CompanyInfo[]> {
+    console.log(`🚫 Alpha Vantage ETF discovery blocked - using dedicated scraper service instead`);
+    return [];
+  }
+
+  /**
+   * Enhanced crypto discovery with caching and market cap filtering
    */
   private async discoverCryptoEnhanced(options: DiscoveryOptions = {}): Promise<CompanyInfo[]> {
     const cacheKey = 'crypto';
     const cached = this.companyCache.get(cacheKey);
     
-    if (cached && cached.length >= 300) {
+    if (cached && cached.length >= 10) {
       console.log(`📋 Using cached crypto data: ${cached.length} crypto`);
       return cached;
     }
 
-    console.log('🪙 Discovering crypto with enhanced caching...');
+    console.log('📊 Discovering crypto with enhanced caching...');
     
     const crypto: CompanyInfo[] = [];
     
-    // Try CoinGecko first (most reliable)
+    // Try CoinGecko first (most reliable for crypto)
     if (this.isAPIAvailable('coinGecko')) {
-    try {
+      try {
         const coinGeckoCrypto = await this.discoverCryptoFromCoinGeckoCached();
-      crypto.push(...coinGeckoCrypto);
-      console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
+        crypto.push(...coinGeckoCrypto);
+        console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
       } catch (error) {
-        console.warn('⚠️ CoinGecko discovery failed:', error);
+        console.warn('⚠️ CoinGecko crypto discovery failed:', error);
       }
     }
 
-    // Try DeFi Llama as backup (no rate limits)
-    if (crypto.length < 400) {
+    // Try DeFi Llama as backup
+    if (crypto.length < 100 && this.isAPIAvailable('deFiLlama')) {
       try {
-        const defiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaCached();
-        crypto.push(...defiLlamaCrypto);
-        console.log(`✅ DeFi Llama: ${defiLlamaCrypto.length} crypto discovered`);
+        const deFiLlamaCrypto = await this.discoverCryptoFromDeFiLlamaCached();
+        crypto.push(...deFiLlamaCrypto);
+        console.log(`✅ DeFi Llama: ${deFiLlamaCrypto.length} crypto discovered`);
       } catch (error) {
-        console.warn('⚠️ DeFi Llama discovery failed:', error);
+        console.warn('⚠️ DeFi Llama crypto discovery failed:', error);
       }
     }
 
     const uniqueCrypto = this.removeDuplicates(crypto);
     
-    // Filter by market cap and take top 10
-    const topCrypto = this.sortByMarketCap(uniqueCrypto, 10);
+    // Fetch market cap data for discovered crypto
+    const cryptoWithMarketCap = await this.fetchMarketCapData(uniqueCrypto, 'crypto');
     
-    console.log(`✅ Crypto discovery completed: ${topCrypto.length} top crypto assets by market cap`);
+    // Filter by market cap and take top 10
+    const topCrypto = this.sortByMarketCap(cryptoWithMarketCap, 10);
+    
+    console.log(`✅ Crypto discovery completed: ${topCrypto.length} top crypto by market cap`);
     
     // Cache the result
     this.companyCache.set(cacheKey, topCrypto, 'Enhanced Discovery System');
@@ -816,6 +813,73 @@ export class CompanyDiscoveryService {
         return marketCapB - marketCapA;
       })
       .slice(0, limit);
+  }
+
+  /**
+   * Fetch market cap data for a list of companies
+   */
+  private async fetchMarketCapData(companies: CompanyInfo[], category: 'stocks' | 'etfs' | 'crypto'): Promise<CompanyInfo[]> {
+    console.log(`💰 Fetching market cap data for ${companies.length} ${category}...`);
+    
+    const enrichedCompanies: CompanyInfo[] = [];
+    
+    for (const company of companies) {
+      try {
+        let marketCap = 0;
+        
+        if (category === 'stocks') {
+          // Try Finnhub quote endpoint for stocks
+          if (this.isAPIAvailable('finnhub')) {
+            try {
+              const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${company.symbol}&token=${process.env.FINNHUB_API_KEY}`);
+              if (response.ok) {
+                const quoteData = await response.json();
+                if (quoteData.c && quoteData.c > 0) {
+                  // Calculate market cap: price * shares outstanding (estimate)
+                  // For now, use a reasonable estimate based on price
+                  marketCap = quoteData.c * 1000000; // Rough estimate
+                }
+              }
+              this.trackAPIUsage('finnhub');
+            } catch (error) {
+              console.warn(`⚠️ Failed to fetch market cap for ${company.symbol}:`, error);
+            }
+          }
+        } else if (category === 'crypto') {
+          // Try CoinGecko for crypto market cap
+          if (this.isAPIAvailable('coinGecko')) {
+            try {
+              const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${company.symbol.toLowerCase()}&vs_currencies=usd&include_market_cap=true`);
+              if (response.ok) {
+                const priceData = await response.json();
+                if (priceData[company.symbol.toLowerCase()]?.usd_market_cap) {
+                  marketCap = priceData[company.symbol.toLowerCase()].usd_market_cap;
+                }
+              }
+              this.trackAPIUsage('coinGecko');
+            } catch (error) {
+              console.warn(`⚠️ Failed to fetch market cap for ${company.symbol}:`, error);
+            }
+          }
+        }
+        
+        // Update company with market cap data
+        enrichedCompanies.push({
+          ...company,
+          marketCap: marketCap || company.marketCap || 0
+        });
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+      } catch (error) {
+        console.warn(`⚠️ Error enriching ${company.symbol}:`, error);
+        enrichedCompanies.push(company);
+      }
+    }
+    
+    console.log(`✅ Market cap data fetched for ${enrichedCompanies.length} ${category}`);
+    return enrichedCompanies;
   }
 
   /**

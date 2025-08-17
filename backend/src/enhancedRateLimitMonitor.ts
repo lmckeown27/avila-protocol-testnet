@@ -523,9 +523,9 @@ export class EnhancedRateLimitMonitor {
 
     // Define which APIs can handle which request types
     const apiCapabilities: Record<string, string[]> = {
-      finnhub: ['stocks', 'etfs'],
-      alphaVantage: ['stocks'],
-      twelveData: ['stocks', 'etfs'],
+      finnhub: ['stocks'], // ETFs blocked - use scraper instead
+      alphaVantage: ['stocks'], // ETFs blocked - use scraper instead
+      twelveData: ['stocks'], // ETFs blocked - use scraper instead
       coingecko: ['crypto'],
       coinmarketcap: ['crypto'],
       defillama: ['crypto']

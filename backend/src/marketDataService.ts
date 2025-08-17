@@ -175,9 +175,15 @@ export class MarketDataService {
   // ============================================================================
 
   /**
-   * Enhanced function to retrieve TradFi market data (stocks, ETFs)
+   * Enhanced function to retrieve TradFi market data (stocks only - ETFs blocked)
    */
   private async getStockMarketData(symbol: string): Promise<{ marketCap: number | null; volume: number | null; pe?: number | null }> {
+    // Check if this is an ETF symbol and block API calls
+    const etfSymbols = ['SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', '^GSPC', '^DJI', '^IXIC', '^RUT'];
+    if (etfSymbols.includes(symbol)) {
+      console.warn(`🚫 ETF data blocked from API for ${symbol}, reroute to scraper`);
+      return { marketCap: null, volume: null, pe: null };
+    }
           const cacheKey = `stock_${symbol}`;
     const cached = this.marketDataCache[cacheKey];
     const now = Date.now();

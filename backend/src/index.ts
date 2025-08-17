@@ -267,6 +267,118 @@ app.get('/api/market-data/etf-market', async (req: Request, res: Response) => {
   }
 });
 
+// ETF Scraper Service Endpoint
+app.get('/api/etf-scraper/:symbol', async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    console.log(`🔍 ETF scraper request for symbol: ${symbol}`);
+    
+    // Import and use ETF scraper service
+    const { etfScraperService } = await import('./etfScraperService');
+    const etfData = await etfScraperService.getETFData(symbol);
+    
+    return res.json({
+      success: true,
+      data: etfData,
+      timestamp: new Date().toISOString(),
+      source: 'ETF Scraper Service'
+    });
+    
+  } catch (error) {
+    console.error(`❌ ETF scraper error for ${req.params.symbol}:`, error);
+    return res.status(500).json({
+      success: false,
+      error: 'ETF data temporarily unavailable',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ETF Scraper Batch Endpoint
+app.post('/api/etf-scraper/batch', async (req: Request, res: Response) => {
+  try {
+    const { symbols } = req.body;
+    
+    if (!symbols || !Array.isArray(symbols)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request: symbols array required'
+      });
+    }
+    
+    console.log(`🔍 ETF scraper batch request for ${symbols.length} symbols: ${symbols.join(', ')}`);
+    
+    // Import and use ETF scraper service
+    const { etfScraperService } = await import('./etfScraperService');
+    const etfData = await etfScraperService.getMultipleETFData(symbols);
+    
+    return res.json({
+      success: true,
+      data: etfData,
+      timestamp: new Date().toISOString(),
+      source: 'ETF Scraper Service',
+      count: etfData.length
+    });
+    
+  } catch (error) {
+    console.error('❌ ETF scraper batch error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ETF data temporarily unavailable',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ETF Scraper Cache Stats
+app.get('/api/etf-scraper/cache/stats', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 Fetching ETF scraper cache stats...');
+    
+    // Import and use ETF scraper service
+    const { etfScraperService } = await import('./etfScraperService');
+    const cacheStats = etfScraperService.getCacheStats();
+    
+    return res.json({
+      success: true,
+      data: cacheStats,
+      timestamp: new Date().toISOString(),
+      service: 'ETF Scraper'
+    });
+    
+  } catch (error) {
+    console.error('❌ ETF scraper cache stats error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch cache stats'
+    });
+  }
+});
+
+// ETF Scraper Clear Cache
+app.post('/api/etf-scraper/cache/clear', async (req: Request, res: Response) => {
+  try {
+    console.log('🧹 Clearing ETF scraper cache...');
+    
+    // Import and use ETF scraper service
+    const { etfScraperService } = await import('./etfScraperService');
+    etfScraperService.clearCache();
+    
+    return res.json({
+      success: true,
+      message: 'ETF scraper cache cleared successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ ETF scraper clear cache error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to clear cache'
+    });
+  }
+});
+
 // Get digital assets overview (renamed from defi)
 app.get('/api/market-data/digital-assets', async (req: Request, res: Response) => {
   try {

@@ -84,9 +84,9 @@ const API_KEYS = {
 // ============================================================================
 
 const DEFAULT_STOCK_SYMBOLS = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX',
-  'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD',
-  '^GSPC', '^DJI', '^IXIC', '^RUT' // Major indices
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'
+  // ETFs removed: SPY, QQQ, IWM, VTI, VEA, VWO, BND, GLD
+  // Indices removed: ^GSPC, ^DJI, ^IXIC, ^RUT
 ];
 
 const DEFAULT_CRYPTO_IDS = [

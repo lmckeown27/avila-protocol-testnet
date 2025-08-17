@@ -10,6 +10,12 @@
  * 3. If working, increase by small increments (e.g., +5 stocks, +2 ETFs, +5 crypto)
  * 4. Test again and repeat until you find the maximum sustainable amount
  * 5. Document the optimal configuration
+ * 
+ * ETF HANDLING UPDATE:
+ * - ETFs now use dedicated scraper service instead of API calls
+ * - API services block ETF requests and log warnings
+ * - ETF data comes from issuer site scraping (AUM, expense ratios)
+ * - Longer cache TTL for ETF data (24 hours vs 10 minutes for stocks/crypto)
  */
 
 export interface ScalingConfig {
@@ -69,6 +75,12 @@ export const CURRENT_SCALING_LEVEL: ScalingConfig = {
     This configuration starts with the absolute minimum assets to ensure
     frontend-backend integration works perfectly.
     
+    ETF HANDLING:
+    - ETFs (SPY, QQQ, VTI) now use dedicated scraper service
+    - API services block ETF requests and log warnings
+    - ETF data includes AUM and expense ratios from issuer sites
+    - Longer cache TTL (24 hours) for ETF data
+    
     NEXT STEPS:
     1. Test this configuration - ensure frontend displays data correctly
     2. If successful, increase to SMALL level (+5 stocks, +2 ETFs, +5 crypto)
@@ -80,6 +92,8 @@ export const CURRENT_SCALING_LEVEL: ScalingConfig = {
     - Monitor frontend loading times
     - Check for data display issues
     - Note any backend timeouts or crashes
+    - Monitor ETF scraper success rates
+    - Check ETF cache hit rates
   `
 };
 

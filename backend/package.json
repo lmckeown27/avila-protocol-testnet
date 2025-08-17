@@ -35,7 +35,9 @@
   "license": "MIT",
   "dependencies": {
     "@aptos-labs/ts-sdk": "^4.0.0",
+    "@types/cheerio": "^0.22.35",
     "axios": "^1.6.0",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.18.0",
