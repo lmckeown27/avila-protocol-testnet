@@ -21,9 +21,9 @@ const ENDPOINTS = {
   digitalAssets: `${config.backend.baseUrl}/api/market-data/digital-assets`,
   defiProtocols: `${config.backend.baseUrl}/api/market-data/defi-protocols`,
   
-  // Asset Data
-  stocks: `${config.backend.baseUrl}/api/market-data/stock-market`,
-  etfs: `${config.backend.baseUrl}/api/market-data/etf-market`,
+  // Asset Data - INDIVIDUAL ASSET ENDPOINTS (These are what the frontend actually calls)
+  stocks: `${config.backend.baseUrl}/api/stocks`,
+  etfs: `${config.backend.baseUrl}/api/etfs`,
   crypto: `${config.backend.baseUrl}/api/crypto`,
   digitalAssetsData: `${config.backend.baseUrl}/api/digital-assets`,
   defiProtocolsData: `${config.backend.baseUrl}/api/defi-protocols`,

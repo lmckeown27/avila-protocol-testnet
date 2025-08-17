@@ -297,76 +297,280 @@ app.get('/api/market-data/defi-protocols', async (req, res) => {
         });
     }
 });
+app.get('/api/stocks', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const search = req.query.search;
+        console.log(`📊 Fetching stocks from hybrid cache (page ${page}, limit ${limit}, search: ${search || 'none'})`);
+        const hybridData = await hybridCacheService_1.hybridCacheService.getTopAssets('stocks', 100);
+        if (hybridData && hybridData.length > 0) {
+            let filteredStocks = hybridData;
+            if (search) {
+                filteredStocks = filteredStocks.filter((stock) => stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
+                    stock.name.toLowerCase().includes(search.toLowerCase()));
+            }
+            const startIndex = (page - 1) * limit;
+            const endIndex = startIndex + limit;
+            const paginatedStocks = filteredStocks.slice(startIndex, endIndex);
+            const transformedData = paginatedStocks.map((stock) => {
+                var _a, _b, _c, _d, _e, _f;
+                return ({
+                    asset: stock.symbol,
+                    symbol: stock.symbol,
+                    name: stock.name || stock.symbol,
+                    price: stock.price || ((_a = stock.liveData) === null || _a === void 0 ? void 0 : _a.price) || 0,
+                    change24h: ((_b = stock.liveData) === null || _b === void 0 ? void 0 : _b.change24h) || 0,
+                    volume24h: ((_c = stock.liveData) === null || _c === void 0 ? void 0 : _c.volume24h) || 0,
+                    marketCap: ((_d = stock.liveData) === null || _d === void 0 ? void 0 : _d.marketCap) || 0,
+                    sector: ((_e = stock.metadata) === null || _e === void 0 ? void 0 : _e.sector) || 'Unknown',
+                    industry: ((_f = stock.metadata) === null || _f === void 0 ? void 0 : _f.industry) || 'Unknown',
+                    source: stock.source || 'Hybrid Cache',
+                    lastUpdated: stock.lastUpdated || Date.now()
+                });
+            });
+            return res.json({
+                success: true,
+                data: transformedData,
+                pagination: {
+                    page,
+                    limit,
+                    total: filteredStocks.length,
+                    totalPages: Math.ceil(filteredStocks.length / limit)
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            console.log('⚠️ Hybrid cache empty, falling back to company discovery...');
+            const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies({
+                maxAssets: 100,
+                useCache: true
+            });
+            if (discoveredCompanies && discoveredCompanies.stocks) {
+                let filteredStocks = discoveredCompanies.stocks;
+                if (search) {
+                    filteredStocks = filteredStocks.filter((stock) => stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
+                        stock.name.toLowerCase().includes(search.toLowerCase()));
+                }
+                const startIndex = (page - 1) * limit;
+                const endIndex = startIndex + limit;
+                const paginatedStocks = filteredStocks.slice(startIndex, endIndex);
+                const transformedData = paginatedStocks.map((stock) => ({
+                    asset: stock.symbol,
+                    symbol: stock.symbol,
+                    name: stock.name,
+                    price: stock.price || 0,
+                    change24h: stock.change24h || 0,
+                    volume24h: stock.volume24h || 0,
+                    marketCap: stock.marketCap || 0,
+                    sector: stock.sector || 'Unknown',
+                    industry: stock.industry || 'Unknown',
+                    source: stock.source || 'Company Discovery (Fallback)',
+                    lastUpdated: stock.lastUpdated || Date.now()
+                }));
+                return res.json({
+                    success: true,
+                    data: transformedData,
+                    pagination: {
+                        page,
+                        limit,
+                        total: filteredStocks.length,
+                        totalPages: Math.ceil(filteredStocks.length / limit)
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            else {
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to fetch stock data from both hybrid cache and company discovery'
+                });
+            }
+        }
+    }
+    catch (error) {
+        console.error('❌ Stocks fetch error:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
+});
+app.get('/api/etfs', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const search = req.query.search;
+        console.log(`📊 Fetching dynamically discovered ETFs (page ${page}, limit ${limit}, search: ${search || 'none'})`);
+        const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies({
+            maxAssets: 100,
+            useCache: true
+        });
+        if (discoveredCompanies && discoveredCompanies.etfs) {
+            let filteredETFs = discoveredCompanies.etfs;
+            if (search) {
+                filteredETFs = filteredETFs.filter((etf) => etf.symbol.toLowerCase().includes(search.toLowerCase()) ||
+                    etf.name.toLowerCase().includes(search.toLowerCase()));
+            }
+            const startIndex = (page - 1) * limit;
+            const endIndex = startIndex + limit;
+            const paginatedETFs = filteredETFs.slice(startIndex, endIndex);
+            const transformedData = paginatedETFs.map((etf) => ({
+                asset: etf.symbol,
+                symbol: etf.symbol,
+                name: etf.name,
+                price: etf.price || 0,
+                change24h: etf.change24h || 0,
+                volume24h: etf.volume24h || 0,
+                marketCap: etf.marketCap || 0,
+                sector: etf.sector || 'Unknown',
+                industry: etf.industry || 'Unknown',
+                source: etf.source || 'Dynamic Discovery',
+                lastUpdated: etf.lastUpdated || Date.now()
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                pagination: {
+                    page,
+                    limit,
+                    total: filteredETFs.length,
+                    totalPages: Math.ceil(filteredETFs.length / limit)
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch dynamically discovered ETF data'
+            });
+        }
+    }
+    catch (error) {
+        console.error('❌ Dynamic ETFs fetch error:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
+});
 app.get('/api/crypto', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const search = req.query.search;
-        const options = { page, limit };
-        if (search)
-            options.search = search;
-        const cryptoData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
-        res.json({
-            success: true,
-            data: cryptoData,
-            timestamp: new Date().toISOString()
+        console.log(`🪙 Fetching dynamically discovered crypto (page ${page}, limit ${limit}, search: ${search || 'none'})`);
+        const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies({
+            maxAssets: 100,
+            useCache: true
         });
+        if (discoveredCompanies && discoveredCompanies.crypto) {
+            let filteredCrypto = discoveredCompanies.crypto;
+            if (search) {
+                filteredCrypto = filteredCrypto.filter((crypto) => crypto.symbol.toLowerCase().includes(search.toLowerCase()) ||
+                    crypto.name.toLowerCase().includes(search.toLowerCase()));
+            }
+            const startIndex = (page - 1) * limit;
+            const endIndex = startIndex + limit;
+            const paginatedCrypto = filteredCrypto.slice(startIndex, endIndex);
+            const transformedData = paginatedCrypto.map((crypto) => ({
+                asset: crypto.symbol,
+                symbol: crypto.symbol,
+                name: crypto.name,
+                price: crypto.price || 0,
+                change24h: crypto.change24h || 0,
+                volume24h: crypto.volume24h || 0,
+                marketCap: crypto.marketCap || 0,
+                sector: crypto.sector || 'Unknown',
+                industry: crypto.industry || 'Unknown',
+                source: crypto.source || 'Dynamic Discovery',
+                lastUpdated: crypto.lastUpdated || Date.now()
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                pagination: {
+                    page,
+                    limit,
+                    total: filteredCrypto.length,
+                    totalPages: Math.ceil(filteredCrypto.length / limit)
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch dynamically discovered crypto data'
+            });
+        }
     }
     catch (error) {
-        console.error('❌ Crypto data fetch failed:', error);
-        res.status(500).json({
+        console.error('❌ Dynamic crypto fetch error:', error);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch crypto data',
-            timestamp: new Date().toISOString()
+            error: 'Internal server error'
         });
     }
 });
 app.get('/api/digital-assets', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search;
-        const options = { page, limit };
-        if (search)
-            options.search = search;
-        const digitalAssetsData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
-        res.json({
-            success: true,
-            data: digitalAssetsData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('🪙 Fetching digital assets data...');
+        const cryptoData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+        if (cryptoData && cryptoData.data) {
+            const transformedData = cryptoData.data.map((crypto) => ({
+                asset: crypto.symbol,
+                symbol: crypto.symbol,
+                price: crypto.price,
+                change24h: crypto.change24h,
+                volume24h: crypto.volume24h || 0,
+                marketCap: crypto.marketCap || 0,
+                source: crypto.source || 'Multiple APIs',
+                lastUpdated: crypto.lastUpdated || Date.now(),
+                high24h: crypto.high24h,
+                low24h: crypto.low24h,
+                open24h: crypto.open24h
+            }));
+            return res.json({ success: true, data: transformedData, timestamp: new Date().toISOString() });
+        }
+        else {
+            return res.status(500).json({ success: false, error: 'Failed to fetch digital assets data' });
+        }
     }
     catch (error) {
-        console.error('❌ Digital assets data fetch failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch digital assets data',
-            timestamp: new Date().toISOString()
-        });
+        console.error('❌ Digital assets data fetch error:', error);
+        return res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 app.get('/api/defi-protocols', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search;
-        const options = { page, limit };
-        if (search)
-            options.search = search;
-        const defiProtocolsData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto(options);
-        res.json({
-            success: true,
-            data: defiProtocolsData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('🔗 Fetching DeFi protocols data...');
+        const defiData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+        if (defiData && defiData.data) {
+            const transformedData = defiData.data.map((defi) => ({
+                asset: defi.symbol,
+                symbol: defi.symbol,
+                price: defi.price,
+                change24h: defi.change24h,
+                volume24h: defi.volume24h || 0,
+                marketCap: defi.marketCap || 0,
+                source: defi.source || 'Multiple APIs',
+                lastUpdated: defi.lastUpdated || Date.now(),
+                high24h: defi.high24h,
+                low24h: defi.low24h,
+                open24h: defi.open24h
+            }));
+            return res.json({ success: true, data: transformedData, timestamp: new Date().toISOString() });
+        }
+        else {
+            return res.status(500).json({ success: false, error: 'Failed to fetch DeFi protocols data' });
+        }
     }
     catch (error) {
-        console.error('❌ DeFi protocols data fetch failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch DeFi protocols data',
-            timestamp: new Date().toISOString()
-        });
+        console.error('❌ DeFi protocols data fetch error:', error);
+        return res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 app.get('/api/companies', async (_req, res) => {
