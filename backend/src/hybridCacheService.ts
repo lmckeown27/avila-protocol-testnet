@@ -124,25 +124,19 @@ export class HybridCacheService {
   // Prefetch configuration for top assets
   private readonly prefetchConfig: PrefetchConfig = {
     stocks: {
-      topCount: 150,
+      topCount: 50,
       symbols: [
         'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'JNJ', 'PG',
         'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC', 'HD', 'UNH', 'MA',
         'V', 'DIS', 'PYPL', 'ADBE', 'CRM', 'INTC', 'ORCL', 'ABT', 'LLY', 'PEP', 'AVGO',
         'TMO', 'COST', 'DHR', 'NEE', 'ACN', 'WMT', 'MRK', 'QCOM', 'TXN', 'HON', 'LOW',
-        'UPS', 'SPGI', 'RTX', 'IBM', 'AMAT', 'PLD', 'SCHW', 'GILD', 'BKNG', 'ADI',
-        'REGN', 'PANW', 'KLAC', 'SNPS', 'CDNS', 'MELI', 'ASML', 'CHTR', 'MU', 'LRCX',
-        'MAR', 'ORLY', 'PAYX', 'ROST', 'BIIB', 'CTAS', 'FAST', 'VRSK', 'WDAY', 'DXCM',
-        'IDXX', 'CPRT', 'ODFL', 'EXC', 'AEP', 'SO', 'DUK', 'D', 'DTE', 'EIX', 'PEG',
-        'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL', 'WEC', 'AEE',
-        'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE',
-        'EIX', 'PEG', 'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL'
+        'UPS', 'SPGI', 'RTX', 'IBM', 'AMAT', 'PLD', 'SCHW', 'GILD', 'BKNG', 'ADI'
       ],
       metadataTTL: 24, // 24 hours
       liveDataTTL: 30  // 30 seconds
     },
     etfs: {
-      topCount: 100,
+      topCount: 50,
       symbols: [
         'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', 'SLV', 'USO', 'TLT',
         'LQD', 'HYG', 'EMB', 'EFA', 'EEM', 'AGG', 'TIP', 'SHY', 'IEI', 'VGK', 'VPL',
@@ -158,7 +152,7 @@ export class HybridCacheService {
       liveDataTTL: 30  // 30 seconds
     },
     crypto: {
-      topCount: 200,
+      topCount: 100,
       symbols: [
         'BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'XRP', 'ADA', 'SOL', 'AVAX', 'DOT',
         'MATIC', 'LINK', 'UNI', 'LTC', 'BCH', 'XLM', 'ATOM', 'ETC', 'FIL', 'VET',

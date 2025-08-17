@@ -185,9 +185,9 @@ export class CompanyDiscoveryService {
   
   // Simplified progressive loading state
   private loadingState = {
-    stocks: { discovered: 0, target: 500, lastUpdate: 0 },
-    etfs: { discovered: 0, target: 300, lastUpdate: 0 },
-    crypto: { discovered: 0, target: 800, lastUpdate: 0 }
+    stocks: { discovered: 0, target: 100, lastUpdate: 0 },
+    etfs: { discovered: 0, target: 100, lastUpdate: 0 },
+    crypto: { discovered: 0, target: 200, lastUpdate: 0 }
   };
 
   // Rate limit tracking
@@ -359,7 +359,7 @@ export class CompanyDiscoveryService {
     }
 
     // Try Twelve Data as backup
-    if (stocks.length < 150 && this.isAPIAvailable('twelveData')) {
+    if (stocks.length < 50 && this.isAPIAvailable('twelveData')) {
       try {
         const twelveDataStocks = await this.discoverStocksFromTwelveDataCached();
         stocks.push(...twelveDataStocks);
@@ -371,7 +371,7 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit
     const uniqueStocks = this.removeDuplicates(stocks);
-    const maxAssets = options.maxAssets || 500;
+    const maxAssets = options.maxAssets || 100;
     const finalStocks = uniqueStocks.slice(0, maxAssets);
     
     // Cache the result
@@ -407,7 +407,7 @@ export class CompanyDiscoveryService {
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
-            const batch = data.slice(0, 150).map((stock: any) => ({
+            const batch = data.slice(0, 50).map((stock: any) => ({
               symbol: stock.symbol,
               name: stock.description || stock.symbol,
               sector: stock.primarySic || 'Unknown',
@@ -448,7 +448,7 @@ export class CompanyDiscoveryService {
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'ok' && Array.isArray(data.data)) {
-          const stocks = data.data.slice(0, 300).map((stock: any) => ({
+          const stocks = data.data.slice(0, 100).map((stock: any) => ({
             symbol: stock.symbol,
             name: stock.name || stock.symbol,
             sector: stock.sector || 'Unknown',
@@ -578,7 +578,7 @@ export class CompanyDiscoveryService {
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
-          const etfs = data.slice(0, 150).map((etf: any) => ({
+          const etfs = data.slice(0, 50).map((etf: any) => ({
             symbol: etf.symbol,
             name: etf.name || etf.symbol,
             sector: 'ETF',
@@ -639,7 +639,7 @@ export class CompanyDiscoveryService {
     }
 
     const uniqueCrypto = this.removeDuplicates(crypto);
-    const maxAssets = options.maxAssets || 800;
+    const maxAssets = options.maxAssets || 200;
     const finalCrypto = uniqueCrypto.slice(0, maxAssets);
     
     // Cache the result
@@ -667,9 +667,9 @@ export class CompanyDiscoveryService {
     const crypto: CompanyInfo[] = [];
     
     try {
-      // Get first 2 pages (500 coins) to stay within rate limits
+      // Get first 2 pages (200 coins) to stay within rate limits
       for (let page = 1; page <= 2; page++) {
-        const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`);
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=${page}&sparkline=false`);
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
