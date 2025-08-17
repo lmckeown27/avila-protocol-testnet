@@ -23,28 +23,22 @@ class HybridCacheService {
         this.maxLiveDataCacheSize = 2000;
         this.prefetchStatus = new Map();
         this.lastPrefetch = Date.now();
-        this.nextPrefetch = Date.now() + (5 * 60 * 1000);
+        this.nextPrefetch = Date.now() + (15 * 60 * 1000);
         this.prefetchConfig = {
             stocks: {
-                topCount: 150,
+                topCount: 50,
                 symbols: [
                     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'JNJ', 'PG',
                     'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC', 'HD', 'UNH', 'MA',
                     'V', 'DIS', 'PYPL', 'ADBE', 'CRM', 'INTC', 'ORCL', 'ABT', 'LLY', 'PEP', 'AVGO',
                     'TMO', 'COST', 'DHR', 'NEE', 'ACN', 'WMT', 'MRK', 'QCOM', 'TXN', 'HON', 'LOW',
-                    'UPS', 'SPGI', 'RTX', 'IBM', 'AMAT', 'PLD', 'SCHW', 'GILD', 'BKNG', 'ADI',
-                    'REGN', 'PANW', 'KLAC', 'SNPS', 'CDNS', 'MELI', 'ASML', 'CHTR', 'MU', 'LRCX',
-                    'MAR', 'ORLY', 'PAYX', 'ROST', 'BIIB', 'CTAS', 'FAST', 'VRSK', 'WDAY', 'DXCM',
-                    'IDXX', 'CPRT', 'ODFL', 'EXC', 'AEP', 'SO', 'DUK', 'D', 'DTE', 'EIX', 'PEG',
-                    'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL', 'WEC', 'AEE',
-                    'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE',
-                    'EIX', 'PEG', 'XEL', 'WEC', 'AEE', 'CMS', 'D', 'DTE', 'EIX', 'PEG', 'XEL'
+                    'UPS', 'SPGI', 'RTX', 'IBM', 'AMAT', 'PLD', 'SCHW', 'GILD', 'BKNG', 'ADI'
                 ],
                 metadataTTL: 24,
                 liveDataTTL: 30
             },
             etfs: {
-                topCount: 100,
+                topCount: 50,
                 symbols: [
                     'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', 'SLV', 'USO', 'TLT',
                     'LQD', 'HYG', 'EMB', 'EFA', 'EEM', 'AGG', 'TIP', 'SHY', 'IEI', 'VGK', 'VPL',
@@ -60,7 +54,7 @@ class HybridCacheService {
                 liveDataTTL: 30
             },
             crypto: {
-                topCount: 200,
+                topCount: 100,
                 symbols: [
                     'BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'XRP', 'ADA', 'SOL', 'AVAX', 'DOT',
                     'MATIC', 'LINK', 'UNI', 'LTC', 'BCH', 'XLM', 'ATOM', 'ETC', 'FIL', 'VET',
@@ -78,7 +72,9 @@ class HybridCacheService {
             }
         };
         console.log('🚀 Initializing Hybrid Cache Service for Real Asset Scanning...');
-        this.startPrefetchCycle();
+        setTimeout(() => {
+            this.startPrefetchCycle();
+        }, 30000);
         this.startCacheCleanup();
     }
     async startPrefetchCycle() {
@@ -86,7 +82,7 @@ class HybridCacheService {
         await this.prefetchTopAssets();
         setInterval(async () => {
             await this.prefetchTopAssets();
-        }, 5 * 60 * 1000);
+        }, 15 * 60 * 1000);
     }
     async prefetchTopAssets() {
         try {
@@ -98,7 +94,7 @@ class HybridCacheService {
             const duration = Date.now() - startTime;
             console.log(`✅ Real asset prefetch cycle completed in ${duration}ms`);
             this.lastPrefetch = Date.now();
-            this.nextPrefetch = Date.now() + (5 * 60 * 1000);
+            this.nextPrefetch = Date.now() + (15 * 60 * 1000);
         }
         catch (error) {
             console.error('❌ Real asset prefetch cycle failed:', error);
@@ -114,11 +110,17 @@ class HybridCacheService {
                 ? categoryCompanies.slice(0, config.topCount).map(c => c.symbol)
                 : config.symbols.slice(0, config.topCount);
             await this.prefetchMetadata(category, symbolsToPrefetch, categoryCompanies);
-            await this.prefetchLiveData(category, symbolsToPrefetch);
+            try {
+                await this.prefetchLiveData(category, symbolsToPrefetch);
+            }
+            catch (error) {
+                console.warn(`⚠️ Live data prefetch failed for ${category}, using cached data:`, error);
+            }
             console.log(`✅ ${category} real data prefetch completed`);
         }
         catch (error) {
             console.error(`❌ ${category} real data prefetch failed:`, error);
+            await this.prefetchBasicMetadata(category, config.symbols.slice(0, config.topCount));
         }
     }
     async prefetchMetadata(category, symbols, discoveredCompanies) {
@@ -160,6 +162,30 @@ class HybridCacheService {
             }
             catch (error) {
                 console.warn(`⚠️ Failed to prefetch metadata for ${symbol}:`, error);
+            }
+        }
+    }
+    async prefetchBasicMetadata(category, symbols) {
+        console.log(`📋 Prefetching basic metadata for ${symbols.length} ${category} (fallback mode)...`);
+        for (const symbol of symbols) {
+            try {
+                const metadata = {
+                    symbol,
+                    name: `${symbol} ${category.charAt(0).toUpperCase() + category.slice(1)}`,
+                    category: category === 'stocks' ? 'stock' : category === 'etfs' ? 'etf' : 'crypto',
+                    sector: 'Unknown',
+                    industry: 'Unknown',
+                    description: `Top ${category} asset: ${symbol}`,
+                    country: 'US',
+                    currency: 'USD',
+                    exchange: 'Unknown',
+                    lastUpdated: Date.now()
+                };
+                this.setMetadata(symbol, metadata);
+                this.prefetchStatus.set(symbol, true);
+            }
+            catch (error) {
+                console.warn(`⚠️ Failed to prefetch basic metadata for ${symbol}:`, error);
             }
         }
     }

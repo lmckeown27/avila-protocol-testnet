@@ -32,17 +32,55 @@ app.use((0, cors_1.default)({
     origin: [
         'https://avilaprotocol-liam-mckeown-s-projects.vercel.app',
         'https://avila-protocol-testnet.vercel.app',
+        'https://avila-protocol-testnet-git-main-lmckeown27.vercel.app',
+        'https://avila-protocol-testnet-lmckeown27.vercel.app',
         'http://localhost:5173',
-        'http://localhost:3000'
+        'http://localhost:3000',
+        'http://localhost:8080'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+    optionsSuccessStatus: 200
 }));
 app.use(express_1.default.json());
 app.use((req, res, next) => {
     console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
     next();
+});
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0',
+        services: {
+            server: 'running',
+            cache: 'initializing',
+            marketData: 'initializing'
+        }
+    });
+});
+app.get('/api/health/ready', (req, res) => {
+    const isReady = process.uptime() > 60;
+    if (isReady) {
+        res.json({
+            status: 'ready',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            message: 'Service is ready to handle requests'
+        });
+    }
+    else {
+        res.status(503).json({
+            status: 'starting',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            message: 'Service is still starting up',
+            estimatedReadyIn: Math.max(0, 60 - process.uptime())
+        });
+    }
 });
 app.get('/', (_req, res) => {
     res.json({
@@ -67,15 +105,6 @@ app.get('/', (_req, res) => {
             hybrid: '/api/hybrid'
         },
         documentation: 'This is the Avila Markets Backend API for real-time asset scanning, company discovery, and market data services.',
-        environment: process.env.NODE_ENV || 'development'
-    });
-});
-app.get('/api/health', (_req, res) => {
-    res.json({
-        success: true,
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
         environment: process.env.NODE_ENV || 'development'
     });
 });
@@ -112,123 +141,159 @@ app.get('/api/market-data/total', async (_req, res) => {
         });
     }
 });
-app.get('/api/market-data/stock-market', async (_req, res) => {
+app.get('/api/market-data/stock-market', async (req, res) => {
     try {
-        const stockMarketData = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
-        res.json({
-            success: true,
-            data: stockMarketData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('📈 Fetching stock market data...');
+        const stockData = await paginatedMarketDataService_1.paginatedMarketDataService.getStocks({ page: 1, limit: 50 });
+        if (stockData && stockData.data) {
+            const transformedData = stockData.data.map((stock) => ({
+                asset: stock.symbol,
+                symbol: stock.symbol,
+                price: stock.price,
+                change24h: stock.change24h,
+                volume24h: stock.volume24h || 0,
+                marketCap: stock.marketCap || 0,
+                source: stock.source || 'Multiple APIs',
+                lastUpdated: stock.lastUpdated || Date.now(),
+                high24h: stock.high24h,
+                low24h: stock.low24h,
+                open24h: stock.open24h
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch stock market data'
+            });
+        }
     }
     catch (error) {
-        console.error('❌ Stock market data fetch failed:', error);
-        res.status(500).json({
+        console.error('❌ Stock market data fetch error:', error);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch stock market data',
-            timestamp: new Date().toISOString()
+            error: 'Internal server error'
         });
     }
 });
-app.get('/api/market-data/etf-market', async (_req, res) => {
+app.get('/api/market-data/etf-market', async (req, res) => {
     try {
-        const etfMarketData = await enhancedMarketDataService_1.enhancedMarketDataService.getStockData();
-        res.json({
-            success: true,
-            data: etfMarketData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('📊 Fetching ETF market data...');
+        const etfData = await paginatedMarketDataService_1.paginatedMarketDataService.getETFs({ page: 1, limit: 50 });
+        if (etfData && etfData.data) {
+            const transformedData = etfData.data.map((etf) => ({
+                asset: etf.symbol,
+                symbol: etf.symbol,
+                price: etf.price,
+                change24h: etf.change24h,
+                volume24h: etf.volume24h || 0,
+                marketCap: etf.marketCap || 0,
+                source: etf.source || 'Multiple APIs',
+                lastUpdated: etf.lastUpdated || Date.now(),
+                high24h: etf.high24h,
+                low24h: etf.low24h,
+                open24h: etf.open24h
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch ETF market data'
+            });
+        }
     }
     catch (error) {
-        console.error('❌ ETF market data fetch failed:', error);
-        res.status(500).json({
+        console.error('❌ ETF market data fetch error:', error);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch ETF market data',
-            timestamp: new Date().toISOString()
+            error: 'Internal server error'
         });
     }
 });
-app.get('/api/market-data/digital-assets', async (_req, res) => {
+app.get('/api/market-data/digital-assets', async (req, res) => {
     try {
-        const digitalAssetsData = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
-        res.json({
-            success: true,
-            data: digitalAssetsData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('🪙 Fetching digital assets data...');
+        const cryptoData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+        if (cryptoData && cryptoData.data) {
+            const transformedData = cryptoData.data.map((crypto) => ({
+                asset: crypto.symbol,
+                symbol: crypto.symbol,
+                price: crypto.price,
+                change24h: crypto.change24h,
+                volume24h: crypto.volume24h || 0,
+                marketCap: crypto.marketCap || 0,
+                source: crypto.source || 'Multiple APIs',
+                lastUpdated: crypto.lastUpdated || Date.now(),
+                high24h: crypto.high24h,
+                low24h: crypto.low24h,
+                open24h: crypto.open24h
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch digital assets data'
+            });
+        }
     }
     catch (error) {
-        console.error('❌ Digital assets data fetch failed:', error);
-        res.status(500).json({
+        console.error('❌ Digital assets data fetch error:', error);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch digital assets data',
-            timestamp: new Date().toISOString()
+            error: 'Internal server error'
         });
     }
 });
-app.get('/api/market-data/defi-protocols', async (_req, res) => {
+app.get('/api/market-data/defi-protocols', async (req, res) => {
     try {
-        const defiProtocolsData = await enhancedMarketDataService_1.enhancedMarketDataService.getDigitalAssetsData();
-        res.json({
-            success: true,
-            data: defiProtocolsData,
-            timestamp: new Date().toISOString()
-        });
+        console.log('🔗 Fetching DeFi protocols data...');
+        const defiData = await paginatedMarketDataService_1.paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+        if (defiData && defiData.data) {
+            const transformedData = defiData.data.map((defi) => ({
+                asset: defi.symbol,
+                symbol: defi.symbol,
+                price: defi.price,
+                change24h: defi.change24h,
+                volume24h: defi.volume24h || 0,
+                marketCap: defi.marketCap || 0,
+                source: defi.source || 'Multiple APIs',
+                lastUpdated: defi.lastUpdated || Date.now(),
+                high24h: defi.high24h,
+                low24h: defi.low24h,
+                open24h: defi.open24h
+            }));
+            return res.json({
+                success: true,
+                data: transformedData,
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch DeFi protocols data'
+            });
+        }
     }
     catch (error) {
-        console.error('❌ DeFi protocols data fetch failed:', error);
-        res.status(500).json({
+        console.error('❌ DeFi protocols data fetch error:', error);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch DeFi protocols data',
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-app.get('/api/stocks', async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search;
-        const options = { page, limit };
-        if (search)
-            options.search = search;
-        const stocksData = await paginatedMarketDataService_1.paginatedMarketDataService.getStocks(options);
-        res.json({
-            success: true,
-            data: stocksData,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('❌ Stocks data fetch failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch stocks data',
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-app.get('/api/etfs', async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search;
-        const options = { page, limit };
-        if (search)
-            options.search = search;
-        const etfsData = await paginatedMarketDataService_1.paginatedMarketDataService.getETFs(options);
-        res.json({
-            success: true,
-            data: etfsData,
-            timestamp: new Date().toISOString()
-        });
-    }
-    catch (error) {
-        console.error('❌ ETFs data fetch failed:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch ETFs data',
-            timestamp: new Date().toISOString()
+            error: 'Internal server error'
         });
     }
 });
