@@ -302,10 +302,13 @@ app.get('/api/stocks', async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const search = req.query.search;
-        console.log(`📊 Fetching stocks from hybrid cache (page ${page}, limit ${limit}, search: ${search || 'none'})`);
-        const hybridData = await hybridCacheService_1.hybridCacheService.getTopAssets('stocks', 100);
-        if (hybridData && hybridData.length > 0) {
-            let filteredStocks = hybridData;
+        console.log(`📊 Fetching stocks with live market data (page ${page}, limit ${limit}, search: ${search || 'none'})`);
+        const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies({
+            maxAssets: 100,
+            useCache: true
+        });
+        if (discoveredCompanies && discoveredCompanies.stocks) {
+            let filteredStocks = discoveredCompanies.stocks;
             if (search) {
                 filteredStocks = filteredStocks.filter((stock) => stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
                     stock.name.toLowerCase().includes(search.toLowerCase()));
@@ -313,22 +316,19 @@ app.get('/api/stocks', async (req, res) => {
             const startIndex = (page - 1) * limit;
             const endIndex = startIndex + limit;
             const paginatedStocks = filteredStocks.slice(startIndex, endIndex);
-            const transformedData = paginatedStocks.map((stock) => {
-                var _a, _b, _c, _d, _e, _f;
-                return ({
-                    asset: stock.symbol,
-                    symbol: stock.symbol,
-                    name: stock.name || stock.symbol,
-                    price: stock.price || ((_a = stock.liveData) === null || _a === void 0 ? void 0 : _a.price) || 0,
-                    change24h: ((_b = stock.liveData) === null || _b === void 0 ? void 0 : _b.change24h) || 0,
-                    volume24h: ((_c = stock.liveData) === null || _c === void 0 ? void 0 : _c.volume24h) || 0,
-                    marketCap: ((_d = stock.liveData) === null || _d === void 0 ? void 0 : _d.marketCap) || 0,
-                    sector: ((_e = stock.metadata) === null || _e === void 0 ? void 0 : _e.sector) || 'Unknown',
-                    industry: ((_f = stock.metadata) === null || _f === void 0 ? void 0 : _f.industry) || 'Unknown',
-                    source: stock.source || 'Hybrid Cache',
-                    lastUpdated: stock.lastUpdated || Date.now()
-                });
-            });
+            const transformedData = paginatedStocks.map((stock) => ({
+                asset: stock.symbol,
+                symbol: stock.symbol,
+                name: stock.name,
+                price: stock.price || 0,
+                change24h: stock.change24h || 0,
+                volume24h: stock.volume24h || 0,
+                marketCap: stock.marketCap || 0,
+                sector: stock.sector || 'Unknown',
+                industry: stock.industry || 'Unknown',
+                source: stock.source || 'Company Discovery',
+                lastUpdated: stock.lastUpdated || Date.now()
+            }));
             return res.json({
                 success: true,
                 data: transformedData,
@@ -342,51 +342,10 @@ app.get('/api/stocks', async (req, res) => {
             });
         }
         else {
-            console.log('⚠️ Hybrid cache empty, falling back to company discovery...');
-            const discoveredCompanies = await companyDiscoveryService_1.companyDiscoveryService.getDiscoveredCompanies({
-                maxAssets: 100,
-                useCache: true
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to fetch stock data from company discovery'
             });
-            if (discoveredCompanies && discoveredCompanies.stocks) {
-                let filteredStocks = discoveredCompanies.stocks;
-                if (search) {
-                    filteredStocks = filteredStocks.filter((stock) => stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
-                        stock.name.toLowerCase().includes(search.toLowerCase()));
-                }
-                const startIndex = (page - 1) * limit;
-                const endIndex = startIndex + limit;
-                const paginatedStocks = filteredStocks.slice(startIndex, endIndex);
-                const transformedData = paginatedStocks.map((stock) => ({
-                    asset: stock.symbol,
-                    symbol: stock.symbol,
-                    name: stock.name,
-                    price: stock.price || 0,
-                    change24h: stock.change24h || 0,
-                    volume24h: stock.volume24h || 0,
-                    marketCap: stock.marketCap || 0,
-                    sector: stock.sector || 'Unknown',
-                    industry: stock.industry || 'Unknown',
-                    source: stock.source || 'Company Discovery (Fallback)',
-                    lastUpdated: stock.lastUpdated || Date.now()
-                }));
-                return res.json({
-                    success: true,
-                    data: transformedData,
-                    pagination: {
-                        page,
-                        limit,
-                        total: filteredStocks.length,
-                        totalPages: Math.ceil(filteredStocks.length / limit)
-                    },
-                    timestamp: new Date().toISOString()
-                });
-            }
-            else {
-                return res.status(500).json({
-                    success: false,
-                    error: 'Failed to fetch stock data from both hybrid cache and company discovery'
-                });
-            }
         }
     }
     catch (error) {

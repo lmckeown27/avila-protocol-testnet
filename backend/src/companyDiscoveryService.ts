@@ -20,7 +20,7 @@ export interface CompanyInfo {
   name: string;
   sector?: string;
   industry?: string;
-  marketCap?: number;
+  marketCap: number; // Required for market cap filtering
   exchange?: string;
   country?: string;
   website?: string;
@@ -183,11 +183,11 @@ export class CompanyDiscoveryService {
   private discoveryCache = new EnhancedCache<DiscoveredCompanies>(500, 6 * 60 * 60 * 1000);
   private apiResponseCache = new EnhancedCache<any>(2000, 30 * 60 * 1000); // 30 minutes for API responses
   
-  // Simplified progressive loading state - STARTING MINIMAL FOR PROGRESSIVE SCALING
+  // Simplified progressive loading state - TOP 10 BY MARKET CAP
   private loadingState = {
-    stocks: { discovered: 0, target: 10, lastUpdate: 0 }, // STARTING MINIMAL
-    etfs: { discovered: 0, target: 5, lastUpdate: 0 },   // STARTING MINIMAL
-    crypto: { discovered: 0, target: 10, lastUpdate: 0 } // STARTING MINIMAL
+    stocks: { discovered: 0, target: 10, lastUpdate: 0 }, // TOP 10 STOCKS BY MARKET CAP
+    etfs: { discovered: 0, target: 10, lastUpdate: 0 },   // TOP 10 ETFS BY MARKET CAP
+    crypto: { discovered: 0, target: 10, lastUpdate: 0 }  // TOP 10 CRYPTO BY MARKET CAP
   };
 
   // Rate limit tracking
@@ -373,17 +373,15 @@ export class CompanyDiscoveryService {
 
     // Remove duplicates and limit
     const uniqueStocks = this.removeDuplicates(stocks);
-    const maxAssets = options.maxAssets || 100;
-    const finalStocks = uniqueStocks.slice(0, maxAssets);
+    
+    // Filter by market cap and take top 10
+    const topStocks = this.sortByMarketCap(uniqueStocks, 10);
+    
+    console.log(`✅ Stock discovery completed: ${topStocks.length} top stocks by market cap`);
     
     // Cache the result
-    this.companyCache.set(cacheKey, finalStocks, 'Enhanced Discovery');
-    
-    // Update loading state
-    this.loadingState.stocks.discovered = finalStocks.length;
-    this.loadingState.stocks.lastUpdate = Date.now();
-    
-    return finalStocks;
+    this.companyCache.set(cacheKey, topStocks, 'Enhanced Discovery System');
+    return topStocks;
   }
 
   /**
@@ -414,7 +412,9 @@ export class CompanyDiscoveryService {
               name: stock.description || stock.symbol,
               sector: stock.primarySic || 'Unknown',
               industry: stock.primarySic || 'Unknown',
-              exchange: stock.primaryExchange || exchange
+              exchange: stock.primaryExchange || exchange,
+              marketCap: stock.marketCap || stock.marketCapitalization || 0,
+              country: 'US'
             }));
             stocks.push(...batch);
           }
@@ -455,7 +455,9 @@ export class CompanyDiscoveryService {
             name: stock.name || stock.symbol,
             sector: stock.sector || 'Unknown',
             industry: stock.industry || 'Unknown',
-            exchange: stock.exchange || 'Unknown'
+            exchange: stock.exchange || 'Unknown',
+            marketCap: stock.marketCapitalization || stock.marketCap || 0,
+            country: stock.country || 'US'
           }));
           
           // Cache the result
@@ -511,17 +513,15 @@ export class CompanyDiscoveryService {
     }
 
     const uniqueETFs = this.removeDuplicates(etfs);
-    const maxAssets = options.maxAssets || 300;
-    const finalETFs = uniqueETFs.slice(0, maxAssets);
+    
+    // Filter by market cap and take top 10
+    const topETFs = this.sortByMarketCap(uniqueETFs, 10);
+    
+    console.log(`✅ ETF discovery completed: ${topETFs.length} top ETFs by market cap`);
     
     // Cache the result
-    this.companyCache.set(cacheKey, finalETFs, 'Enhanced Discovery');
-    
-    // Update loading state
-    this.loadingState.etfs.discovered = finalETFs.length;
-    this.loadingState.etfs.lastUpdate = Date.now();
-    
-    return finalETFs;
+    this.companyCache.set(cacheKey, topETFs, 'Enhanced Discovery System');
+    return topETFs;
   }
 
   /**
@@ -546,7 +546,9 @@ export class CompanyDiscoveryService {
             name: etf.name || etf.symbol,
             sector: 'ETF',
             industry: etf.category || 'Exchange Traded Fund',
-            exchange: etf.exchange || 'ETF'
+            exchange: etf.exchange || 'ETF',
+            marketCap: etf.marketCap || etf.marketCapitalization || 0,
+            country: 'US'
           }));
           
           // Cache the result
@@ -585,7 +587,9 @@ export class CompanyDiscoveryService {
             name: etf.name || etf.symbol,
             sector: 'ETF',
             industry: etf.category || 'Exchange Traded Fund',
-            exchange: etf.exchange || 'ETF'
+            exchange: etf.exchange || 'ETF',
+            marketCap: etf.marketCap || etf.marketCapitalization || 0,
+            country: 'US'
           }));
           
           // Cache the result
@@ -641,17 +645,15 @@ export class CompanyDiscoveryService {
     }
 
     const uniqueCrypto = this.removeDuplicates(crypto);
-    const maxAssets = options.maxAssets || 200;
-    const finalCrypto = uniqueCrypto.slice(0, maxAssets);
+    
+    // Filter by market cap and take top 10
+    const topCrypto = this.sortByMarketCap(uniqueCrypto, 10);
+    
+    console.log(`✅ Crypto discovery completed: ${topCrypto.length} top crypto assets by market cap`);
     
     // Cache the result
-    this.companyCache.set(cacheKey, finalCrypto, 'Enhanced Discovery');
-    
-    // Update loading state
-    this.loadingState.crypto.discovered = finalCrypto.length;
-    this.loadingState.crypto.lastUpdate = Date.now();
-    
-    return finalCrypto;
+    this.companyCache.set(cacheKey, topCrypto, 'Enhanced Discovery System');
+    return topCrypto;
   }
 
   /**
@@ -680,7 +682,9 @@ export class CompanyDiscoveryService {
               name: coin.name || coin.symbol?.toUpperCase(),
               sector: 'Cryptocurrency',
               industry: coin.categories?.[0] || 'Digital Asset',
-              exchange: 'Crypto Exchange'
+              exchange: 'Crypto Exchange',
+              marketCap: coin.market_cap || 0,
+              country: 'Global'
             }));
             crypto.push(...batch);
           }
@@ -728,7 +732,9 @@ export class CompanyDiscoveryService {
             name: protocol.name || protocol.symbol?.toUpperCase(),
             sector: 'DeFi Protocol',
             industry: protocol.category || 'Decentralized Finance',
-            exchange: 'DeFi Protocol'
+            exchange: 'DeFi Protocol',
+            marketCap: 0, // No market cap for protocols
+            country: 'Global'
           }));
           crypto.push(...batch);
         }
@@ -744,7 +750,9 @@ export class CompanyDiscoveryService {
             name: chain.name || chain.tokenSymbol?.toUpperCase(),
             sector: 'Blockchain',
             industry: 'Layer 1 Protocol',
-            exchange: 'Blockchain Network'
+            exchange: 'Blockchain Network',
+            marketCap: 0, // No market cap for chains
+            country: 'Global'
           }));
           crypto.push(...batch);
         }
@@ -774,6 +782,40 @@ export class CompanyDiscoveryService {
       seen.add(key);
       return true;
     });
+  }
+
+  /**
+   * Validate company has sufficient market cap and basic info
+   */
+  private isValidCompany(company: CompanyInfo): boolean {
+    // Must have a valid symbol
+    if (!company.symbol || company.symbol.length < 1) return false;
+    
+    // Must have a name
+    if (!company.name || company.name.length < 2) return false;
+    
+    // Must have market cap data (if available) - minimum $1B for top tier
+    if (company.marketCap !== undefined && company.marketCap < 1000000000) return false;
+    
+    // Must have basic company info
+    if (!company.sector && !company.industry) return false;
+    
+    return true;
+  }
+
+  /**
+   * Sort companies by market cap (highest first) and take top N
+   */
+  private sortByMarketCap(companies: CompanyInfo[], limit: number): CompanyInfo[] {
+    return companies
+      .filter(company => this.isValidCompany(company))
+      .sort((a, b) => {
+        // Sort by market cap (highest first)
+        const marketCapA = a.marketCap || 0;
+        const marketCapB = b.marketCap || 0;
+        return marketCapB - marketCapA;
+      })
+      .slice(0, limit);
   }
 
   /**

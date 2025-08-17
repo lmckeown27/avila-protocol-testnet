@@ -121,29 +121,23 @@ export class HybridCacheService {
   private lastPrefetch = Date.now();
   private nextPrefetch = Date.now() + (15 * 60 * 1000); // 15 minutes
 
-  // Prefetch configuration for top assets - STARTING MINIMAL FOR PROGRESSIVE SCALING
+  // Prefetch configuration for top assets - DYNAMICALLY DISCOVERED BY MARKET CAP
   private readonly prefetchConfig: PrefetchConfig = {
     stocks: {
-      topCount: 5, // STARTING MINIMAL - will increase gradually
-      symbols: [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'
-      ],
+      topCount: 10, // TOP 10 STOCKS BY MARKET CAP (discovered dynamically)
+      symbols: [], // EMPTY - will be populated by market cap discovery
       metadataTTL: 24, // 24 hours
       liveDataTTL: 30  // 30 seconds
     },
     etfs: {
-      topCount: 3, // STARTING MINIMAL - will increase gradually
-      symbols: [
-        'SPY', 'QQQ', 'VTI'
-      ],
+      topCount: 10, // TOP 10 ETFS BY MARKET CAP (discovered dynamically)
+      symbols: [], // EMPTY - will be populated by market cap discovery
       metadataTTL: 24, // 24 hours
       liveDataTTL: 30  // 30 seconds
     },
     crypto: {
-      topCount: 5, // STARTING MINIMAL - will increase gradually
-      symbols: [
-        'BTC', 'ETH', 'USDT', 'USDC', 'BNB'
-      ],
+      topCount: 10, // TOP 10 CRYPTO BY MARKET CAP (discovered dynamically)
+      symbols: [], // EMPTY - will be populated by market cap discovery
       metadataTTL: 24, // 24 hours
       liveDataTTL: 15  // 15 seconds (crypto moves faster)
     }
@@ -201,34 +195,73 @@ export class HybridCacheService {
 
   private async prefetchCategory(category: 'stocks' | 'etfs' | 'crypto') {
     const config = this.prefetchConfig[category];
-    console.log(`📊 Prefetching top ${config.topCount} ${category} with real data...`);
-    
     try {
-      // Get discovered companies for this category
-      const discoveredCompanies = await companyDiscoveryService.getDiscoveredCompanies();
-      const categoryCompanies = discoveredCompanies[category] || [];
+      console.log(`🔄 Prefetching ${category} by market cap...`);
       
-      // Use discovered companies if available, otherwise fall back to predefined symbols
-      const symbolsToPrefetch = categoryCompanies.length > 0 
-        ? categoryCompanies.slice(0, config.topCount).map(c => c.symbol)
-        : config.symbols.slice(0, config.topCount);
+      // DYNAMICALLY DISCOVER top assets by market cap
+      const topAssets = await this.discoverTopAssetsByMarketCap(category, config.topCount);
       
-      // Prefetch metadata from discovered companies (long TTL)
-      await this.prefetchMetadata(category, symbolsToPrefetch, categoryCompanies);
+      if (topAssets && topAssets.length > 0) {
+        // Update the prefetch config with discovered symbols
+        config.symbols = topAssets.map(asset => asset.symbol);
+        
+        // Prefetch metadata for discovered assets
+        await this.prefetchMetadata(category, config.symbols, topAssets);
+        
+        // Prefetch live data from market APIs (short TTL)
+        try {
+          await this.prefetchLiveData(category, config.symbols);
+        } catch (error) {
+          console.warn(`⚠️ Live data prefetch failed for ${category}, using cached data:`, error);
+        }
+        
+        console.log(`✅ ${category} market cap-based prefetch completed: ${topAssets.length} assets`);
+      } else {
+        console.warn(`⚠️ No ${category} discovered by market cap, skipping prefetch`);
+      }
+    } catch (error) {
+      console.error(`❌ ${category} market cap-based prefetch failed:`, error);
+    }
+  }
+
+  /**
+   * Dynamically discover top assets by market cap
+   */
+  private async discoverTopAssetsByMarketCap(category: 'stocks' | 'etfs' | 'crypto', count: number): Promise<any[]> {
+    try {
+      console.log(`🔍 Discovering top ${count} ${category} by market cap...`);
       
-      // Prefetch live data from market APIs (short TTL) - with error handling
-      try {
-        await this.prefetchLiveData(category, symbolsToPrefetch);
-      } catch (error) {
-        console.warn(`⚠️ Live data prefetch failed for ${category}, using cached data:`, error);
-        // Continue with cached data instead of failing completely
+      let discoveredAssets: any[] = [];
+      
+      if (category === 'stocks') {
+        // Use company discovery service to get stocks, then filter by market cap
+        const { companyDiscoveryService } = await import('./companyDiscoveryService');
+        const discovered = await companyDiscoveryService.getDiscoveredCompanies({ maxAssets: 100 });
+        discoveredAssets = discovered.stocks || [];
+      } else if (category === 'etfs') {
+        // Use company discovery service to get ETFs, then filter by market cap
+        const { companyDiscoveryService } = await import('./companyDiscoveryService');
+        const discovered = await companyDiscoveryService.getDiscoveredCompanies({ maxAssets: 100 });
+        discoveredAssets = discovered.etfs || [];
+      } else if (category === 'crypto') {
+        // Use company discovery service to get crypto, then filter by market cap
+        const { companyDiscoveryService } = await import('./companyDiscoveryService');
+        const discovered = await companyDiscoveryService.getDiscoveredCompanies({ maxAssets: 100 });
+        discoveredAssets = discovered.crypto || [];
       }
       
-      console.log(`✅ ${category} real data prefetch completed`);
+      // Sort by market cap (highest first) and take top N
+      const topAssets = discoveredAssets
+        .filter(asset => asset.marketCap && asset.marketCap > 0)
+        .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+        .slice(0, count);
+      
+      console.log(`✅ Discovered ${topAssets.length} top ${category} by market cap`);
+      return topAssets;
+      
     } catch (error) {
-      console.error(`❌ ${category} real data prefetch failed:`, error);
-      // Don't fail completely - continue with basic metadata
-      await this.prefetchBasicMetadata(category, config.symbols.slice(0, config.topCount));
+      console.error(`❌ Failed to discover ${category} by market cap:`, error);
+      return [];
     }
   }
 
