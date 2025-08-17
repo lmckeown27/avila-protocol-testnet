@@ -180,79 +180,177 @@ app.get('/api/market-data/total', async (_req: Request, res: Response) => {
 });
 
 // Get stock market overview (renamed from tradfi)
-app.get('/api/market-data/stock-market', async (_req: Request, res: Response) => {
+app.get('/api/market-data/stock-market', async (req: Request, res: Response) => {
   try {
-    const stockMarketData = await enhancedMarketDataService.getStockData();
-    res.json({
-      success: true,
-      data: stockMarketData,
-      timestamp: new Date().toISOString()
-    });
+    console.log('📈 Fetching stock market data...');
+    
+    // Use the working paginated endpoint instead of the broken enhanced endpoint
+    const stockData = await paginatedMarketDataService.getStocks({ page: 1, limit: 50 });
+    
+    if (stockData && stockData.data) {
+      // Transform the data to match the expected format
+      const transformedData = stockData.data.map((stock: any) => ({
+        asset: stock.symbol,
+        symbol: stock.symbol,
+        price: stock.price,
+        change24h: stock.change24h,
+        volume24h: stock.volume24h || 0,
+        marketCap: stock.marketCap || 0,
+        source: stock.source || 'Multiple APIs',
+        lastUpdated: stock.lastUpdated || Date.now(),
+        high24h: stock.high24h,
+        low24h: stock.low24h,
+        open24h: stock.open24h
+      }));
+      
+      return res.json({
+        success: true,
+        data: transformedData,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch stock market data'
+      });
+    }
   } catch (error) {
-    console.error('❌ Stock market data fetch failed:', error);
-    res.status(500).json({
+    console.error('❌ Stock market data fetch error:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Failed to fetch stock market data',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     });
   }
 });
 
-// Get ETF market overview
-app.get('/api/market-data/etf-market', async (_req: Request, res: Response) => {
+// ETF Market Data
+app.get('/api/market-data/etf-market', async (req: Request, res: Response) => {
   try {
-    // For now, use stock data as ETF data since ETFs are stocks
-    const etfMarketData = await enhancedMarketDataService.getStockData();
-    res.json({
-      success: true,
-      data: etfMarketData,
-      timestamp: new Date().toISOString()
-    });
+    console.log('📊 Fetching ETF market data...');
+    
+    // Use the working paginated endpoint instead of the broken enhanced endpoint
+    const etfData = await paginatedMarketDataService.getETFs({ page: 1, limit: 50 });
+    
+    if (etfData && etfData.data) {
+      // Transform the data to match the expected format
+      const transformedData = etfData.data.map((etf: any) => ({
+        asset: etf.symbol,
+        symbol: etf.symbol,
+        price: etf.price,
+        change24h: etf.change24h,
+        volume24h: etf.volume24h || 0,
+        marketCap: etf.marketCap || 0,
+        source: etf.source || 'Multiple APIs',
+        lastUpdated: etf.lastUpdated || Date.now(),
+        high24h: etf.high24h,
+        low24h: etf.low24h,
+        open24h: etf.open24h
+      }));
+      
+      return res.json({
+        success: true,
+        data: transformedData,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch ETF market data'
+      });
+    }
   } catch (error) {
-    console.error('❌ ETF market data fetch failed:', error);
-    res.status(500).json({
+    console.error('❌ ETF market data fetch error:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Failed to fetch ETF market data',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     });
   }
 });
 
 // Get digital assets overview (renamed from defi)
-app.get('/api/market-data/digital-assets', async (_req: Request, res: Response) => {
+app.get('/api/market-data/digital-assets', async (req: Request, res: Response) => {
   try {
-    const digitalAssetsData = await enhancedMarketDataService.getDigitalAssetsData();
-    res.json({
-      success: true,
-      data: digitalAssetsData,
-      timestamp: new Date().toISOString()
-    });
+    console.log('🪙 Fetching digital assets data...');
+    
+    // Use the working paginated endpoint instead of the broken enhanced endpoint
+    const cryptoData = await paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+    
+    if (cryptoData && cryptoData.data) {
+      // Transform the data to match the expected format
+      const transformedData = cryptoData.data.map((crypto: any) => ({
+        asset: crypto.symbol,
+        symbol: crypto.symbol,
+        price: crypto.price,
+        change24h: crypto.change24h,
+        volume24h: crypto.volume24h || 0,
+        marketCap: crypto.marketCap || 0,
+        source: crypto.source || 'Multiple APIs',
+        lastUpdated: crypto.lastUpdated || Date.now(),
+        high24h: crypto.high24h,
+        low24h: crypto.low24h,
+        open24h: crypto.open24h
+      }));
+      
+      return res.json({
+        success: true,
+        data: transformedData,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch digital assets data'
+      });
+    }
   } catch (error) {
-    console.error('❌ Digital assets data fetch failed:', error);
-    res.status(500).json({
+    console.error('❌ Digital assets data fetch error:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Failed to fetch digital assets data',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     });
   }
 });
 
 // Get DeFi protocols overview
-app.get('/api/market-data/defi-protocols', async (_req: Request, res: Response) => {
+app.get('/api/market-data/defi-protocols', async (req: Request, res: Response) => {
   try {
-    // For now, use digital assets data as DeFi protocols data
-    const defiProtocolsData = await enhancedMarketDataService.getDigitalAssetsData();
-    res.json({
-      success: true,
-      data: defiProtocolsData,
-      timestamp: new Date().toISOString()
-    });
+    console.log('🔗 Fetching DeFi protocols data...');
+    
+    // Use the working paginated endpoint instead of the broken enhanced endpoint
+    const defiData = await paginatedMarketDataService.getCrypto({ page: 1, limit: 50 });
+    
+    if (defiData && defiData.data) {
+      // Transform the data to match the expected format
+      const transformedData = defiData.data.map((defi: any) => ({
+        asset: defi.symbol,
+        symbol: defi.symbol,
+        price: defi.price,
+        change24h: defi.change24h,
+        volume24h: defi.volume24h || 0,
+        marketCap: defi.marketCap || 0,
+        source: defi.source || 'Multiple APIs',
+        lastUpdated: defi.lastUpdated || Date.now(),
+        high24h: defi.high24h,
+        low24h: defi.low24h,
+        open24h: defi.open24h
+      }));
+      
+      return res.json({
+        success: true,
+        data: transformedData,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch DeFi protocols data'
+      });
+    }
   } catch (error) {
-    console.error('❌ DeFi protocols data fetch failed:', error);
-    res.status(500).json({
+    console.error('❌ DeFi protocols data fetch error:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Failed to fetch DeFi protocols data',
-      timestamp: new Date().toISOString()
+      error: 'Internal server error'
     });
   }
 });
