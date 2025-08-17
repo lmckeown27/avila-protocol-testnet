@@ -183,11 +183,11 @@ export class CompanyDiscoveryService {
   private discoveryCache = new EnhancedCache<DiscoveredCompanies>(500, 6 * 60 * 60 * 1000);
   private apiResponseCache = new EnhancedCache<any>(2000, 30 * 60 * 1000); // 30 minutes for API responses
   
-  // Simplified progressive loading state
+  // Simplified progressive loading state - STARTING MINIMAL FOR PROGRESSIVE SCALING
   private loadingState = {
-    stocks: { discovered: 0, target: 100, lastUpdate: 0 },
-    etfs: { discovered: 0, target: 100, lastUpdate: 0 },
-    crypto: { discovered: 0, target: 200, lastUpdate: 0 }
+    stocks: { discovered: 0, target: 10, lastUpdate: 0 }, // STARTING MINIMAL
+    etfs: { discovered: 0, target: 5, lastUpdate: 0 },   // STARTING MINIMAL
+    crypto: { discovered: 0, target: 10, lastUpdate: 0 } // STARTING MINIMAL
   };
 
   // Rate limit tracking

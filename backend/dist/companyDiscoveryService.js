@@ -99,9 +99,9 @@ class CompanyDiscoveryService {
         this.discoveryCache = new EnhancedCache(500, 6 * 60 * 60 * 1000);
         this.apiResponseCache = new EnhancedCache(2000, 30 * 60 * 1000);
         this.loadingState = {
-            stocks: { discovered: 0, target: 100, lastUpdate: 0 },
-            etfs: { discovered: 0, target: 100, lastUpdate: 0 },
-            crypto: { discovered: 0, target: 200, lastUpdate: 0 }
+            stocks: { discovered: 0, target: 10, lastUpdate: 0 },
+            etfs: { discovered: 0, target: 5, lastUpdate: 0 },
+            crypto: { discovered: 0, target: 10, lastUpdate: 0 }
         };
         this.apiUsageTracker = new Map();
         setTimeout(() => {

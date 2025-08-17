@@ -121,49 +121,28 @@ export class HybridCacheService {
   private lastPrefetch = Date.now();
   private nextPrefetch = Date.now() + (15 * 60 * 1000); // 15 minutes
 
-  // Prefetch configuration for top assets
+  // Prefetch configuration for top assets - STARTING MINIMAL FOR PROGRESSIVE SCALING
   private readonly prefetchConfig: PrefetchConfig = {
     stocks: {
-      topCount: 50,
+      topCount: 5, // STARTING MINIMAL - will increase gradually
       symbols: [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'JNJ', 'PG',
-        'KO', 'PFE', 'VZ', 'T', 'XOM', 'CVX', 'JPM', 'BAC', 'WFC', 'HD', 'UNH', 'MA',
-        'V', 'DIS', 'PYPL', 'ADBE', 'CRM', 'INTC', 'ORCL', 'ABT', 'LLY', 'PEP', 'AVGO',
-        'TMO', 'COST', 'DHR', 'NEE', 'ACN', 'WMT', 'MRK', 'QCOM', 'TXN', 'HON', 'LOW',
-        'UPS', 'SPGI', 'RTX', 'IBM', 'AMAT', 'PLD', 'SCHW', 'GILD', 'BKNG', 'ADI'
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'
       ],
       metadataTTL: 24, // 24 hours
       liveDataTTL: 30  // 30 seconds
     },
     etfs: {
-      topCount: 50,
+      topCount: 3, // STARTING MINIMAL - will increase gradually
       symbols: [
-        'SPY', 'QQQ', 'IWM', 'VTI', 'VEA', 'VWO', 'BND', 'GLD', 'SLV', 'USO', 'TLT',
-        'LQD', 'HYG', 'EMB', 'EFA', 'EEM', 'AGG', 'TIP', 'SHY', 'IEI', 'VGK', 'VPL',
-        'VSS', 'VCSH', 'VCIT', 'VGSH', 'VTEB', 'VWOB', 'VXUS', 'VYM', 'VIG', 'VBR',
-        'VBK', 'VTV', 'VUG', 'VGT', 'VHT', 'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC',
-        'VRE', 'VRTX', 'VGT', 'VHT', 'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC', 'VRE',
-        'VRTX', 'VGT', 'VHT', 'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC', 'VRE', 'VRTX',
-        'VGT', 'VHT', 'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC', 'VRE', 'VRTX', 'VGT',
-        'VHT', 'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC', 'VRE', 'VRTX', 'VGT', 'VHT',
-        'VFH', 'VDE', 'VAW', 'VIS', 'VCR', 'VDC', 'VRE', 'VRTX', 'VGT', 'VHT', 'VFH'
+        'SPY', 'QQQ', 'VTI'
       ],
       metadataTTL: 24, // 24 hours
       liveDataTTL: 30  // 30 seconds
     },
     crypto: {
-      topCount: 100,
+      topCount: 5, // STARTING MINIMAL - will increase gradually
       symbols: [
-        'BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'XRP', 'ADA', 'SOL', 'AVAX', 'DOT',
-        'MATIC', 'LINK', 'UNI', 'LTC', 'BCH', 'XLM', 'ATOM', 'ETC', 'FIL', 'VET',
-        'TRX', 'THETA', 'XMR', 'EOS', 'AAVE', 'ALGO', 'MKR', 'COMP', 'SUSHI', 'YFI',
-        'SNX', 'BAL', 'REN', 'BAND', 'ZRX', 'BAT', 'MANA', 'ENJ', 'SAND', 'AXS',
-        'CHZ', 'HOT', 'DOGE', 'SHIB', 'TRX', 'THETA', 'XMR', 'EOS', 'AAVE', 'ALGO',
-        'MKR', 'COMP', 'SUSHI', 'YFI', 'SNX', 'BAL', 'REN', 'BAND', 'ZRX', 'BAT',
-        'MANA', 'ENJ', 'SAND', 'AXS', 'CHZ', 'HOT', 'DOGE', 'SHIB', 'TRX', 'THETA',
-        'XMR', 'EOS', 'AAVE', 'ALGO', 'MKR', 'COMP', 'SUSHI', 'YFI', 'SNX', 'BAL',
-        'REN', 'BAND', 'ZRX', 'BAT', 'MANA', 'ENJ', 'SAND', 'AXS', 'CHZ', 'HOT',
-        'DOGE', 'SHIB', 'TRX', 'THETA', 'XMR', 'EOS', 'AAVE', 'ALGO', 'MKR', 'COMP'
+        'BTC', 'ETH', 'USDT', 'USDC', 'BNB'
       ],
       metadataTTL: 24, // 24 hours
       liveDataTTL: 15  // 15 seconds (crypto moves faster)
