@@ -47,7 +47,7 @@ export class MarketDataService {
       const data = await apiService.getStockMarketData();
       console.log('✅ Real stock market overview fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real stock market overview:', error);
       throw new Error('Unable to fetch real stock market overview. Please check your connection and try again.');
     }
@@ -60,7 +60,7 @@ export class MarketDataService {
       const data = await apiService.getETFMarketData();
       console.log('✅ Real ETF market overview fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real ETF market overview:', error);
       throw new Error('Unable to fetch real ETF market overview. Please check your connection and try again.');
     }
@@ -73,7 +73,7 @@ export class MarketDataService {
       const data = await apiService.getDigitalAssetsData();
       console.log('✅ Real digital assets overview fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real digital assets overview:', error);
       throw new Error('Unable to fetch real digital assets overview. Please check your connection and try again.');
     }
@@ -86,7 +86,7 @@ export class MarketDataService {
       const data = await apiService.getDeFiProtocolsData();
       console.log('✅ Real DeFi protocols overview fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real DeFi protocols overview:', error);
       throw new Error('Unable to fetch real DeFi protocols overview. Please check your connection and try again.');
     }
@@ -103,7 +103,7 @@ export class MarketDataService {
       const data = await apiService.getStocks(page, limit, search);
       console.log('✅ Real stock data fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real stock data:', error);
       throw new Error('Unable to fetch real stock data. Please check your connection and try again.');
     }
@@ -116,7 +116,7 @@ export class MarketDataService {
       const data = await apiService.getETFs(page, limit, search);
       console.log('✅ Real ETF data fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real ETF data:', error);
       throw new Error('Unable to fetch real ETF data. Please check your connection and try again.');
     }
@@ -129,7 +129,7 @@ export class MarketDataService {
       const data = await apiService.getCrypto(page, limit, search);
       console.log('✅ Real crypto data fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch real crypto data:', error);
       throw new Error('Unable to fetch real crypto data. Please check your connection and try again.');
     }
@@ -159,7 +159,7 @@ export class MarketDataService {
       const data = await apiService.getCompanyStats();
       console.log('✅ Company stats fetched successfully');
       return data;
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Failed to fetch company stats:', error);
       throw new Error('Unable to fetch company stats. Please check your connection and try again.');
     }

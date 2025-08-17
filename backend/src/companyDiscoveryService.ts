@@ -171,10 +171,10 @@ class EnhancedCache<T> {
 
 export class CompanyDiscoveryService {
   private discoveredCompanies: DiscoveredCompanies = {
-    stocks: [],
-    etfs: [],
-    crypto: [],
-    timestamp: Date.now(),
+      stocks: [], 
+      etfs: [], 
+      crypto: [],
+      timestamp: Date.now(),
     dataSource: 'Enhanced Discovery System'
   };
   
@@ -351,10 +351,10 @@ export class CompanyDiscoveryService {
     
     // Try Finnhub first (most reliable)
     if (this.isAPIAvailable('finnhub')) {
-      try {
+    try {
         const finnhubStocks = await this.discoverStocksFromFinnhubCached();
-        stocks.push(...finnhubStocks);
-        console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
+      stocks.push(...finnhubStocks);
+      console.log(`✅ Finnhub: ${finnhubStocks.length} stocks discovered`);
       } catch (error) {
         console.warn('⚠️ Finnhub stock discovery failed:', error);
       }
@@ -429,7 +429,7 @@ export class CompanyDiscoveryService {
 
     // Cache the result
     this.apiResponseCache.set(cacheKey, stocks, 'Finnhub');
-    
+
     return stocks;
   }
 
@@ -490,10 +490,10 @@ export class CompanyDiscoveryService {
     
     // Try Twelve Data first (most reliable for ETFs)
     if (this.isAPIAvailable('twelveData')) {
-      try {
+    try {
         const twelveDataETFs = await this.discoverETFsFromTwelveDataCached();
-        etfs.push(...twelveDataETFs);
-        console.log(`✅ Twelve Data: ${twelveDataETFs.length} ETFs discovered`);
+      etfs.push(...twelveDataETFs);
+      console.log(`✅ Twelve Data: ${twelveDataETFs.length} ETFs discovered`);
       } catch (error) {
         console.warn('⚠️ Twelve Data ETF discovery failed:', error);
       }
@@ -620,10 +620,10 @@ export class CompanyDiscoveryService {
     
     // Try CoinGecko first (most reliable)
     if (this.isAPIAvailable('coinGecko')) {
-      try {
+    try {
         const coinGeckoCrypto = await this.discoverCryptoFromCoinGeckoCached();
-        crypto.push(...coinGeckoCrypto);
-        console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
+      crypto.push(...coinGeckoCrypto);
+      console.log(`✅ CoinGecko: ${coinGeckoCrypto.length} crypto discovered`);
       } catch (error) {
         console.warn('⚠️ CoinGecko discovery failed:', error);
       }
@@ -688,14 +688,14 @@ export class CompanyDiscoveryService {
         
         // Rate limit: 50 req/min = 1 req/1.2sec
         if (page < 2) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
+    }
       
       // Cache the result
       this.apiResponseCache.set(cacheKey, crypto, 'CoinGecko');
-      
-      return crypto;
+
+    return crypto;
     } catch (error) {
       console.warn('⚠️ CoinGecko discovery failed:', error);
     }
@@ -748,12 +748,12 @@ export class CompanyDiscoveryService {
           }));
           crypto.push(...batch);
         }
-      }
+    }
       
       // Cache the result
       this.apiResponseCache.set(cacheKey, crypto, 'DeFi Llama');
-      
-      return crypto;
+
+    return crypto;
     } catch (error) {
       console.warn('⚠️ DeFi Llama discovery failed:', error);
     }
