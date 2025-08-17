@@ -22,8 +22,8 @@ const ENDPOINTS = {
   defiProtocols: `${config.backend.baseUrl}/api/market-data/defi-protocols`,
   
   // Asset Data
-  stocks: `${config.backend.baseUrl}/api/stocks`,
-  etfs: `${config.backend.baseUrl}/api/etfs`,
+  stocks: `${config.backend.baseUrl}/api/market-data/stock-market`,
+  etfs: `${config.backend.baseUrl}/api/market-data/etf-market`,
   crypto: `${config.backend.baseUrl}/api/crypto`,
   digitalAssetsData: `${config.backend.baseUrl}/api/digital-assets`,
   defiProtocolsData: `${config.backend.baseUrl}/api/defi-protocols`,
@@ -181,63 +181,93 @@ export class APIService {
 
   async getStocks(page: number = 1, limit: number = 25, search?: string): Promise<any> {
     try {
-      console.log(`📊 Fetching real stock data (page ${page}, limit ${limit})...`);
+      console.log(`📊 Fetching real stock market data (page ${page}, limit ${limit})...`);
       
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
-      });
-      
-      if (search) {
-        params.append('search', search);
-      }
-      
-      const response = await fetch(`${ENDPOINTS.stocks}?${params}`);
+      // The stock market endpoint returns all data, so we'll slice it based on page and limit
+      const response = await fetch(ENDPOINTS.stocks);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
       if (data.success && data.data) {
-        console.log('✅ Real stock data fetched successfully');
-        return data.data;
+        // Calculate pagination manually since the endpoint returns all data
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = data.data.slice(startIndex, endIndex);
+        
+        // Filter by search if provided
+        const filteredData = search 
+          ? paginatedData.filter((stock: any) => 
+              stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
+              stock.name.toLowerCase().includes(search.toLowerCase())
+            )
+          : paginatedData;
+        
+        console.log('✅ Real stock market data fetched successfully');
+        return {
+          data: filteredData,
+          pagination: {
+            page,
+            limit,
+            total: data.data.length,
+            totalPages: Math.ceil(data.data.length / limit),
+            hasNext: endIndex < data.data.length,
+            hasPrev: page > 1
+          }
+        };
       } else {
         throw new Error('Invalid response format from backend');
       }
     } catch (error) {
-      console.error('❌ Failed to fetch real stock data:', error);
-      throw new Error('Unable to fetch real stock data. Please check your connection and try again.');
+      console.error('❌ Failed to fetch real stock market data:', error);
+      throw new Error('Unable to fetch real stock market data. Please check your connection and try again.');
     }
   }
 
   async getETFs(page: number = 1, limit: number = 25, search?: string): Promise<any> {
     try {
-      console.log(`📊 Fetching real ETF data (page ${page}, limit ${limit})...`);
+      console.log(`📊 Fetching real ETF market data (page ${page}, limit ${limit})...`);
       
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
-      });
-      
-      if (search) {
-        params.append('search', search);
-      }
-      
-      const response = await fetch(`${ENDPOINTS.etfs}?${params}`);
+      // The ETF market endpoint returns all data, so we'll slice it based on page and limit
+      const response = await fetch(ENDPOINTS.etfs);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
       if (data.success && data.data) {
-        console.log('✅ Real ETF data fetched successfully');
-        return data.data;
+        // Calculate pagination manually since the endpoint returns all data
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedData = data.data.slice(startIndex, endIndex);
+        
+        // Filter by search if provided
+        const filteredData = search 
+          ? paginatedData.filter((etf: any) => 
+              etf.symbol.toLowerCase().includes(search.toLowerCase()) ||
+              etf.name.toLowerCase().includes(search.toLowerCase())
+            )
+          : paginatedData;
+        
+        console.log('✅ Real ETF market data fetched successfully');
+        return {
+          data: filteredData,
+          pagination: {
+            page,
+            limit,
+            total: data.data.length,
+            totalPages: Math.ceil(data.data.length / limit),
+            hasNext: endIndex < data.data.length,
+            hasPrev: page > 1
+          }
+        };
       } else {
         throw new Error('Invalid response format from backend');
       }
     } catch (error) {
-      console.error('❌ Failed to fetch real ETF data:', error);
-      throw new Error('Unable to fetch real ETF data. Please check your connection and try again.');
+      console.error('❌ Failed to fetch real ETF market data:', error);
+      throw new Error('Unable to fetch real ETF market data. Please check your connection and try again.');
     }
   }
 

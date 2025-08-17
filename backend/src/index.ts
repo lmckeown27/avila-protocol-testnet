@@ -359,59 +359,7 @@ app.get('/api/market-data/defi-protocols', async (req: Request, res: Response) =
 // ASSET DATA ENDPOINTS
 // ============================================================================
 
-// Get stocks with pagination
-app.get('/api/stocks', async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 25;
-    const search = req.query.search as string;
-    
-    const options: PaginationOptions = { page, limit };
-    if (search) options.search = search;
-    
-    const stocksData = await paginatedMarketDataService.getStocks(options);
-    res.json({
-      success: true,
-      data: stocksData,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Stocks data fetch failed:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch stocks data',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Get ETFs with pagination
-app.get('/api/etfs', async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 25;
-    const search = req.query.search as string;
-    
-    const options: PaginationOptions = { page, limit };
-    if (search) options.search = search;
-    
-    const etfsData = await paginatedMarketDataService.getETFs(options);
-    res.json({
-      success: true,
-      data: etfsData,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ ETFs data fetch failed:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch ETFs data',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Get crypto with pagination
+// Get crypto data (digital assets)
 app.get('/api/crypto', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
