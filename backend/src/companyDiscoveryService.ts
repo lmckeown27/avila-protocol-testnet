@@ -195,7 +195,9 @@ export class CompanyDiscoveryService {
 
   constructor() {
     // Schedule periodic discovery refresh (less frequent)
-    setInterval(() => this.refreshDiscovery(), 2 * 60 * 60 * 1000); // Every 2 hours
+    setTimeout(() => {
+      setInterval(() => this.refreshDiscovery(), 2 * 60 * 60 * 1000); // Every 2 hours
+    }, 45000); // Wait 45 seconds before starting discovery
     
     // Schedule cache cleanup
     setInterval(() => this.cleanupCaches(), 30 * 60 * 1000); // Every 30 minutes

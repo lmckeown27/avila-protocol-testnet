@@ -119,7 +119,7 @@ export class HybridCacheService {
   private readonly maxLiveDataCacheSize = 2000;
   private prefetchStatus = new Map<string, boolean>();
   private lastPrefetch = Date.now();
-  private nextPrefetch = Date.now() + (5 * 60 * 1000); // 5 minutes
+  private nextPrefetch = Date.now() + (15 * 60 * 1000); // 15 minutes
 
   // Prefetch configuration for top assets
   private readonly prefetchConfig: PrefetchConfig = {
@@ -172,7 +172,10 @@ export class HybridCacheService {
 
   constructor() {
     console.log('🚀 Initializing Hybrid Cache Service for Real Asset Scanning...');
-    this.startPrefetchCycle();
+    // Delay prefetch to allow service to stabilize first
+    setTimeout(() => {
+      this.startPrefetchCycle();
+    }, 30000); // Wait 30 seconds before starting prefetch
     this.startCacheCleanup();
   }
 
@@ -186,10 +189,10 @@ export class HybridCacheService {
     // Initial prefetch
     await this.prefetchTopAssets();
     
-    // Set up recurring prefetch
+    // Set up recurring prefetch with longer intervals
     setInterval(async () => {
       await this.prefetchTopAssets();
-    }, 5 * 60 * 1000); // Every 5 minutes
+    }, 15 * 60 * 1000); // Every 15 minutes instead of 5
   }
 
   private async prefetchTopAssets() {
@@ -210,7 +213,7 @@ export class HybridCacheService {
       console.log(`✅ Real asset prefetch cycle completed in ${duration}ms`);
       
       this.lastPrefetch = Date.now();
-      this.nextPrefetch = Date.now() + (5 * 60 * 1000);
+      this.nextPrefetch = Date.now() + (15 * 60 * 1000);
       
     } catch (error) {
       console.error('❌ Real asset prefetch cycle failed:', error);
@@ -234,12 +237,19 @@ export class HybridCacheService {
       // Prefetch metadata from discovered companies (long TTL)
       await this.prefetchMetadata(category, symbolsToPrefetch, categoryCompanies);
       
-      // Prefetch live data from market APIs (short TTL)
-      await this.prefetchLiveData(category, symbolsToPrefetch);
+      // Prefetch live data from market APIs (short TTL) - with error handling
+      try {
+        await this.prefetchLiveData(category, symbolsToPrefetch);
+      } catch (error) {
+        console.warn(`⚠️ Live data prefetch failed for ${category}, using cached data:`, error);
+        // Continue with cached data instead of failing completely
+      }
       
       console.log(`✅ ${category} real data prefetch completed`);
     } catch (error) {
       console.error(`❌ ${category} real data prefetch failed:`, error);
+      // Don't fail completely - continue with basic metadata
+      await this.prefetchBasicMetadata(category, config.symbols.slice(0, config.topCount));
     }
   }
 
@@ -288,6 +298,32 @@ export class HybridCacheService {
         this.prefetchStatus.set(symbol, true);
       } catch (error) {
         console.warn(`⚠️ Failed to prefetch metadata for ${symbol}:`, error);
+      }
+    }
+  }
+
+  private async prefetchBasicMetadata(category: 'stocks' | 'etfs' | 'crypto', symbols: string[]) {
+    console.log(`📋 Prefetching basic metadata for ${symbols.length} ${category} (fallback mode)...`);
+    
+    for (const symbol of symbols) {
+      try {
+        const metadata: AssetMetadata = {
+          symbol,
+          name: `${symbol} ${category.charAt(0).toUpperCase() + category.slice(1)}`,
+          category: category === 'stocks' ? 'stock' : category === 'etfs' ? 'etf' : 'crypto',
+          sector: 'Unknown',
+          industry: 'Unknown',
+          description: `Top ${category} asset: ${symbol}`,
+          country: 'US',
+          currency: 'USD',
+          exchange: 'Unknown',
+          lastUpdated: Date.now()
+        };
+        
+        this.setMetadata(symbol, metadata);
+        this.prefetchStatus.set(symbol, true);
+      } catch (error) {
+        console.warn(`⚠️ Failed to prefetch basic metadata for ${symbol}:`, error);
       }
     }
   }

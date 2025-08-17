@@ -27,6 +27,6 @@ services:
         sync: false
       - key: FRONTEND_URL
         value: https://avilaprotocol-liam-mckeown-s-projects.vercel.app
-    healthCheckPath: /api/health
+    healthCheckPath: /api/health/ready
     autoDeploy: true
     branch: main 

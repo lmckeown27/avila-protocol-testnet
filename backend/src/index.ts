@@ -62,6 +62,47 @@ app.use((req: Request, res: Response, next: any) => {
 });
 
 // ============================================================================
+// HEALTH CHECK ENDPOINTS
+// ============================================================================
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0',
+    services: {
+      server: 'running',
+      cache: 'initializing',
+      marketData: 'initializing'
+    }
+  });
+});
+
+app.get('/api/health/ready', (req, res) => {
+  // This endpoint checks if the service is ready to handle requests
+  const isReady = process.uptime() > 60; // Ready after 1 minute
+  
+  if (isReady) {
+    res.json({
+      status: 'ready',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      message: 'Service is ready to handle requests'
+    });
+  } else {
+    res.status(503).json({
+      status: 'starting',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      message: 'Service is still starting up',
+      estimatedReadyIn: Math.max(0, 60 - process.uptime())
+    });
+  }
+});
+
+// ============================================================================
 // ROOT ENDPOINT - Landing page for Render
 // ============================================================================
 
@@ -96,17 +137,6 @@ app.get('/', (_req: Request, res: Response) => {
 // ============================================================================
 // HEALTH & STATUS ENDPOINTS
 // ============================================================================
-
-// Health check endpoint
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
 
 // Environment check endpoint
 app.get('/env-check', (_req: Request, res: Response) => {
