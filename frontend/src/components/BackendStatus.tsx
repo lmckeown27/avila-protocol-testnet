@@ -1,118 +1,99 @@
-import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Activity, RefreshCw } from 'lucide-react';
-import { backendMarketDataService, NormalizedAsset } from '../services/backendMarketData';
-import { config } from '../config/environment';
+import React, { useState, useEffect } from 'react';
+import { backendMarketDataService } from '../services/backendMarketData';
+import { tradFiDataService } from '../services/tradfiData';
 
-const BackendStatus = () => {
+const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  const [lastCheck, setLastCheck] = useState<Date | null>(null);
-  const [sampleData, setSampleData] = useState<NormalizedAsset[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [etfData, setEtfData] = useState<any>(null);
+  const [stockData, setStockData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkBackendStatus();
+    testBackendConnection();
   }, []);
 
-  const checkBackendStatus = async () => {
-    setLoading(true);
+  const testBackendConnection = async () => {
     try {
-      // Test backend connectivity by trying to fetch market data
-      const data = await backendMarketDataService.getStockData();
-      if (data && data.length > 0) {
-        setStatus('connected');
-        setSampleData(data.slice(0, 3)); // Show first 3 assets
-      } else {
-        setStatus('error');
-      }
-    } catch (error) {
-      console.error('Backend connection failed:', error);
+      setStatus('checking');
+      setError(null);
+
+      console.log('🧪 Testing backend connection...');
+      
+      // Test ETF endpoint
+      console.log('📊 Testing ETF endpoint...');
+      const etfResponse = await backendMarketDataService.getETFsData();
+      console.log('✅ ETF data received:', etfResponse);
+      setEtfData(etfResponse);
+
+      // Test stock endpoint
+      console.log('📈 Testing stock endpoint...');
+      const stockResponse = await tradFiDataService.getTopStocks(5);
+      console.log('✅ Stock data received:', stockResponse);
+      setStockData(stockResponse);
+
+      setStatus('connected');
+    } catch (err) {
+      console.error('❌ Backend test failed:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setStatus('error');
-    } finally {
-      setLoading(false);
-      setLastCheck(new Date());
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'connected':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Activity className="w-5 h-5 text-yellow-500 animate-pulse" />;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (status) {
-      case 'connected':
-        return 'Backend Connected';
-      case 'error':
-        return 'Backend Error';
-      default:
-        return 'Checking Backend...';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Backend Status
-        </h3>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Backend Connection Status
+      </h3>
+      
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className={`w-3 h-3 rounded-full ${
+            status === 'connected' ? 'bg-green-500' : 
+            status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+          }`}></div>
+          <span className="text-sm font-medium">
+            {status === 'connected' ? 'Connected' : 
+             status === 'error' ? 'Error' : 'Checking...'}
+          </span>
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-sm">
+            Error: {error}
+          </div>
+        )}
+
+        {etfData && (
+          <div className="text-sm">
+            <div className="font-medium text-gray-700 dark:text-gray-300">ETF Data:</div>
+            <div className="text-gray-600 dark:text-gray-400">
+              Type: {typeof etfData}, Length: {Array.isArray(etfData) ? etfData.length : 'N/A'}
+            </div>
+            <div className="text-gray-600 dark:text-gray-400">
+              Sample: {JSON.stringify(etfData.slice(0, 2), null, 2)}
+            </div>
+          </div>
+        )}
+
+        {stockData && (
+          <div className="text-sm">
+            <div className="font-medium text-gray-700 dark:text-gray-300">Stock Data:</div>
+            <div className="text-gray-600 dark:text-gray-400">
+              Type: {typeof stockData}, Length: {Array.isArray(stockData) ? stockData.length : 'N/A'}
+            </div>
+            <div className="text-gray-600 dark:text-gray-400">
+              Sample: {JSON.stringify(stockData.slice(0, 2), null, 2)}
+            </div>
+          </div>
+        )}
+
         <button
-          onClick={checkBackendStatus}
-          disabled={loading}
-          className="flex items-center space-x-2 px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 disabled:opacity-50"
+          onClick={testBackendConnection}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          Test Connection
         </button>
       </div>
-
-      <div className="flex items-center space-x-3 mb-4">
-        {getStatusIcon()}
-        <span className={`font-medium ${
-          status === 'connected' ? 'text-green-600 dark:text-green-400' :
-          status === 'error' ? 'text-red-600 dark:text-red-400' :
-          'text-yellow-600 dark:text-yellow-400'
-        }`}>
-          {getStatusText()}
-        </span>
-      </div>
-
-      {lastCheck && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Last checked: {lastCheck.toLocaleTimeString()}
-        </p>
-      )}
-
-      {status === 'connected' && sampleData.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Sample Data (First 3 Assets):
-          </h4>
-          <div className="space-y-2">
-            {sampleData.map((asset, index) => (
-              <div key={index} className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">{asset.symbol}</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  ${asset.price.toFixed(2)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {status === 'error' && (
-        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          <p className="text-sm text-red-700 dark:text-red-300">
-            Unable to connect to backend server. Backend URL: {config.backend.baseUrl}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

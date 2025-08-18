@@ -3,42 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backend Connection Test</title>
+    <title>Backend Endpoint Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
 </head>
 <body>
-    <h1>Backend Connection Test</h1>
-    <div id="status">Testing connection...</div>
-    <div id="data"></div>
+    <h1>Backend Endpoint Test</h1>
+    <p>This page tests the backend endpoints to verify data flow.</p>
+    
+    <button onclick="runTests()">Run Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
 
     <script>
-        async function testBackend() {
+        const BACKEND_URL = 'https://avila-protocol-testnet.onrender.com';
+        
+        function addResult(content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = content;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        async function testEndpoint(endpoint, name) {
             try {
-                // Test health endpoint
-                const healthResponse = await fetch('http://localhost:3000/health');
-                const healthData = await healthResponse.json();
+                addResult(`🧪 Testing ${name} endpoint: ${endpoint}`, 'info');
+                const response = await fetch(endpoint);
                 
-                document.getElementById('status').innerHTML = '✅ Backend connected successfully!';
-                document.getElementById('data').innerHTML = `
-                    <h3>Health Check Response:</h3>
-                    <pre>${JSON.stringify(healthData, null, 2)}</pre>
-                `;
-
-                // Test stocks endpoint
-                const stocksResponse = await fetch('http://localhost:3000/api/market-data/stocks');
-                const stocksData = await stocksResponse.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
-                document.getElementById('data').innerHTML += `
-                    <h3>Stocks Data Response:</h3>
-                    <pre>${JSON.stringify(stocksData, null, 2)}</pre>
-                `;
-
+                const data = await response.json();
+                addResult(`
+                    <strong>✅ ${name} endpoint successful:</strong><br>
+                    Status: ${data.success}<br>
+                    Has data: ${!!data.data}<br>
+                    Data type: ${Array.isArray(data.data) ? 'Array' : typeof data.data}<br>
+                    Data length: ${Array.isArray(data.data) ? data.data.length : 'N/A'}<br>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `, 'success');
+                
+                return data;
             } catch (error) {
-                document.getElementById('status').innerHTML = `❌ Connection failed: ${error.message}`;
-                console.error('Backend connection error:', error);
+                addResult(`<strong>❌ ${name} endpoint failed:</strong> ${error.message}`, 'error');
+                return null;
             }
         }
-
-        testBackend();
+        
+        async function runTests() {
+            addResult('<strong>🚀 Starting backend endpoint tests...</strong>', 'info');
+            
+            const endpoints = [
+                { url: `${BACKEND_URL}/api/health`, name: 'Health' },
+                { url: `${BACKEND_URL}/api/stocks`, name: 'Stocks' },
+                { url: `${BACKEND_URL}/api/etfs`, name: 'ETFs' },
+                { url: `${BACKEND_URL}/api/crypto`, name: 'Crypto' },
+                { url: `${BACKEND_URL}/api/market-data`, name: 'Market Data' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint.url, endpoint.name);
+            }
+            
+            addResult('<strong>🎉 Backend endpoint tests completed!</strong>', 'success');
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            addResult('Page loaded. Click "Run Tests" to test backend endpoints.', 'info');
+        });
     </script>
 </body>
 </html> 

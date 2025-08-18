@@ -22,8 +22,13 @@ const ETFMarket: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      console.log('🔍 Fetching ETF data from backend...');
       // Fetch ETF data from the correct endpoint
       const response = await backendMarketDataService.getETFsData();
+      console.log('📊 ETF response received:', response);
+      console.log('📊 ETF response type:', typeof response);
+      console.log('📊 ETF response length:', Array.isArray(response) ? response.length : 'Not an array');
+      
       setEtfData(response);
     } catch (err) {
       console.error('Error fetching ETF data:', err);

@@ -24,7 +24,10 @@ const MarketDashboard = () => {
   useEffect(() => {
     const fetchStockData = async () => {
       try {
+        console.log('🔍 Fetching stock data...');
         const data = await tradFiDataService.getStockMarketOverview();
+        console.log('📊 Stock data received:', data);
+        console.log('📊 Stock data.assets:', data.assets);
         setStockData(data.assets);
       } catch (error) {
         console.error('Failed to fetch Stock Market data:', error);
@@ -34,13 +37,16 @@ const MarketDashboard = () => {
 
     const fetchDigitalAssetsData = async () => {
       try {
+        console.log('🔍 Fetching digital assets data...');
         const results = await Promise.allSettled([
           marketDataService.getDigitalAssetsOverview(),
         ]);
+        console.log('📊 Digital assets results:', results);
         const validResults = results
           .filter((result) => result.status === 'fulfilled')
           .map((result) => (result as PromiseFulfilledResult<any>).value);
         
+        console.log('📊 Valid digital assets results:', validResults);
         setDigitalAssetsData(validResults);
       } catch (error) {
         console.error('Failed to fetch Digital Assets data:', error);

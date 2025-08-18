@@ -12,6 +12,7 @@ import DeFiProtocols from './pages/DeFiProtocols';
 import Watchlist from './components/Watchlist';
 import Governance from './pages/Governance';
 import Admin from './pages/Admin';
+import BackendStatus from './components/BackendStatus';
 import { useAppStore } from './stores/appStore';
 import { aptosService } from './services/aptos';
 import { runAllBackendTests, testBackendFromBrowser } from './utils/testBackendConnection';
@@ -61,24 +62,27 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Analytics />
-        <TestnetBanner />
         <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/markets" element={<Markets />} />
-            <Route path="/stock-market" element={<StockMarket />} />
-        <Route path="/digital-assets" element={<DigitalAssets />} />
-        <Route path="/etf-market" element={<ETFMarket />} />
-                    <Route path="/defi-protocols" element={<DeFiProtocols />} />
-                <Route path="/watchlist" element={<Watchlist />} />
-        <Route path="/portfolio" element={<Watchlist />} />
-            <Route path="/governance" element={<Governance />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
+        <TestnetBanner />
+        
+        <Routes>
+          <Route path="/" element={
+            <div className="space-y-8 p-6">
+              <Home />
+              <BackendStatus />
+            </div>
+          } />
+          <Route path="/markets" element={<Markets />} />
+          <Route path="/tradfi-markets" element={<StockMarket />} />
+          <Route path="/defi-markets" element={<DigitalAssets />} />
+          <Route path="/etf-market" element={<ETFMarket />} />
+          <Route path="/defi-protocols" element={<DeFiProtocols />} />
+          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/governance" element={<Governance />} />
+          <Route path="/admin" element={<Admin />} />
+        </Routes>
+        
+        <Analytics />
       </div>
     </Router>
   );
